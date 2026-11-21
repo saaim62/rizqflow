@@ -439,7 +439,7 @@ export function BeginnerGuideProvider({ children }: { children: React.ReactNode 
             <div className="p-4 px-6 border-t border-white/10 bg-[#11131A] flex items-center justify-between text-xs text-zinc-400">
               <span className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                Live PSX data & simulated models
+                Seeded PSX data (as of 20 Nov 2026) & simulated models
               </span>
               <button
                 onClick={closeGuide}

@@ -55,7 +55,7 @@ export default function RootLayout({
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center gap-3 text-[11px] text-zinc-400">
-                  <span>Educational Financial Modeling Only — SECP / SEBI Non-Advisory</span>
+                  <span>Educational Financial Modeling Only — Not Investment Advice (SECP-regulated advisors only can advise)</span>
                   <span className="hidden sm:inline">·</span>
                   <span className="text-emerald-400 font-medium">Bismillah for Halal Barakah</span>
                 </div>

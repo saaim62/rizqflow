@@ -23,9 +23,10 @@ interface AuthModalProps {
   onClose: () => void;
   initialMode?: 'signin' | 'signup' | 'portfolios';
   onOpenOnboarding?: () => void;
+  onRecalibrate?: () => void;
 }
 
-export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboarding }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboarding, onRecalibrate }: AuthModalProps) {
   const { 
     currentUser, 
     signInUser, 
@@ -59,22 +60,6 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
       onClose();
     } else {
       setError(res.error || 'Failed to sign in.');
-    }
-  };
-
-  const handleQuickDemoSignIn = () => {
-    setError(null);
-    const res = signInUser('saaim62@gmail.com', 'password123');
-    if (res.success) {
-      showToast('Signed in as Saim Asif (saaim62@gmail.com)!');
-      onClose();
-    } else {
-      // If user not found, sign up
-      const signupRes = signUpUser('Saim Asif', 'saaim62@gmail.com', 'password123', undefined, "Saim's Halal Wealth");
-      if (signupRes.success) {
-        showToast('Created & signed in as Saim Asif!');
-        onClose();
-      }
     }
   };
 
@@ -170,27 +155,10 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
             </div>
           )}
 
-          {/* Quick Demo Login Pill for Saim Asif */}
-          {!currentUser && (
-            <button
-              type="button"
-              onClick={handleQuickDemoSignIn}
-              className="w-full flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-emerald-500/15 to-teal-500/10 border border-emerald-500/30 hover:border-emerald-500/60 text-xs transition-all group"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
-                  SA
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-white group-hover:text-emerald-300 transition-colors">
-                    1-Click Sign In: Saim Asif
-                  </div>
-                  <div className="text-[10px] text-zinc-400">saaim62@gmail.com</div>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-emerald-400 group-hover:translate-x-1 transition-transform" />
-            </button>
-          )}
+          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 text-[11px] leading-relaxed text-zinc-400">
+            Accounts are stored <span className="text-zinc-200 font-semibold">only in this browser, on this device</span> —
+            nothing is sent to a server. Clearing browser data deletes them permanently.
+          </div>
 
           {/* SIGN IN FORM */}
           {mode === 'signin' && !currentUser && (
@@ -204,7 +172,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="saaim62@gmail.com"
+                    placeholder="you@example.com"
                     className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
@@ -246,7 +214,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Saim Asif"
+                    placeholder="Your full name"
                     className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
@@ -261,7 +229,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="saim@example.com"
+                    placeholder="you@example.com"
                     className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
@@ -400,7 +368,8 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
                 type="button"
                 onClick={() => {
                   onClose();
-                  if (onOpenOnboarding) onOpenOnboarding();
+                  if (onRecalibrate) onRecalibrate();
+                  else if (onOpenOnboarding) onOpenOnboarding();
                 }}
                 className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-200 border border-white/10 text-xs font-semibold flex items-center justify-center gap-2 transition-all"
               >

@@ -250,8 +250,11 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
     };
   });
 
-  // 8. 15-Year Timeline Simulation
-  const simulationYears = 15;
+  // 8. Timeline Simulation — runs to the user's retirement age (bounded
+  // 10–45 years) so figures labelled "at retirement" are truly at retirement,
+  // not silently truncated at year 15.
+  const yearsToRetirement = (profile.retirementAge || 60) - (profile.age || 30);
+  const simulationYears = Math.min(45, Math.max(10, yearsToRetirement || 15));
   const timeline: (WealthTimelinePoint & { portfolioValuePkr: number; annualNetDividendPkr: number })[] = [];
   let currentPortfolio = profile.lumpSumPkr;
   const annualNewCapital = profile.monthlyInvestPkr * 12;
@@ -278,22 +281,30 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
     const monthlyExpenses = totalMonthlyExpenses * inflationFactor;
     const realMonthlyDiv = monthlyNetDiv / inflationFactor;
 
-    // Check goals for this year
+    // Check goals for this year. A goal is only "funded" if the pot can
+    // actually pay it — otherwise record the honest shortfall and withdraw
+    // only what exists (the old engine marked every goal FUNDED).
     let goalWithdrawnThisYear = 0;
+    let availableForGoalsPkr =
+      capitalBase + newCapitalThisYear + (profile.reinvestDividends ? annualNetDiv : 0);
     for (const g of goals) {
       if (g.targetAge === currentAge) {
         const inflatedCost = g.costInTodaysPkr * Math.pow(1 + profile.annualInflationPct / 100, year);
         const yearsToRetire = Math.max(0, (profile.retirementAge || 60) - g.targetAge);
-        const opportunityCost = inflatedCost * Math.pow(1 + 0.12, yearsToRetire);
-        goalWithdrawnThisYear += inflatedCost;
+        const oppRate = (profile.opportunityCostReturnPct ?? 10) / 100;
+        const opportunityCost = inflatedCost * Math.pow(1 + oppRate, yearsToRetire);
+        const fundedAmountPkr = Math.min(Math.max(0, availableForGoalsPkr), inflatedCost);
+        const shortfallPkr = Math.max(0, inflatedCost - fundedAmountPkr);
+        availableForGoalsPkr -= fundedAmountPkr;
+        goalWithdrawnThisYear += fundedAmountPkr;
         goalOutcomes.push({
           goalId: g.id,
           name: g.name,
           targetAge: g.targetAge,
           inflatedCostPkr: Math.round(inflatedCost),
           trueOpportunityCostAtRetirementPkr: Math.round(opportunityCost),
-          funded: true,
-          shortfallPkr: 0,
+          funded: shortfallPkr <= 0,
+          shortfallPkr: Math.round(shortfallPkr),
         });
       }
     }
@@ -331,7 +342,7 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
   }
 
   // 9. Freedom Date & Years/Age Calculation
-  let freedomDateLabel = 'Beyond 15 Years';
+  let freedomDateLabel = `Beyond ${simulationYears} Years`;
   let freedomYears: number | null = null;
   let freedomAge: number | null = null;
 

@@ -84,12 +84,14 @@ describe('QA Edge Cases: Boundary & Extreme Financial Inputs', () => {
     expect(plan.initialMonthlyNetDividendPkr).toBe(0);
     expect(plan.nonFilerTaxPenaltyYearlyPkr).toBe(0);
 
-    // Freedom cannot be achieved in 15 years with 0 capital
+    // Freedom cannot be achieved within the horizon with 0 capital.
+    // Horizon = retirementAge - age = 60 - 28 = 32 years (engine simulates
+    // to retirement age since the Forgewarden fix round, not a fixed 15).
     expect(plan.freedomYears).toBeNull();
-    expect(plan.freedomDateLabel).toBe('Beyond 15 Years');
+    expect(plan.freedomDateLabel).toBe('Beyond 32 Years');
 
-    // All 15 timeline years must have 0 portfolio value and 0 dividends
-    expect(plan.timeline.length).toBe(15);
+    // All 32 timeline years must have 0 portfolio value and 0 dividends
+    expect(plan.timeline.length).toBe(32);
     plan.timeline.forEach((year) => {
       expect(year.portfolioValuePkr).toBe(0);
       expect(year.annualNetDividendPkr).toBe(0);
@@ -157,13 +159,14 @@ describe('QA Edge Cases: Boundary & Extreme Financial Inputs', () => {
 
     const plan = calculateLifePlan(profile);
 
-    // Gross monthly dividend on Rs 10 Cr @ ~8.24% blended yield is ~Rs 680k/mo
-    expect(plan.initialMonthlyGrossDividendPkr).toBeGreaterThan(650000);
-    expect(plan.initialMonthlyGrossDividendPkr).toBeLessThan(750000);
+    // Gross monthly dividend on Rs 10 Cr @ ~7.6% blended yield (Shariah
+    // basket at 20 Nov 2026 prices) is ~Rs 635k/mo
+    expect(plan.initialMonthlyGrossDividendPkr).toBeGreaterThan(600000);
+    expect(plan.initialMonthlyGrossDividendPkr).toBeLessThan(700000);
 
-    // Net monthly dividend (filer 15%) is ~Rs 580k/mo
-    expect(plan.initialMonthlyNetDividendPkr).toBeGreaterThan(550000);
-    expect(plan.initialMonthlyNetDividendPkr).toBeLessThan(640000);
+    // Net monthly dividend (filer 15%) is ~Rs 539k/mo
+    expect(plan.initialMonthlyNetDividendPkr).toBeGreaterThan(500000);
+    expect(plan.initialMonthlyNetDividendPkr).toBeLessThan(600000);
 
     // Immediate freedom achieved today (since net dividend >> total expenses of Rs 90k)
     expect(plan.freedomYears).toBe(0);
@@ -522,9 +525,9 @@ describe('QA Edge Cases: Expense Waterfall Mechanics', () => {
     const plan = calculateLifePlan(profile);
     const netDiv = plan.initialMonthlyNetDividendPkr;
 
-    // Net dividend should be roughly 25k (between 24k and 26k)
-    expect(netDiv).toBeGreaterThanOrEqual(24000);
-    expect(netDiv).toBeLessThanOrEqual(26500);
+    // Net dividend should be roughly 23k at 20 Nov 2026 yields (24k-26k on stale data)
+    expect(netDiv).toBeGreaterThanOrEqual(22000);
+    expect(netDiv).toBeLessThanOrEqual(25000);
 
     const wf = plan.expenseWaterfall;
 
@@ -804,8 +807,9 @@ describe('QA Edge Cases: WealthFlow Compounding & Dated Life Goals', () => {
     expect(wedding.inflatedCostPkr).toBe(expectedWeddingInflated);
 
     // Years to retirement = 60 - 30 = 30 years
-    // Opportunity cost = inflatedCost * (1.12)^30
-    const expectedOppCost = Math.round(wedding.inflatedCostPkr * Math.pow(1.12, 30));
+    // Opportunity cost uses the PROFILE's opportunityCostReturnPct (10% in
+    // this fixture) — the engine previously hardcoded 12%.
+    const expectedOppCost = Math.round(wedding.inflatedCostPkr * Math.pow(1.1, 30));
     expect(wedding.trueOpportunityCostAtRetirementPkr).toBe(expectedOppCost);
 
     // Check that timeline in year 2 recorded goal withdrawal
@@ -888,5 +892,36 @@ describe('QA Edge Cases: Safe State URL Serialization & Security Defense', () =>
     expect(sanitized.annualSalaryRaisePct).toBeLessThanOrEqual(50);
     expect(sanitized.annualInflationPct).toBeLessThanOrEqual(40);
     expect(sanitized.monthlyIncomePkr).toBe(0);
+  });
+});
+
+describe('QA Edge Cases: Goal Shortfall Honesty (Forgewarden fix round)', () => {
+  it('marks a goal FUNDED=false with a real shortfall when the pot cannot pay it', () => {
+    const profile = createBaseProfile({
+      age: 28,
+      retirementAge: 60,
+      lumpSumPkr: 100000,
+      monthlyInvestPkr: 0,
+      annualInflationPct: 8,
+      lifeGoals: [
+        { id: 'big-house', name: 'House Downpayment', targetAge: 30, costInTodaysPkr: 5000000 },
+      ],
+    });
+
+    const plan = calculateLifePlan(profile);
+    const outcome = plan.goalOutcomes.find((g) => g.goalId === 'big-house');
+    expect(outcome).toBeDefined();
+    if (!outcome) return;
+
+    // Inflated cost is reported in full...
+    expect(outcome.inflatedCostPkr).toBe(Math.round(5000000 * Math.pow(1.08, 2)));
+    // ...but the goal is NOT marked funded, and the shortfall is real.
+    expect(outcome.funded).toBe(false);
+    expect(outcome.shortfallPkr).toBeGreaterThan(5000000);
+
+    // Only what actually exists leaves the pot that year.
+    const year2 = plan.timeline.find((t) => t.age === 30);
+    expect(year2?.goalWithdrawnPkr).toBeGreaterThan(0);
+    expect(year2?.goalWithdrawnPkr).toBeLessThan(outcome.inflatedCostPkr);
   });
 });

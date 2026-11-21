@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { MetalAsset } from '@/types';
+import { DATA_AS_OF_SHORT } from '@/data/marketData';
 import { StreakBadge } from '@/components/ui/StreakBadge';
 import { Sparkline } from '@/components/markets/Sparkline';
 import { 
@@ -68,7 +69,7 @@ export function GoldSpotlight({ gold, silver }: GoldSpotlightProps) {
               </span>
             </div>
             <p className="text-xs text-zinc-400">
-              Live physical gold spot tracking with 30-day streak momentum
+              Physical gold spot tracking · seeded series as of {DATA_AS_OF_SHORT} · 30-day streak momentum
             </p>
           </div>
         </div>

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { METAL_ASSETS, PSX_STOCKS } from '@/data/marketData';
+import { METAL_ASSETS, PSX_STOCKS, MARKET_SNAPSHOT } from '@/data/marketData';
 import { GoldSpotlight } from '@/components/markets/GoldSpotlight';
 import { PsxMoversStrip } from '@/components/markets/PsxMoversStrip';
 import { QuickSimulator } from '@/components/markets/QuickSimulator';
@@ -95,7 +95,7 @@ export default function HomePage() {
             <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
               <span className="text-zinc-500 text-[10px] uppercase">24K Sarafa Gold</span>
               <div className="font-mono font-bold text-white text-sm mt-0.5">
-                Rs 385,000
+                Rs {gold.currentPrice.toLocaleString('en-PK')}
               </div>
               <span className="text-rose-400 font-mono text-[10px]">▼ 5d Dip Zone (-12.8%)</span>
             </div>
@@ -104,7 +104,7 @@ export default function HomePage() {
             <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
               <span className="text-zinc-500 text-[10px] uppercase">24K Silver (Tola)</span>
               <div className="font-mono font-bold text-white text-sm mt-0.5">
-                Rs 4,708
+                Rs {silver.currentPrice.toLocaleString('en-PK')}
               </div>
               <span className="text-rose-400 font-mono text-[10px]">▼ 3d Losing Streak</span>
             </div>
@@ -113,7 +113,7 @@ export default function HomePage() {
             <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
               <span className="text-zinc-500 text-[10px] uppercase">Interbank USD</span>
               <div className="font-mono font-bold text-emerald-400 text-sm mt-0.5">
-                Rs 276.28
+                Rs {MARKET_SNAPSHOT.usdPkrInterbank}
               </div>
               <span className="text-zinc-400 font-mono text-[10px]">SBP Remittance Rate</span>
             </div>
@@ -122,16 +122,16 @@ export default function HomePage() {
             <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
               <span className="text-zinc-500 text-[10px] uppercase">KSE-100 Index</span>
               <div className="font-mono font-bold text-white text-sm mt-0.5">
-                177,382
+                {MARKET_SNAPSHOT.kse100Index.toLocaleString('en-PK', { maximumFractionDigits: 0 })}
               </div>
-              <span className="text-emerald-400 font-mono text-[10px]">▲ +2,410 pts (+1.4%)</span>
+              <span className="text-emerald-400 font-mono text-[10px]">▲ +{MARKET_SNAPSHOT.kse100ChangePts} pts (+{MARKET_SNAPSHOT.kse100ChangePct}%)</span>
             </div>
 
             {/* Petrol */}
             <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between col-span-2 sm:col-span-1">
               <span className="text-zinc-500 text-[10px] uppercase">Petrol (Super)</span>
               <div className="font-mono font-bold text-amber-300 text-sm mt-0.5">
-                Rs 322 / L
+                Rs {MARKET_SNAPSHOT.petrolPerLitre} / L
               </div>
               <span className="text-zinc-400 font-mono text-[10px]">Effective Nov 21, 2026</span>
             </div>

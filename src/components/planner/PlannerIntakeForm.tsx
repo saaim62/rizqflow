@@ -493,6 +493,42 @@ export function PlannerIntakeForm({
                   <option value="married">Married</option>
                 </select>
               </div>
+
+              <div>
+                <label className="text-[11px] text-zinc-400 block mb-1">Gender</label>
+                <select
+                  value={profile.gender}
+                  onChange={(e) => updateProfileField('gender', e.target.value as 'male' | 'female')}
+                  className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 text-white text-xs"
+                >
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[11px] text-zinc-400 block mb-1">Family Members (Household Size)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={profile.familyMembers}
+                  onChange={(e) => updateProfileField('familyMembers', Number(e.target.value))}
+                  className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 font-mono text-white text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] text-zinc-400 block mb-1">Main Breadwinner</label>
+                <select
+                  value={profile.isBreadwinner ? 'yes' : 'no'}
+                  onChange={(e) => updateProfileField('isBreadwinner', e.target.value === 'yes')}
+                  className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 text-white text-xs"
+                >
+                  <option value="yes">Yes — I am</option>
+                  <option value="no">No — someone else is</option>
+                </select>
+              </div>
             </div>
           </div>
         )}

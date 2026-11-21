@@ -50,7 +50,7 @@ interface ProfileContextType {
   switchActivePortfolio: (portfolioId: string) => void;
   createNewPortfolio: (name: string, baseProfile?: UserProfile) => { success: boolean; user?: UserAccount; portfolio?: PortfolioRecord };
   openAuthModal: (mode?: 'signin' | 'signup' | 'portfolios') => void;
-  openOnboardingModal: () => void;
+  openOnboardingModal: (mode?: 'create' | 'update') => void;
 }
 
 const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -81,6 +81,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup' | 'portfolios'>('signin');
   const [onboardingModalOpen, setOnboardingModalOpen] = useState<boolean>(false);
+  const [onboardingMode, setOnboardingMode] = useState<'create' | 'update'>('create');
 
   // Show temporary toast message
   const showToast = useCallback((msg: string) => {
@@ -332,7 +333,8 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     setAuthModalOpen(true);
   }, []);
 
-  const openOnboardingModal = useCallback(() => {
+  const openOnboardingModal = useCallback((mode: 'create' | 'update' = 'create') => {
+    setOnboardingMode(mode);
     setOnboardingModalOpen(true);
   }, []);
 
@@ -371,12 +373,14 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
         initialMode={authModalMode}
-        onOpenOnboarding={() => setOnboardingModalOpen(true)}
+        onOpenOnboarding={() => openOnboardingModal('create')}
+        onRecalibrate={() => openOnboardingModal('update')}
       />
 
       {/* Global Onboarding Setup Wizard Modal */}
       <OnboardingWizardModal
         isOpen={onboardingModalOpen}
+        mode={onboardingMode}
         onClose={() => setOnboardingModalOpen(false)}
       />
 

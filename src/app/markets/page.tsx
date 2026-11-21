@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { METAL_ASSETS, PSX_STOCKS } from '@/data/marketData';
+import { METAL_ASSETS, PSX_STOCKS, DATA_AS_OF_SHORT } from '@/data/marketData';
 import { StockScreener } from '@/components/markets/StockScreener';
 import { StreakBadge } from '@/components/ui/StreakBadge';
 import { formatPkr, formatPct } from '@/lib/format';
@@ -70,7 +70,7 @@ function MarketsTerminal() {
               Gold & PSX Streak Terminal
             </h1>
             <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 text-xs font-semibold">
-              Sarafa & PSX Live
+              Data as of {DATA_AS_OF_SHORT}
             </span>
           </div>
           <p className="text-xs sm:text-sm text-zinc-400 mt-1">
@@ -258,7 +258,7 @@ function MarketsTerminal() {
               PSX Dividend Stock Screener & Trap Detector
             </h2>
             <p className="text-xs text-zinc-400">
-              Filter 18 tracked companies by Shariah status, Grade A safety core vs Grade B/C yield traps, and active streak lengths
+              Filter 18 tracked companies by Shariah status, Grade A safety core vs Grade B/C yield traps, and active streak lengths. Prices & yields as of {DATA_AS_OF_SHORT} close — 30-day streak charts use sample price history, so verify live prices before trading.
             </p>
           </div>
         </div>

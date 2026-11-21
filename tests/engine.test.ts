@@ -140,7 +140,7 @@ describe('Market Data Layer (src/data/marketData.ts)', () => {
     // Check specific traps
     const nbp = PSX_STOCKS.find((s) => s.ticker === 'NBP');
     expect(nbp?.grade).toBe('C');
-    expect(nbp?.dividendYieldPct).toBe(20.2);
+    expect(nbp?.dividendYieldPct).toBe(19.9); // 20 Nov 2026: DPS 35.00 one-off special / price 176.03
     expect(nbp?.trapWarning).toContain('pension litigation');
 
     const kapco = PSX_STOCKS.find((s) => s.ticker === 'KAPCO');
@@ -149,8 +149,11 @@ describe('Market Data Layer (src/data/marketData.ts)', () => {
     expect(kapco?.trapWarning).toContain('PPA');
 
     const lotchem = PSX_STOCKS.find((s) => s.ticker === 'LOTCHEM');
-    expect(lotchem?.grade).toBe('B');
-    expect(lotchem?.dividendYieldPct).toBe(19.5);
+    // Demoted B -> C in the 21 Nov 2026 fix round: at 20 Nov 2026 prices the
+    // trailing yield is ~25% — a cyclical PTA-PX peak artifact, not a payout
+    // rate. That is a yield trap by definition.
+    expect(lotchem?.grade).toBe('C');
+    expect(lotchem?.dividendYieldPct).toBe(25.3);
     expect(lotchem?.trapWarning).toContain('PTA-PX');
   });
 

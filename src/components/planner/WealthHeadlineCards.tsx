@@ -129,7 +129,7 @@ export function WealthHeadlineCards({ plan, profile }: WealthHeadlineCardsProps)
                 Dividend Freedom
               </span>
             </div>
-            <div className="text-lg sm:text-xl font-extrabold text-amber-300 font-mono tabular-nums mt-1.5 line-clamp-1">
+            <div className="text-base sm:text-lg font-extrabold text-amber-300 font-mono tabular-nums mt-1.5 leading-tight break-words">
               {plan.freedomDateLabel}
             </div>
           </div>

@@ -46,7 +46,7 @@ export function QuickSimulator() {
               Instant Lump-Sum Dividend Simulator
             </h2>
             <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 text-xs font-semibold">
-              Live Yield Engine
+              Dividend Yield Engine
             </span>
           </div>
           <p className="text-xs sm:text-sm text-zinc-400 mt-1">

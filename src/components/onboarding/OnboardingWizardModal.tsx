@@ -25,21 +25,26 @@ import {
 interface OnboardingWizardModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** 'create' = new portfolio (default). 'update' = recalibrate the ACTIVE
+   *  portfolio in place — never spawn a duplicate for a settings change. */
+  mode?: 'create' | 'update';
   onComplete?: (profile: UserProfile, portfolioName: string) => void;
 }
 
-export function OnboardingWizardModal({ isOpen, onClose, onComplete }: OnboardingWizardModalProps) {
+export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComplete }: OnboardingWizardModalProps) {
   const { profile, updateProfile, showToast, currentUser, createNewPortfolio } = useProfile();
 
   const [step, setStep] = useState<number>(1);
   const totalSteps = 6;
 
   // Local draft state initialized with current profile
-  const [name, setName] = useState<string>(currentUser?.name || 'Saim Asif');
+  const [name, setName] = useState<string>(currentUser?.name || '');
   const [portfolioName, setPortfolioName] = useState<string>('My Freedom Portfolio');
   const [age, setAge] = useState<number>(profile.age || 28);
   const [retirementAge, setRetirementAge] = useState<number>(profile.retirementAge || 55);
   const [role, setRole] = useState<UserRole>(profile.role || 'salaried');
+  const [gender, setGender] = useState<'male' | 'female'>(profile.gender || 'male');
+  const [isBreadwinner, setIsBreadwinner] = useState<boolean>(profile.isBreadwinner ?? true);
   const [maritalStatus, setMaritalStatus] = useState<'unmarried' | 'married'>(profile.maritalStatus || 'unmarried');
   const [familyMembers, setFamilyMembers] = useState<number>(profile.familyMembers || 1);
 
@@ -104,6 +109,8 @@ export function OnboardingWizardModal({ isOpen, onClose, onComplete }: Onboardin
     const compiledProfile: UserProfile = {
       ...profile,
       role,
+      gender,
+      isBreadwinner,
       age,
       retirementAge,
       maritalStatus,
@@ -152,13 +159,18 @@ export function OnboardingWizardModal({ isOpen, onClose, onComplete }: Onboardin
       lifeGoals: goals.length > 0 ? goals : profile.lifeGoals,
     };
 
-    if (currentUser) {
+    if (mode === 'update' && currentUser) {
+      // Recalibrate: update the ACTIVE portfolio in place. (Previously every
+      // recalibration silently created a duplicate portfolio.)
+      updateProfile(compiledProfile);
+      showToast('Active portfolio recalibrated & saved!');
+    } else if (currentUser) {
       createNewPortfolio(portfolioName, compiledProfile);
+      showToast(`Portfolio "${portfolioName}" configured & loaded successfully!`);
     } else {
       updateProfile(compiledProfile);
+      showToast(`Portfolio "${portfolioName}" configured & loaded successfully!`);
     }
-
-    showToast(`Portfolio "${portfolioName}" configured & loaded successfully!`);
     if (onComplete) onComplete(compiledProfile, portfolioName);
     onClose();
   };
@@ -223,7 +235,7 @@ export function OnboardingWizardModal({ isOpen, onClose, onComplete }: Onboardin
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm focus:border-emerald-500 focus:outline-none"
-                    placeholder="Saim Asif"
+                    placeholder="Your full name"
                   />
                 </div>
 
@@ -234,7 +246,7 @@ export function OnboardingWizardModal({ isOpen, onClose, onComplete }: Onboardin
                     value={portfolioName}
                     onChange={(e) => setPortfolioName(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm focus:border-emerald-500 focus:outline-none"
-                    placeholder="e.g. Saim's Halal Wealth"
+                    placeholder="e.g. My Halal Wealth"
                   />
                 </div>
 
@@ -304,6 +316,30 @@ export function OnboardingWizardModal({ isOpen, onClose, onComplete }: Onboardin
                   </div>
                 </div>
               </div>
+
+            {/* Household questions — the profile type always carried gender,
+                familyMembers and isBreadwinner, but no UI collected them
+                before the Forgewarden fix round. */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-300">Gender</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => setGender('male')} className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${gender === 'male' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-black/30 border-white/10 text-zinc-400'}`}>Male</button>
+                  <button type="button" onClick={() => setGender('female')} className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${gender === 'female' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-black/30 border-white/10 text-zinc-400'}`}>Female</button>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-300">Family Members (Household Size)</label>
+                <input type="number" value={familyMembers} onChange={(e) => setFamilyMembers(Number(e.target.value))} min={1} max={30} className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm font-mono focus:border-emerald-500 focus:outline-none" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-300">Are You the Main Breadwinner?</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => setIsBreadwinner(true)} className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${isBreadwinner ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-black/30 border-white/10 text-zinc-400'}`}>Yes, I am</button>
+                  <button type="button" onClick={() => setIsBreadwinner(false)} className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${!isBreadwinner ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-black/30 border-white/10 text-zinc-400'}`}>Someone else</button>
+                </div>
+              </div>
+            </div>
             </div>
           )}
 
@@ -411,7 +447,7 @@ export function OnboardingWizardModal({ isOpen, onClose, onComplete }: Onboardin
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-300">Monthly Net Income (PKR)</label>
+                  <label className="text-xs font-semibold text-zinc-300">{isBreadwinner ? 'Monthly Net Income (PKR)' : "Breadwinner's Monthly Income — Household (PKR)"}</label>
                   <input
                     type="number"
                     value={monthlyIncomePkr}
@@ -550,7 +586,7 @@ export function OnboardingWizardModal({ isOpen, onClose, onComplete }: Onboardin
               <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 text-xs text-zinc-300 leading-relaxed flex items-start gap-3">
                 <Car className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-semibold text-white">Vehicle & Solar Arbitrage:</span> Fuel is the single fastest-growing expense in Pakistan. Switching from Petrol (Rs 322/L) to EV charging on rooftop solar can save Rs 25,000–60,000 every single month!
+                  <span className="font-semibold text-white">Vehicle & Solar Arbitrage:</span> Fuel is the single fastest-growing expense in Pakistan. Switching from petrol to EV charging on rooftop solar can save Rs 25,000–60,000 every single month!
                 </div>
               </div>
 
@@ -581,7 +617,15 @@ export function OnboardingWizardModal({ isOpen, onClose, onComplete }: Onboardin
                   </select>
                 </div>
 
+                {currentVehicleType !== 'none' && (
                 <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-zinc-300">Current Vehicle Resale Value (PKR)</label>
+                  <input type="number" value={currentVehicleResalePkr} onChange={(e) => setCurrentVehicleResalePkr(Number(e.target.value))} step={50000} className="w-full px-3.5 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none" />
+                  <span className="text-[11px] text-zinc-400">What you could sell it for today — drives the EV-swap math ({formatPkr(currentVehicleResalePkr)})</span>
+                </div>
+              )}
+
+              <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-zinc-300">Rooftop Solar Installed (kW)</label>
                   <input
                     type="number"
@@ -684,7 +728,7 @@ export function OnboardingWizardModal({ isOpen, onClose, onComplete }: Onboardin
               className="flex items-center gap-2 px-7 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black font-extrabold text-xs transition-all shadow-xl shadow-emerald-500/30"
             >
               <Sparkles className="w-4 h-4 text-black" />
-              <span>Launch & Calibrate My Portfolio</span>
+              <span>{mode === 'update' ? 'Save & Recalibrate My Portfolio' : 'Launch & Calibrate My Portfolio'}</span>
             </button>
           )}
         </div>

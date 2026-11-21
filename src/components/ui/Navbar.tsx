@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { DATA_AS_OF_SHORT } from '@/data/marketData';
 import { 
   BookOpen, 
   TrendingUp, 
@@ -80,7 +81,7 @@ export function Navbar() {
           {/* Pakistan Market Live Badge */}
           <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[11px] font-medium text-zinc-300">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>KSE-100 & Sarafa Live</span>
+            <span>KSE-100 · Sarafa · Data {DATA_AS_OF_SHORT}</span>
           </div>
         </div>
 
@@ -115,7 +116,7 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           {/* Setup Wizard Button */}
           <button
-            onClick={openOnboardingModal}
+            onClick={() => openOnboardingModal()}
             className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/25 text-xs font-semibold transition-all shadow-sm"
             title="Setup & Calibrate Your Personal Financial Flow"
           >

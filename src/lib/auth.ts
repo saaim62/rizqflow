@@ -30,9 +30,15 @@ const STORAGE_KEY_USERS = 'rizqflow_users_v1';
 const STORAGE_KEY_SESSION = 'rizqflow_active_session_v1';
 
 /**
- * Simple client-side hash for password matching in local-first environment
+ * Local-demo password hashing.
+ *
+ * RizqFlow accounts are LOCAL ONLY: they live in this browser's localStorage
+ * and never leave the device (see FORGEWARDEN.md). This salted, iterated hash
+ * keeps the plain password out of localStorage, but it is NOT a substitute
+ * for server-side auth (bcrypt/argon2) and must never be presented as such.
+ * No account is ever seeded and no credential is hardcoded.
  */
-function hashPassword(pass: string): string {
+function legacyHashPassword(pass: string): string {
   let hash = 0;
   for (let i = 0; i < pass.length; i++) {
     const char = pass.charCodeAt(i);
@@ -42,6 +48,34 @@ function hashPassword(pass: string): string {
   return 'rf_hash_' + Math.abs(hash).toString(36) + '_' + pass.length;
 }
 
+function makeSalt(): string {
+  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+}
+
+function hashPasswordV2(pass: string, salt: string): string {
+  let h1 = 0x811c9dc5 >>> 0;
+  let h2 = 5381 >>> 0;
+  const seed = salt + '::' + pass;
+  for (let round = 0; round < 4096; round++) {
+    for (let i = 0; i < seed.length; i++) {
+      const c = seed.charCodeAt(i);
+      h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;
+      h2 = (Math.imul(h2, 33) ^ c) >>> 0;
+    }
+    h1 = (h1 ^ h2) >>> 0;
+  }
+  return 'rf2$' + salt + '$' + h1.toString(36) + h2.toString(36);
+}
+
+function verifyPassword(pass: string, stored: string): boolean {
+  if (stored.startsWith('rf2$')) {
+    const salt = stored.split('$')[1];
+    return hashPasswordV2(pass, salt) === stored;
+  }
+  // Pre-v2 stored hash (legacy local installs) — verified once, then upgraded.
+  return legacyHashPassword(pass) === stored;
+}
+
 /**
  * Get all registered local user accounts
  */
@@ -49,48 +83,7 @@ export function getRegisteredUsers(): UserAccount[] {
   if (typeof window === 'undefined') return [];
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY_USERS);
-    if (!raw) {
-      // Seed initial account for Saim Asif (saaim62@gmail.com)
-      const saimDefaultProfile = (PRESET_PROFILES[0]?.profile || PRESET_PROFILES[0]) as UserProfile;
-      const initialSaim: UserAccount = {
-        id: 'usr_saim_62',
-        name: 'Saim Asif',
-        email: 'saaim62@gmail.com',
-        passwordHash: hashPassword('password123'),
-        createdAt: new Date().toISOString(),
-        activePortfolioId: 'port_saim_primary',
-        portfolios: [
-          {
-            id: 'port_saim_primary',
-            name: 'Halal Dividend Wealth (Primary)',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            profile: {
-              ...saimDefaultProfile,
-              monthlyIncomePkr: 250000,
-              monthlyInvestPkr: 100000,
-              lumpSumPkr: 1500000,
-              shariahOnly: true,
-              taxStatus: 'filer',
-            },
-          },
-          {
-            id: 'port_saim_car',
-            name: 'EV Transition & Solar Map',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            profile: {
-              ...saimDefaultProfile,
-              solarKw: 10,
-              solarTariffMode: 'net-metering-legacy',
-              dailyCommuteKm: 40,
-            },
-          },
-        ],
-      };
-      saveRegisteredUsers([initialSaim]);
-      return [initialSaim];
-    }
+    if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
@@ -155,8 +148,14 @@ export function signIn(email: string, pass: string): { success: boolean; user?: 
     return { success: false, error: 'Account not found. Please sign up or check your email.' };
   }
 
-  if (user.passwordHash !== hashPassword(pass)) {
+  if (!verifyPassword(pass, user.passwordHash)) {
     return { success: false, error: 'Incorrect password. Try again.' };
+  }
+
+  // Transparently upgrade a legacy stored hash to the salted v2 format.
+  if (!user.passwordHash.startsWith('rf2$')) {
+    user.passwordHash = hashPasswordV2(pass, makeSalt());
+    saveRegisteredUsers(users);
   }
 
   const session: AuthSession = {
@@ -189,7 +188,7 @@ export function signUp(
 
   const defaultProfile = initialProfile || ((PRESET_PROFILES[0]?.profile || PRESET_PROFILES[0]) as UserProfile);
   const userId = 'usr_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6);
-  const portfolioId = 'port_' + Date.now().toString(36);
+  const portfolioId = 'port_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6);
 
   const newPortfolio: PortfolioRecord = {
     id: portfolioId,
@@ -203,7 +202,7 @@ export function signUp(
     id: userId,
     name: name.trim(),
     email: normalizedEmail,
-    passwordHash: hashPassword(pass),
+    passwordHash: hashPasswordV2(pass, makeSalt()),
     createdAt: new Date().toISOString(),
     activePortfolioId: portfolioId,
     portfolios: [newPortfolio],
