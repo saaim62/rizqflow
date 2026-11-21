@@ -215,3 +215,5 @@ export function evaluateCarDecision(profile: UserProfile): CarDecisionSummary {
     effectiveSolarRatePerKwh,
   };
 }
+
+export { applyCarSavingsToPlan } from '@/lib/engine/wealthEngine';

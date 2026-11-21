@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { AssetBucket } from '@/types';
-import { Layers, PieChart, Coins, Home, Landmark, Wallet } from 'lucide-react';
+import { Layers, PieChart, Coins, Home, Landmark, Wallet, Wand2 } from 'lucide-react';
 
 interface MultiAssetSplitterProps {
   assetBuckets: AssetBucket[];
@@ -27,6 +27,38 @@ export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitte
     onChange(updated);
   };
 
+  const handleAutoBalance = () => {
+    if (totalSplit === 0) {
+      // Default balanced split
+      const def = [
+        { id: 'psx-dividends', pct: 40 },
+        { id: 'gold', pct: 20 },
+        { id: 'real-estate', pct: 20 },
+        { id: 'money-market', pct: 15 },
+        { id: 'cash', pct: 5 },
+      ];
+      const balanced = assetBuckets.map((b) => {
+        const found = def.find((d) => d.id === b.id);
+        return { ...b, monthlySplitPct: found ? found.pct : 20 };
+      });
+      onChange(balanced);
+      return;
+    }
+
+    // Pro-rata normalization
+    let runningSum = 0;
+    const normalized = assetBuckets.map((b, idx) => {
+      if (idx === assetBuckets.length - 1) {
+        return { ...b, monthlySplitPct: Math.max(0, 100 - runningSum) };
+      }
+      const p = Math.round((b.monthlySplitPct / totalSplit) * 100);
+      runningSum += p;
+      return { ...b, monthlySplitPct: p };
+    });
+
+    onChange(normalized);
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between text-xs">
@@ -34,13 +66,27 @@ export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitte
           <Layers className="w-3.5 h-3.5 text-emerald-400" />
           <span>Multi-Asset Monthly Split</span>
         </label>
-        <span
-          className={`font-mono text-[11px] font-bold ${
-            totalSplit === 100 ? 'text-emerald-400' : 'text-amber-400'
-          }`}
-        >
-          Total: {totalSplit}% {totalSplit !== 100 && '(Adjust to 100%)'}
-        </span>
+
+        <div className="flex items-center gap-2">
+          {totalSplit !== 100 && (
+            <button
+              type="button"
+              onClick={handleAutoBalance}
+              className="flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold transition-all"
+            >
+              <Wand2 className="w-2.5 h-2.5" />
+              <span>Auto-Balance 100%</span>
+            </button>
+          )}
+
+          <span
+            className={`font-mono text-[11px] font-bold ${
+              totalSplit === 100 ? 'text-emerald-400' : 'text-amber-400'
+            }`}
+          >
+            Total: {totalSplit}%
+          </span>
+        </div>
       </div>
 
       <div className="space-y-2.5">

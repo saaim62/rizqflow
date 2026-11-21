@@ -11,6 +11,8 @@ import { ExpenseWaterfall } from '@/components/planner/ExpenseWaterfall';
 import { CompoundingChart } from '@/components/planner/CompoundingChart';
 import { PayoutCalendarChart } from '@/components/planner/PayoutCalendarChart';
 import { PortfolioAllocationsTable } from '@/components/planner/PortfolioAllocationsTable';
+import { PsxExecutionSheet } from '@/components/planner/PsxExecutionSheet';
+import { ShareSnapshotModal } from '@/components/ui/ShareSnapshotModal';
 import { WhatThisCantTellYou } from '@/components/planner/WhatThisCantTellYou';
 import { 
   BarChart3, 
@@ -31,6 +33,7 @@ function PlannerContent() {
   const { profile, setProfile, resetToPreset, sharePlan } = useProfile();
   const { openGuide } = useBeginnerGuide();
   const [activeVisualTab, setActiveVisualTab] = useState<'compounding' | 'calendar'>('compounding');
+  const [showSnapshotModal, setShowSnapshotModal] = useState(false);
 
   // Compute live multi-asset life plan
   const plan = useMemo(() => {
@@ -60,10 +63,18 @@ function PlannerContent() {
 
         <div className="flex items-center gap-2 self-start md:self-auto flex-wrap">
           <button
-            onClick={() => sharePlan()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition-all"
+            onClick={() => setShowSnapshotModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition-all shadow-sm"
           >
-            <Share2 className="w-3.5 h-3.5" />
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Snapshot Card</span>
+          </button>
+
+          <button
+            onClick={() => sharePlan()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/5 text-xs font-semibold transition-all"
+          >
+            <Share2 className="w-3.5 h-3.5 text-zinc-400" />
             <span>Share Plan</span>
           </button>
 
@@ -182,10 +193,24 @@ function PlannerContent() {
             totalLumpSum={profile.lumpSumPkr}
           />
 
+          {/* PSX Broker Execution Sheet (Friction & Whole Shares) */}
+          <PsxExecutionSheet
+            allocations={plan.recommendedAllocations}
+            portfolioPkr={profile.lumpSumPkr}
+          />
+
           {/* What This Can't Tell You - Institutional Reality */}
           <WhatThisCantTellYou />
         </div>
       </div>
+
+      {/* Cinematic Freedom Snapshot Modal */}
+      <ShareSnapshotModal
+        isOpen={showSnapshotModal}
+        onClose={() => setShowSnapshotModal(false)}
+        plan={plan}
+        profile={profile}
+      />
     </div>
   );
 }

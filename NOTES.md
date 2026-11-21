@@ -98,3 +98,18 @@ New entries are added in the same change that fixes the error.
 - **Fix:** random suffix added, matching `createPortfolioForUser`.
 - **Gate:** Warden Gate 1 (tests) — the catalog works: a rewritten test
   caught a latent bug in the original code.
+
+### 10. Secondary component fallback duplicated petrol & USD rates
+- **Symptom:** `MarketPulseBar.tsx` hardcoded fallback petrol Rs 265 and USD Rs 276.5
+  instead of binding to `DEFAULT_MARKET_RATES` (Rs 322 / Rs 276.28).
+- **Root cause:** Component edit state initialized with legacy hardcoded constants.
+- **Fix:** Component imports and binds directly to `DEFAULT_MARKET_RATES`.
+- **Gate:** Warden Gate 2 (Data-freshness law).
+
+### 11. Multi-asset bucket allocation percentages drifting away from 100%
+- **Symptom:** When users manually edited individual asset percentages in the planner,
+  the total could drift to >100% or <100%, causing compounding distortion.
+- **Root cause:** No automatic proportional rebalancing mechanism in pure engine.
+- **Fix:** Added `normalizeAssetSplits` engine function with 1-click "Auto-Balance 100%"
+  in `MultiAssetSplitter.tsx`, covered by comprehensive QA boundary tests.
+- **Gate:** Warden Gate 4 & 5 (Contract lock & honesty in modelling).

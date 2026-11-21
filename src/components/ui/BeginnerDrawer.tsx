@@ -247,7 +247,7 @@ export function BeginnerGuideProvider({ children }: { children: React.ReactNode 
                         <span className="text-[11px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">Grade C Trap</span>
                       </div>
                       <p className="text-xs text-zinc-300 mt-2">
-                        <strong>The Trap:</strong> KAPCO's 25-year Power Purchase Agreement (PPA) with the government expired. Its cash payouts represented the liquidation of legacy cash reserves and final capacity receivables, not sustainable ongoing plant generation profits.
+                        <strong>The Trap:</strong> KAPCO&apos;s 25-year Power Purchase Agreement (PPA) with the government expired. Its cash payouts represented the liquidation of legacy cash reserves and final capacity receivables, not sustainable ongoing plant generation profits.
                       </p>
                     </div>
 
@@ -428,7 +428,7 @@ export function BeginnerGuideProvider({ children }: { children: React.ReactNode 
                   <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
                     <h4 className="text-xs font-bold text-amber-400 uppercase">Zakat on PSX Shares</h4>
                     <p className="text-xs text-zinc-300 mt-1">
-                      Zakat at 2.5% is automatically deducted on the 1st of Ramadan unless you submit a notarized CZ-50 declaration (Zakat exemption form) to your broker prior to Sha'ban.
+                      Zakat at 2.5% is automatically deducted on the 1st of Ramadan unless you submit a notarized CZ-50 declaration (Zakat exemption form) to your broker prior to Sha&apos;ban.
                     </p>
                   </div>
                 </div>
@@ -445,7 +445,7 @@ export function BeginnerGuideProvider({ children }: { children: React.ReactNode 
                 onClick={closeGuide}
                 className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-semibold transition-colors"
               >
-                Got It, Let's Plan
+                Got It, Let&apos;s Plan
               </button>
             </div>
           </div>

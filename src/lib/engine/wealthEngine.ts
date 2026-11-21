@@ -4,9 +4,12 @@ import {
   ExpenseCoverageStep,
   GoalOutcome,
   PlanSummary,
+  PsxExecutionItem,
+  PsxExecutionSheet,
   PsxStock,
   UserProfile,
   VehicleCandidate,
+  VehicleTcoResult,
   WealthTimelinePoint,
 } from '@/types';
 import { PSX_STOCKS } from '@/data/marketData';
@@ -82,6 +85,111 @@ export function selectStockPortfolio(shariahOnly: boolean): StockAllocation[] {
     }
   }
   return allocations;
+}
+
+/**
+ * Normalizes monthly asset bucket allocation percentages so they sum cleanly to 100%.
+ */
+export function normalizeAssetSplits(buckets: AssetBucket[]): AssetBucket[] {
+  if (!buckets || buckets.length === 0) return [];
+
+  const validBuckets = buckets.map((b) => ({
+    ...b,
+    monthlySplitPct:
+      typeof b.monthlySplitPct === 'number' && !isNaN(b.monthlySplitPct) && b.monthlySplitPct > 0
+        ? b.monthlySplitPct
+        : 0,
+  }));
+
+  const sum = validBuckets.reduce((acc, b) => acc + b.monthlySplitPct, 0);
+
+  if (sum === 0) {
+    const even = Math.floor((100 / validBuckets.length) * 10) / 10;
+    const remainder = Math.round((100 - even * validBuckets.length) * 10) / 10;
+    return validBuckets.map((b, i) => ({
+      ...b,
+      monthlySplitPct: i === 0 ? Number((even + remainder).toFixed(1)) : even,
+    }));
+  }
+
+  const normalized = validBuckets.map((b) => ({
+    ...b,
+    monthlySplitPct: Math.round(((b.monthlySplitPct / sum) * 100) * 10) / 10,
+  }));
+
+  const currentSum = normalized.reduce((acc, b) => acc + b.monthlySplitPct, 0);
+  const diff = Math.round((100 - currentSum) * 10) / 10;
+
+  if (diff !== 0 && normalized.length > 0) {
+    let maxIdx = 0;
+    for (let i = 1; i < normalized.length; i++) {
+      if (normalized[i].monthlySplitPct > normalized[maxIdx].monthlySplitPct) {
+        maxIdx = i;
+      }
+    }
+    normalized[maxIdx].monthlySplitPct = Number((normalized[maxIdx].monthlySplitPct + diff).toFixed(1));
+  }
+
+  return normalized;
+}
+
+/**
+ * Computes exact PSX execution sheet: shares to buy (Math.floor(amount / price)),
+ * cash remainder, and realistic 0.25% brokerage + CDC transaction fee.
+ */
+export function calculateExecutionSheet(
+  allocations: { stock: PsxStock; weightPct: number }[],
+  portfolioPkr: number
+): PsxExecutionSheet {
+  const safePortfolio = Math.max(0, portfolioPkr || 0);
+  let totalSpent = 0;
+  let totalFees = 0;
+  let totalRemainder = 0;
+  let totalShares = 0;
+
+  const items: PsxExecutionItem[] = (allocations || []).map((a) => {
+    const targetAmountPkr = Math.round(safePortfolio * (Math.max(0, a.weightPct || 0) / 100));
+    const price = a.stock && a.stock.price > 0 ? a.stock.price : 100;
+    // Account for 0.25% fee so total purchase does not exceed target amount
+    let shares = Math.floor(targetAmountPkr / (price * 1.0025));
+    let actualSpentPkr = shares * price;
+    let feePkr = Math.round(actualSpentPkr * 0.0025 * 100) / 100; // 0.25% brokerage + CDC fee
+
+    while (actualSpentPkr + feePkr > targetAmountPkr && shares > 0) {
+      shares -= 1;
+      actualSpentPkr = shares * price;
+      feePkr = Math.round(actualSpentPkr * 0.0025 * 100) / 100;
+    }
+
+    const remainderPkr = Math.max(0, Math.round((targetAmountPkr - actualSpentPkr - feePkr) * 100) / 100);
+
+    totalSpent += actualSpentPkr;
+    totalFees += feePkr;
+    totalRemainder += remainderPkr;
+    totalShares += shares;
+
+    return {
+      ticker: a.stock.ticker,
+      name: a.stock.name,
+      price,
+      weightPct: a.weightPct,
+      targetAmountPkr,
+      shares,
+      actualSpentPkr,
+      feePkr,
+      remainderPkr,
+      effectiveYieldPct: a.stock.dividendYieldPct || 8.0,
+    };
+  });
+
+  return {
+    items,
+    totalTargetPkr: safePortfolio,
+    totalSpentPkr: totalSpent,
+    totalFeesPkr: totalFees,
+    totalRemainderPkr: totalRemainder,
+    totalShares,
+  };
 }
 
 /**
@@ -492,4 +600,78 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
   };
 
   return result as PlanSummary;
+}
+
+/**
+ * Bridges a winning car decision into the user's wealth plan:
+ * 1. Adds freed equity (from selling higher-priced vehicle) to lumpSumPkr
+ * 2. Adds monthly fuel/total savings to monthlyInvestPkr
+ * 3. Calculates months shaved off freedom date
+ */
+export function applyCarSavingsToPlan(
+  profile: UserProfile,
+  winningVehicle: VehicleTcoResult,
+  baselineVehicle?: VehicleTcoResult
+): UserProfile & { monthsShavedOffFreedom: number; freedEquityPkr: number; monthlyCarSavingsPkr: number } {
+  const vehicles = profile.vehicles || [];
+
+  const baselineCandidate =
+    baselineVehicle ||
+    (vehicles.find((v) => v.isCurrentVehicle)
+      ? {
+          vehicleId: vehicles.find((v) => v.isCurrentVehicle)!.id,
+          name: vehicles.find((v) => v.isCurrentVehicle)!.name,
+          realCostPerMonthPkr: 0,
+          fiveYearFuelOrChargePkr: 0,
+        }
+      : vehicles[0]);
+
+  const winningVehicleSpec = vehicles.find((v) => v.id === winningVehicle.vehicleId);
+  const baselineVehicleSpec = baselineCandidate
+    ? vehicles.find((v) => v.id === (baselineCandidate as any).vehicleId)
+    : null;
+
+  let monthlySavings = 0;
+  if (baselineVehicle && baselineVehicle.realCostPerMonthPkr > 0) {
+    monthlySavings = Math.max(0, baselineVehicle.realCostPerMonthPkr - winningVehicle.realCostPerMonthPkr);
+  } else if (baselineVehicle && baselineVehicle.fiveYearFuelOrChargePkr > 0) {
+    monthlySavings = Math.max(
+      0,
+      Math.round((baselineVehicle.fiveYearFuelOrChargePkr - winningVehicle.fiveYearFuelOrChargePkr) / 60)
+    );
+  }
+
+  const baselinePrice = baselineVehicleSpec ? baselineVehicleSpec.pricePkr : 0;
+  const winningPrice = winningVehicleSpec ? winningVehicleSpec.pricePkr : 0;
+  const freedEquity = Math.max(0, baselinePrice - winningPrice);
+
+  const updatedProfile: UserProfile = {
+    ...profile,
+    lumpSumPkr: profile.lumpSumPkr + freedEquity,
+    monthlyInvestPkr: profile.monthlyInvestPkr + monthlySavings,
+  };
+
+  const planBefore = calculateLifePlan(profile);
+  const planAfter = calculateLifePlan(updatedProfile);
+
+  const yearsBefore =
+    (planBefore as any).freedomYears !== undefined && (planBefore as any).freedomYears !== null
+      ? (planBefore as any).freedomYears
+      : planBefore.freedomAge !== null
+      ? planBefore.freedomAge - profile.age
+      : 15;
+  const yearsAfter =
+    (planAfter as any).freedomYears !== undefined && (planAfter as any).freedomYears !== null
+      ? (planAfter as any).freedomYears
+      : planAfter.freedomAge !== null
+      ? planAfter.freedomAge - profile.age
+      : 15;
+  const monthsShavedOff = Math.max(0, Math.round((yearsBefore - yearsAfter) * 12));
+
+  return {
+    ...updatedProfile,
+    monthsShavedOffFreedom: monthsShavedOff,
+    freedEquityPkr: freedEquity,
+    monthlyCarSavingsPkr: monthlySavings,
+  };
 }

@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { formatCompactPkr, formatPct, formatPkr, formatTolas, formatUsd, maskAmount } from '@/lib/format';
-import { computeStreakStats } from '@/lib/engine/streakEngine';
+import { computeStreakStats, simulateDipStrategy } from '@/lib/engine/streakEngine';
 import { calculateLifePlan } from '@/lib/engine/plannerEngine';
 import { evaluateCarDecision } from '@/lib/engine/carTcoEngine';
+import { applyCarSavingsToPlan, calculateExecutionSheet, normalizeAssetSplits } from '@/lib/engine/wealthEngine';
+import { applyRatesToProfile, getDefaultMarketRates, loadCustomMarketRates, resetMarketRates, saveCustomMarketRates } from '@/lib/marketRates';
 import { decodeProfileFromHash, encodeProfileToHash, sanitizeProfile } from '@/lib/stateUrl';
-import { LifeGoal, PricePoint, UserProfile, VehicleCandidate } from '@/types';
+import { PSX_STOCKS } from '@/data/marketData';
+import { AssetBucket, LifeGoal, PricePoint, UserProfile, VehicleCandidate } from '@/types';
 
 /**
  * Standard baseline user profile used as a clean fixture for cloning
@@ -923,5 +926,327 @@ describe('QA Edge Cases: Goal Shortfall Honesty (Forgewarden fix round)', () => 
     const year2 = plan.timeline.find((t) => t.age === 30);
     expect(year2?.goalWithdrawnPkr).toBeGreaterThan(0);
     expect(year2?.goalWithdrawnPkr).toBeLessThan(outcome.inflatedCostPkr);
+  });
+});
+
+describe('QA Edge Cases: Asset Split Normalization & Boundary Hardening', () => {
+  it('handles empty buckets list gracefully', () => {
+    expect(normalizeAssetSplits([])).toEqual([]);
+  });
+
+  it('normalizes single bucket to 100%', () => {
+    const single: AssetBucket[] = [
+      { id: 'psx-dividends', label: 'Equities', currentValuePkr: 0, monthlySplitPct: 40, expectedAnnualReturnPct: 14 },
+    ];
+    const normalized = normalizeAssetSplits(single);
+    expect(normalized.length).toBe(1);
+    expect(normalized[0].monthlySplitPct).toBe(100);
+  });
+
+  it('treats negative or NaN split percentages as zero and redistributes', () => {
+    const buckets: AssetBucket[] = [
+      { id: 'psx-dividends', label: 'Equities', currentValuePkr: 0, monthlySplitPct: -20, expectedAnnualReturnPct: 14 },
+      { id: 'gold', label: 'Gold', currentValuePkr: 0, monthlySplitPct: NaN as any, expectedAnnualReturnPct: 12 },
+      { id: 'real-estate', label: 'Real Estate', currentValuePkr: 0, monthlySplitPct: 50, expectedAnnualReturnPct: 13 },
+    ];
+    const normalized = normalizeAssetSplits(buckets);
+    const sum = normalized.reduce((acc, b) => acc + b.monthlySplitPct, 0);
+    expect(Math.round(sum)).toBe(100);
+    expect(normalized[0].monthlySplitPct).toBe(0);
+    expect(normalized[1].monthlySplitPct).toBe(0);
+    expect(normalized[2].monthlySplitPct).toBe(100);
+  });
+
+  it('normalizes over-allocated buckets (>100%) to sum exactly to 100.0%', () => {
+    const buckets: AssetBucket[] = [
+      { id: 'psx-dividends', label: 'Equities', currentValuePkr: 0, monthlySplitPct: 60, expectedAnnualReturnPct: 14 },
+      { id: 'gold', label: 'Gold', currentValuePkr: 0, monthlySplitPct: 60, expectedAnnualReturnPct: 12 },
+      { id: 'real-estate', label: 'Real Estate', currentValuePkr: 0, monthlySplitPct: 40, expectedAnnualReturnPct: 13 },
+    ]; // Sum = 160%
+    const normalized = normalizeAssetSplits(buckets);
+    const sum = normalized.reduce((acc, b) => acc + b.monthlySplitPct, 0);
+    expect(Math.round(sum)).toBe(100);
+  });
+
+  it('normalizes under-allocated buckets (<100%) to sum exactly to 100.0%', () => {
+    const buckets: AssetBucket[] = [
+      { id: 'psx-dividends', label: 'Equities', currentValuePkr: 0, monthlySplitPct: 15, expectedAnnualReturnPct: 14 },
+      { id: 'gold', label: 'Gold', currentValuePkr: 0, monthlySplitPct: 15, expectedAnnualReturnPct: 12 },
+      { id: 'real-estate', label: 'Real Estate', currentValuePkr: 0, monthlySplitPct: 10, expectedAnnualReturnPct: 13 },
+    ]; // Sum = 40%
+    const normalized = normalizeAssetSplits(buckets);
+    const sum = normalized.reduce((acc, b) => acc + b.monthlySplitPct, 0);
+    expect(Math.round(sum)).toBe(100);
+  });
+});
+
+describe('QA Edge Cases: Car Savings to Wealth Plan Bridging Edge Cases', () => {
+  it('prevents negative freed equity when winning vehicle is more expensive than baseline', () => {
+    const profile = createBaseProfile({
+      lumpSumPkr: 2000000,
+      monthlyInvestPkr: 50000,
+      vehicles: [
+        {
+          id: 'cheap-bike',
+          name: 'Used Petrol Bike',
+          fuelType: 'petrol',
+          pricePkr: 150000,
+          kmPerLitre: 40,
+        },
+        {
+          id: 'expensive-ev',
+          name: 'Luxury City EV',
+          fuelType: 'ev',
+          pricePkr: 4000000,
+          kwhPer100Km: 14,
+        },
+      ],
+    });
+
+    const winningResult = {
+      vehicleId: 'expensive-ev',
+      name: 'Luxury City EV',
+      fuelType: 'ev' as const,
+      isQuoteIncomplete: false,
+      fiveYearFuelOrChargePkr: 100000,
+      fiveYearDepreciationPkr: 1200000,
+      fiveYearMaintenancePkr: 100000,
+      fiveYearBankInterestPkr: 0,
+      fiveYearOpportunityCostPkr: 400000,
+      totalFiveYearCostPkr: 1800000,
+      realCostPerMonthPkr: 30000,
+      waterfall: [],
+    };
+
+    const baselineResult = {
+      vehicleId: 'cheap-bike',
+      name: 'Used Petrol Bike',
+      fuelType: 'petrol' as const,
+      isQuoteIncomplete: false,
+      fiveYearFuelOrChargePkr: 200000,
+      fiveYearDepreciationPkr: 50000,
+      fiveYearMaintenancePkr: 30000,
+      fiveYearBankInterestPkr: 0,
+      fiveYearOpportunityCostPkr: 15000,
+      totalFiveYearCostPkr: 295000,
+      realCostPerMonthPkr: 4917,
+      waterfall: [],
+    };
+
+    const updated = applyCarSavingsToPlan(profile, winningResult, baselineResult);
+    // Freed equity must never be negative
+    expect(updated.freedEquityPkr).toBe(0);
+    expect(updated.lumpSumPkr).toBe(profile.lumpSumPkr);
+  });
+
+  it('applies positive freed equity and monthly operating savings to boost freedom timeline', () => {
+    const profile = createBaseProfile({
+      lumpSumPkr: 1000000,
+      monthlyInvestPkr: 30000,
+      vehicles: [
+        {
+          id: 'old-suv',
+          name: 'Petrol SUV',
+          fuelType: 'petrol',
+          pricePkr: 6000000, // Rs 60 Lac
+          kmPerLitre: 8,
+        },
+        {
+          id: 'honri-ve',
+          name: 'Honri Ve 2.0 EV',
+          fuelType: 'ev',
+          pricePkr: 3599000, // Rs 36 Lac
+          kwhPer100Km: 14,
+        },
+      ],
+    });
+
+    const winningResult = {
+      vehicleId: 'honri-ve',
+      name: 'Honri Ve 2.0 EV',
+      fuelType: 'ev' as const,
+      isQuoteIncomplete: false,
+      fiveYearFuelOrChargePkr: 150000,
+      fiveYearDepreciationPkr: 1000000,
+      fiveYearMaintenancePkr: 125000,
+      fiveYearBankInterestPkr: 0,
+      fiveYearOpportunityCostPkr: 350000,
+      totalFiveYearCostPkr: 1625000,
+      realCostPerMonthPkr: 27083,
+      waterfall: [],
+    };
+
+    const baselineResult = {
+      vehicleId: 'old-suv',
+      name: 'Petrol SUV',
+      fuelType: 'petrol' as const,
+      isQuoteIncomplete: false,
+      fiveYearFuelOrChargePkr: 1200000,
+      fiveYearDepreciationPkr: 2000000,
+      fiveYearMaintenancePkr: 400000,
+      fiveYearBankInterestPkr: 0,
+      fiveYearOpportunityCostPkr: 600000,
+      totalFiveYearCostPkr: 4200000,
+      realCostPerMonthPkr: 70000,
+      waterfall: [],
+    };
+
+    const updated = applyCarSavingsToPlan(profile, winningResult, baselineResult);
+
+    // Freed equity: 6,000,000 - 3,599,000 = 2,401,000
+    expect(updated.freedEquityPkr).toBe(2401000);
+    expect(updated.lumpSumPkr).toBe(profile.lumpSumPkr + 2401000);
+
+    // Monthly savings: 70,000 - 27,083 = 42,917
+    expect(updated.monthlyCarSavingsPkr).toBe(70000 - 27083);
+    expect(updated.monthlyInvestPkr).toBe(profile.monthlyInvestPkr + (70000 - 27083));
+
+    // Months shaved off should be non-negative and finite
+    expect(updated.monthsShavedOffFreedom).toBeGreaterThanOrEqual(0);
+    expect(Number.isFinite(updated.monthsShavedOffFreedom)).toBe(true);
+  });
+});
+
+describe('QA Edge Cases: PSX Execution Sheet Friction & Whole Shares Boundaries', () => {
+  it('handles zero or negative portfolio budget safely without crashes or NaN', () => {
+    const allocations = [
+      { stock: PSX_STOCKS.find((s) => s.ticker === 'FFC')!, weightPct: 60 },
+      { stock: PSX_STOCKS.find((s) => s.ticker === 'MEBL')!, weightPct: 40 },
+    ];
+
+    const sheetZero = calculateExecutionSheet(allocations, 0);
+    expect(sheetZero.totalTargetPkr).toBe(0);
+    expect(sheetZero.totalSpentPkr).toBe(0);
+    expect(sheetZero.totalFeesPkr).toBe(0);
+    expect(sheetZero.totalShares).toBe(0);
+    expect(sheetZero.items.every((i) => i.shares === 0)).toBe(true);
+
+    const sheetNeg = calculateExecutionSheet(allocations, -50000);
+    expect(sheetNeg.totalTargetPkr).toBe(0);
+    expect(sheetNeg.totalSpentPkr).toBe(0);
+  });
+
+  it('handles micro-budget smaller than stock price (0 shares bought, remainder equals target)', () => {
+    const allocations = [
+      { stock: PSX_STOCKS.find((s) => s.ticker === 'POL')!, weightPct: 100 }, // POL price ~Rs 520
+    ];
+    const sheet = calculateExecutionSheet(allocations, 300); // Rs 300 budget < Rs 520 price
+
+    expect(sheet.items.length).toBe(1);
+    expect(sheet.items[0].shares).toBe(0);
+    expect(sheet.items[0].actualSpentPkr).toBe(0);
+    expect(sheet.items[0].feePkr).toBe(0);
+    expect(sheet.items[0].remainderPkr).toBe(300);
+    expect(sheet.totalSpentPkr).toBe(0);
+    expect(sheet.totalRemainderPkr).toBe(300);
+  });
+
+  it('strictly enforces whole integer shares and total cost (spent + fees) <= target budget', () => {
+    const allocations = [
+      { stock: PSX_STOCKS.find((s) => s.ticker === 'FFC')!, weightPct: 35 },
+      { stock: PSX_STOCKS.find((s) => s.ticker === 'HUBC')!, weightPct: 25 },
+      { stock: PSX_STOCKS.find((s) => s.ticker === 'MEBL')!, weightPct: 25 },
+      { stock: PSX_STOCKS.find((s) => s.ticker === 'OGDC')!, weightPct: 15 },
+    ];
+
+    // High Net Worth test: Rs 5 Crore (50,000,000)
+    const sheet = calculateExecutionSheet(allocations, 50000000);
+
+    expect(sheet.items.length).toBe(4);
+    sheet.items.forEach((item) => {
+      expect(Number.isInteger(item.shares)).toBe(true);
+      expect(item.shares).toBeGreaterThan(0);
+      expect(item.actualSpentPkr).toBe(item.shares * item.price);
+      expect(item.feePkr).toBeCloseTo(item.actualSpentPkr * 0.0025, 0);
+      expect(item.actualSpentPkr + item.feePkr).toBeLessThanOrEqual(item.targetAmountPkr);
+      expect(item.remainderPkr).toBeGreaterThanOrEqual(0);
+    });
+
+    expect(sheet.totalSpentPkr + sheet.totalFeesPkr).toBeLessThanOrEqual(50000000);
+    expect(sheet.totalSpentPkr + sheet.totalFeesPkr + sheet.totalRemainderPkr).toBeCloseTo(50000000, 0);
+  });
+});
+
+describe('QA Edge Cases: Dip-Buy Strategy Simulator Boundaries', () => {
+  it('handles invalid inputs (0 budget, negative months, empty history) gracefully', () => {
+    const ffc = PSX_STOCKS.find((s) => s.ticker === 'FFC')!;
+
+    const zeroBudget = simulateDipStrategy(ffc, 0, 6);
+    expect(zeroBudget.dcaShares).toBe(0);
+    expect(zeroBudget.dipShares).toBe(0);
+    expect(zeroBudget.verdict).toContain('Insufficient');
+
+    const negBudget = simulateDipStrategy(ffc, -10000, 6);
+    expect(negBudget.dcaShares).toBe(0);
+    expect(negBudget.dipShares).toBe(0);
+
+    const emptyHistoryStock = { ...ffc, history: [] };
+    const emptySim = simulateDipStrategy(emptyHistoryStock, 50000, 6);
+    expect(emptySim.dcaShares).toBe(0);
+    expect(emptySim.verdict).toContain('Insufficient');
+  });
+
+  it('clamps simulation duration within [1, 24] months', () => {
+    const ffc = PSX_STOCKS.find((s) => s.ticker === 'FFC')!;
+
+    // 0 months should clamp to 1 month
+    const sim0 = simulateDipStrategy(ffc, 50000, 0);
+    expect(sim0.dcaShares).toBeGreaterThan(0);
+
+    // 100 months should clamp to 24 months
+    const sim100 = simulateDipStrategy(ffc, 50000, 100);
+    expect(sim100.dcaShares).toBeGreaterThan(0);
+  });
+
+  it('demonstrates opportunistic dip buying produces >= shares and <= avg cost vs blind DCA', () => {
+    const ffc = PSX_STOCKS.find((s) => s.ticker === 'FFC')!;
+    const sim = simulateDipStrategy(ffc, 100000, 6);
+
+    expect(sim.dipShares).toBeGreaterThanOrEqual(sim.dcaShares);
+    expect(sim.dipAvgCost).toBeLessThanOrEqual(sim.dcaAvgCost);
+    expect(sim.sharesLiftPct).toBeGreaterThanOrEqual(0);
+    expect(sim.costBasisReductionPct).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('QA Edge Cases: Market Rates Live Overrides & Defaults Matrix', () => {
+  it('verifies exact Nov 21 2026 Pakistan economic defaults benchmark rates', () => {
+    const defaults = getDefaultMarketRates();
+    expect(defaults.petrolPricePerLitre).toBe(322);
+    expect(defaults.goldPerTolaPkr).toBe(385000);
+    expect(defaults.usdToPkr).toBe(276.28);
+    expect(defaults.gridRatePerKwh).toBe(55);
+    expect(defaults.kse100Index).toBe(177382);
+    expect(defaults.solarNetMeteringLegacyRate).toBe(26);
+    expect(defaults.solarNetBilling2026Rate).toBe(11);
+    expect(defaults.lastUpdated).toBe('2026-11-21');
+  });
+
+  it('applyRatesToProfile cleanly updates economic rates without modifying other profile fields', () => {
+    const profile = createBaseProfile({
+      monthlyIncomePkr: 300000,
+      age: 32,
+      shariahOnly: true,
+    });
+
+    const customRates = {
+      ...getDefaultMarketRates(),
+      petrolPricePerLitre: 360,
+      goldPerTolaPkr: 410000,
+      usdToPkr: 280.0,
+      gridRatePerKwh: 65,
+    };
+
+    const updated = applyRatesToProfile(profile, customRates);
+    // Updated rates
+    expect(updated.petrolPricePerLitre).toBe(360);
+    expect(updated.goldPerTolaPkr).toBe(410000);
+    expect(updated.usdToPkr).toBe(280.0);
+    expect(updated.gridRatePerKwh).toBe(65);
+
+    // Preserved fields
+    expect(updated.monthlyIncomePkr).toBe(300000);
+    expect(updated.age).toBe(32);
+    expect(updated.shariahOnly).toBe(true);
   });
 });

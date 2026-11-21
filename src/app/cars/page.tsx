@@ -4,6 +4,8 @@ import React, { useMemo, Suspense } from 'react';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import { evaluateCarDecision } from '@/lib/engine/carTcoEngine';
 import { VerdictBanner } from '@/components/cars/VerdictBanner';
+import { CarPodium3D } from '@/components/cars/CarPodium3D';
+import { ApplyCarSwapBanner } from '@/components/cars/ApplyCarSwapBanner';
 import { CarControls } from '@/components/cars/CarControls';
 import { RealCostLeaderboard } from '@/components/cars/RealCostLeaderboard';
 import { DistanceCrossoverChart } from '@/components/cars/DistanceCrossoverChart';
@@ -119,6 +121,14 @@ function CarDecisionContent() {
 
       {/* 1. Bold Verdict Banner */}
       <VerdictBanner decision={decision} />
+
+      {/* 1b. 3D Podium for #1 Lowest Cost Vehicle */}
+      {decision.results.length > 0 && (
+        <CarPodium3D cheapest={decision.results[0]} runnerUp={decision.results[1]} />
+      )}
+
+      {/* 1c. Car-to-Wealth Arbitrage Bridge */}
+      <ApplyCarSwapBanner decision={decision} profile={activeProfile} />
 
       {/* 2. Controls & Tariff Adjuster */}
       <CarControls profile={activeProfile} onChange={updateProfile} />

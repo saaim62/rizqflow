@@ -215,3 +215,50 @@ export interface PlanSummary {
   }[];
   carDecision: CarDecisionSummary;
 }
+
+// --- Phase 3 Additive Engine Types ---
+export interface PsxExecutionItem {
+  ticker: string;
+  name: string;
+  price: number;
+  weightPct: number;
+  targetAmountPkr: number;
+  shares: number;
+  actualSpentPkr: number;
+  feePkr: number;
+  remainderPkr: number;
+  effectiveYieldPct: number;
+}
+
+export interface PsxExecutionSheet {
+  items: PsxExecutionItem[];
+  totalTargetPkr: number;
+  totalSpentPkr: number;
+  totalFeesPkr: number;
+  totalRemainderPkr: number;
+  totalShares: number;
+}
+
+export interface DipStrategyResult {
+  dcaShares: number;
+  dcaAvgCost: number;
+  dcaTotalInvested: number;
+  dipShares: number;
+  dipAvgCost: number;
+  dipTotalInvested: number;
+  sharesLiftPct: number;
+  costBasisReductionPct: number;
+  yieldLiftPct: number;
+  verdict: string;
+}
+
+export interface MarketRatesConfig {
+  petrolPricePerLitre: number;
+  goldPerTolaPkr: number;
+  usdToPkr: number;
+  gridRatePerKwh: number;
+  kse100Index: number;
+  solarNetMeteringLegacyRate: number;
+  solarNetBilling2026Rate: number;
+  lastUpdated: string;
+}

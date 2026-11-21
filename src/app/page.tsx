@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { METAL_ASSETS, PSX_STOCKS, MARKET_SNAPSHOT } from '@/data/marketData';
 import { GoldSpotlight } from '@/components/markets/GoldSpotlight';
+import { GoldBullion3D } from '@/components/ui/GoldBullion3D';
 import { PsxMoversStrip } from '@/components/markets/PsxMoversStrip';
 import { QuickSimulator } from '@/components/markets/QuickSimulator';
 import { useBeginnerGuide } from '@/components/ui/BeginnerDrawer';
@@ -49,44 +50,55 @@ export default function HomePage() {
             </span>
           </div>
 
-          <div className="max-w-3xl space-y-4">
-            <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.15]">
-              Turn PSX Blue-Chip Dividends & Gold Streaks into{' '}
-              <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
-                True Financial Freedom
-              </span>
-            </h1>
-            <p className="text-base sm:text-lg text-zinc-300 leading-relaxed">
-              Model real-life Pakistani living expenses — fuel, electricity, groceries, and EV swaps — paid for entirely by Grade-A halal dividend machines. Honest yields, zero yield traps, and automated FBR tax optimization.
-            </p>
-          </div>
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 pt-2">
+            <div className="max-w-2xl space-y-4">
+              <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.15]">
+                Turn PSX Blue-Chip Dividends & Gold Streaks into{' '}
+                <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
+                  True Financial Freedom
+                </span>
+              </h1>
+              <p className="text-base sm:text-lg text-zinc-300 leading-relaxed">
+                Model real-life Pakistani living expenses — fuel, electricity, groceries, and EV swaps — paid for entirely by Grade-A halal dividend machines. Honest yields, zero yield traps, and automated FBR tax optimization.
+              </p>
 
-          {/* Quick CTA Actions */}
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Link
-              href="/planner"
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm transition-all shadow-lg shadow-emerald-500/25 group"
-            >
-              <Sparkles className="w-4 h-4 text-black" />
-              <span>Launch Life & Wealth Planner</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
+              {/* Quick CTA Actions */}
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Link
+                  href="/planner"
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm transition-all shadow-lg shadow-emerald-500/25 group"
+                >
+                  <Sparkles className="w-4 h-4 text-black" />
+                  <span>Launch Life & Wealth Planner</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
 
-            <Link
-              href="/cars"
-              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-200 border border-white/10 font-semibold text-sm transition-all"
-            >
-              <Car className="w-4 h-4 text-amber-400" />
-              <span>Car Decision Map (5-Yr TCO)</span>
-            </Link>
+                <Link
+                  href="/cars"
+                  className="flex items-center gap-2 px-5 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-200 border border-white/10 font-semibold text-sm transition-all"
+                >
+                  <Car className="w-4 h-4 text-amber-400" />
+                  <span>Car Decision Map (5-Yr TCO)</span>
+                </Link>
 
-            <button
-              onClick={() => openGuide()}
-              className="flex items-center gap-2 px-4 py-3 rounded-xl text-zinc-400 hover:text-white text-sm font-medium transition-all"
-            >
-              <BookOpen className="w-4 h-4 text-emerald-400" />
-              <span>Beginner Guide</span>
-            </button>
+                <button
+                  onClick={() => openGuide()}
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl text-zinc-400 hover:text-white text-sm font-medium transition-all"
+                >
+                  <BookOpen className="w-4 h-4 text-emerald-400" />
+                  <span>Beginner Guide</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 3D Gold Bullion Centerpiece */}
+            <div className="w-full lg:w-[380px] shrink-0 self-center">
+              <GoldBullion3D
+                currentPrice={gold.currentPrice}
+                streakDays={Math.abs(gold.streak.currentStreak)}
+                drawdownPct={gold.streak.drawdownFromPeakPct}
+              />
+            </div>
           </div>
 
           {/* Ticker Pills Strip */}

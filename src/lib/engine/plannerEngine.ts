@@ -1,4 +1,10 @@
 /**
- * Backward compatibility re-export of calculateLifePlan and stock selection from wealthEngine.
+ * Re-exports from wealthEngine for convenient access across planner components.
  */
-export { calculateLifePlan, selectStockPortfolio } from '@/lib/engine/wealthEngine';
+export {
+  applyCarSavingsToPlan,
+  calculateExecutionSheet,
+  calculateLifePlan,
+  normalizeAssetSplits,
+  selectStockPortfolio,
+} from '@/lib/engine/wealthEngine';

@@ -1,11 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { formatCompactPkr, formatPct, formatPkr, formatTolas, formatUsd, maskAmount } from '@/lib/format';
-import { computeStreakStats } from '@/lib/engine/streakEngine';
+import { computeStreakStats, simulateDipStrategy } from '@/lib/engine/streakEngine';
 import { METAL_ASSETS, PRESET_PROFILES, PSX_STOCKS } from '@/data/marketData';
-import { calculateLifePlan } from '@/lib/engine/plannerEngine';
+import {
+  applyCarSavingsToPlan,
+  calculateExecutionSheet,
+  calculateLifePlan,
+  normalizeAssetSplits,
+} from '@/lib/engine/plannerEngine';
 import { evaluateCarDecision } from '@/lib/engine/carTcoEngine';
 import { decodeProfileFromHash, encodeProfileToHash, sanitizeProfile } from '@/lib/stateUrl';
-import { PricePoint, UserProfile } from '@/types';
+import {
+  applyRatesToProfile,
+  getDefaultMarketRates,
+  loadCustomMarketRates,
+  resetMarketRates,
+  saveCustomMarketRates,
+} from '@/lib/marketRates';
+import { AssetBucket, PricePoint, UserProfile } from '@/types';
 
 describe('Formatting Utilities (src/lib/format.ts)', () => {
   it('formats Pakistani Rupee with standard commas and Rs prefix', () => {
@@ -461,5 +473,115 @@ describe('Phase 2: WealthFlow Multi-Asset Compounding & Life Goals Engine', () =
     expect(wedding.inflatedCostPkr).toBeGreaterThan(2500000);
     // Opportunity cost at retirement must be significantly higher than inflated cost
     expect(wedding.trueOpportunityCostAtRetirementPkr).toBeGreaterThan(wedding.inflatedCostPkr);
+  });
+});
+
+describe('Phase 3: Asset Split Normalization & Car Savings Bridge', () => {
+  it('normalizeAssetSplits normalizes percentages cleanly to sum to exactly 100%', () => {
+    const buckets: AssetBucket[] = [
+      { id: 'psx-dividends', label: 'Equities', currentValuePkr: 0, monthlySplitPct: 40, expectedAnnualReturnPct: 14 },
+      { id: 'gold', label: 'Gold', currentValuePkr: 0, monthlySplitPct: 30, expectedAnnualReturnPct: 12 },
+      { id: 'real-estate', label: 'Real Estate', currentValuePkr: 0, monthlySplitPct: 10, expectedAnnualReturnPct: 13 },
+    ];
+    // Sum is 80% -> normalize to 100%
+    const normalized = normalizeAssetSplits(buckets);
+    const sum = normalized.reduce((acc, b) => acc + b.monthlySplitPct, 0);
+    expect(Math.round(sum)).toBe(100);
+    expect(normalized[0].monthlySplitPct).toBe(50);
+    expect(normalized[1].monthlySplitPct).toBe(37.5);
+    expect(normalized[2].monthlySplitPct).toBe(12.5);
+  });
+
+  it('normalizeAssetSplits handles all zero percentages by distributing evenly to 100%', () => {
+    const buckets: AssetBucket[] = [
+      { id: 'psx-dividends', label: 'Equities', currentValuePkr: 0, monthlySplitPct: 0, expectedAnnualReturnPct: 14 },
+      { id: 'gold', label: 'Gold', currentValuePkr: 0, monthlySplitPct: 0, expectedAnnualReturnPct: 12 },
+      { id: 'real-estate', label: 'Real Estate', currentValuePkr: 0, monthlySplitPct: 0, expectedAnnualReturnPct: 13 },
+    ];
+    const normalized = normalizeAssetSplits(buckets);
+    const sum = normalized.reduce((acc, b) => acc + b.monthlySplitPct, 0);
+    expect(Math.round(sum)).toBe(100);
+  });
+
+  it('applyCarSavingsToPlan bridges winning car decision into wealth plan', () => {
+    const profile = PRESET_PROFILES['junior-engineer'].profile;
+    const carDecision = evaluateCarDecision(profile);
+
+    const winning = carDecision.results[0];
+    const baseline = carDecision.results.find((r) => r.vehicleId === 'owned-bike') || carDecision.results[0];
+
+    const updated = applyCarSavingsToPlan(profile, winning, baseline);
+    expect(updated).toBeDefined();
+    expect(updated.lumpSumPkr).toBeGreaterThanOrEqual(profile.lumpSumPkr);
+    expect(updated.monthlyInvestPkr).toBeGreaterThanOrEqual(profile.monthlyInvestPkr);
+    expect(typeof updated.monthsShavedOffFreedom).toBe('number');
+  });
+});
+
+describe('Phase 3: PSX Execution Sheet & Dip-Buy Strategy Simulator', () => {
+  it('calculateExecutionSheet computes exact whole shares, 0.25% fee, and remainder', () => {
+    const allocations = [
+      { stock: PSX_STOCKS.find((s) => s.ticker === 'FFC')!, weightPct: 60 },
+      { stock: PSX_STOCKS.find((s) => s.ticker === 'HUBC')!, weightPct: 40 },
+    ];
+    const sheet = calculateExecutionSheet(allocations, 1000000); // Rs 10 Lac
+
+    expect(sheet.items.length).toBe(2);
+    expect(sheet.totalTargetPkr).toBe(1000000);
+    expect(sheet.totalSpentPkr).toBeGreaterThan(950000);
+    expect(sheet.totalFeesPkr).toBeGreaterThan(0);
+    // Total spent + fees must never exceed target budget
+    expect(sheet.totalSpentPkr + sheet.totalFeesPkr).toBeLessThanOrEqual(1000000);
+
+    const ffc = sheet.items.find((i) => i.ticker === 'FFC');
+    expect(ffc).toBeDefined();
+    if (!ffc) return;
+
+    // Shares must be a non-negative whole integer
+    expect(Number.isInteger(ffc.shares)).toBe(true);
+    expect(ffc.shares).toBeGreaterThan(0);
+    expect(ffc.actualSpentPkr).toBe(ffc.shares * ffc.price);
+    // Fee is ~0.25% of spent
+    expect(ffc.feePkr).toBeCloseTo(ffc.actualSpentPkr * 0.0025, -1);
+  });
+
+  it('simulateDipStrategy compares DCA vs buying on red dip zones', () => {
+    const ffc = PSX_STOCKS.find((s) => s.ticker === 'FFC')!;
+    const sim = simulateDipStrategy(ffc, 50000, 6);
+
+    expect(sim.dcaShares).toBeGreaterThan(0);
+    expect(sim.dipShares).toBeGreaterThan(0);
+    expect(sim.dcaAvgCost).toBeGreaterThan(0);
+    expect(sim.dipAvgCost).toBeGreaterThan(0);
+    expect(sim.verdict).toBeDefined();
+    expect(sim.verdict.length).toBeGreaterThan(10);
+  });
+});
+
+describe('Phase 3: Live & Custom Market Rates Layer', () => {
+  it('returns default Nov 21 2026 Pakistan economic defaults', () => {
+    const rates = getDefaultMarketRates();
+    expect(rates.petrolPricePerLitre).toBe(322);
+    expect(rates.goldPerTolaPkr).toBe(385000);
+    expect(rates.usdToPkr).toBe(276.28);
+    expect(rates.gridRatePerKwh).toBe(55);
+    expect(rates.kse100Index).toBe(177382);
+    expect(rates.solarNetMeteringLegacyRate).toBe(26);
+    expect(rates.solarNetBilling2026Rate).toBe(11);
+  });
+
+  it('applies custom market rates into user profile cleanly', () => {
+    const profile = PRESET_PROFILES['junior-engineer'].profile;
+    const customRates = {
+      ...getDefaultMarketRates(),
+      petrolPricePerLitre: 350,
+      usdToPkr: 285.0,
+      goldPerTolaPkr: 400000,
+    };
+
+    const updatedProfile = applyRatesToProfile(profile, customRates);
+    expect(updatedProfile.petrolPricePerLitre).toBe(350);
+    expect(updatedProfile.usdToPkr).toBe(285.0);
+    expect(updatedProfile.goldPerTolaPkr).toBe(400000);
   });
 });
