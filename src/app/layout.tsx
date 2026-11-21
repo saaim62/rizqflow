@@ -35,7 +35,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col bg-[#17122B] text-zinc-100 selection:bg-emerald-500/30 selection:text-emerald-300">
+      <body className="min-h-full flex flex-col bg-[#F4F4F5] text-zinc-100 selection:bg-emerald-500/30 selection:text-emerald-300">
         <ProfileProvider>
           <BeginnerGuideProvider>
             <MarketPulseBar />
@@ -43,7 +43,7 @@ export default function RootLayout({
             <main className="flex-1 flex flex-col">{children}</main>
 
             {/* Executive Footer */}
-            <footer className="border-t border-white/[0.08] bg-[#12101F] py-8 text-xs text-zinc-400">
+            <footer className="border-t border-white/[0.08] bg-[#FFFFFF] py-8 text-xs text-zinc-400">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex flex-col gap-1 text-center md:text-left">
                   <div className="flex items-center justify-center md:justify-start gap-2">

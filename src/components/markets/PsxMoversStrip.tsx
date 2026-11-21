@@ -51,7 +51,7 @@ export function PsxMoversStrip({ stocks }: PsxMoversStripProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Red Streaks (SIP Dip Zones) */}
-        <div className="rounded-2xl bg-[#12101F] border border-white/[0.08] p-5 shadow-lg flex flex-col justify-between">
+        <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-5 shadow-lg flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.06]">
               <div className="flex items-center gap-2">
@@ -121,7 +121,7 @@ export function PsxMoversStrip({ stocks }: PsxMoversStripProps) {
         </div>
 
         {/* Green Streaks (Momentum Runs) */}
-        <div className="rounded-2xl bg-[#12101F] border border-white/[0.08] p-5 shadow-lg flex flex-col justify-between">
+        <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-5 shadow-lg flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.06]">
               <div className="flex items-center gap-2">

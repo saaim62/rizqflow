@@ -184,3 +184,15 @@ New entries are added in the same change that fixes the error.
   drop IN PKR + %, dip-zone band IN PKR with an in-zone marker, streak,
   and the 30-day sparkline — all computed from the stamped series.
   (GoldBullion3D.tsx remains in the tree, unused.)
+
+### 15. Theme, final: professional light (owner, 21 Nov 2026)
+- Aurora was rejected as "too dark and kidish". Senior-UX reset, modelled
+  on institutional fintech (Stripe/Mercury/Linear-light): neutral light
+  canvas (#FAFAFA), white cards, slate ink text, hairline borders,
+  whisper shadows, ONE accent (emerald-600) + amber reserved for gold
+  data + rose for losses. No gradients on text, no glows, no animated
+  blobs. Text ramps deepened one step for light-bg contrast (token rule).
+- Watch out: with `--color-white` as the ink token, a literal `bg-white`
+  class renders INK — surfaces must use `bg-[#FFFFFF]`. Caught on the
+  home secondary CTA + car podium during screenshot QA (NOTES discipline
+  working as intended).

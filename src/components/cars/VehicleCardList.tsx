@@ -60,7 +60,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
   };
 
   return (
-    <div className="rounded-2xl bg-[#12101F] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-5">
+    <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.06]">
         <div>
           <div className="flex items-center gap-2">
@@ -96,7 +96,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
           return (
             <div
               key={v.id}
-              className="rounded-xl bg-[#0B0A16] border border-white/[0.08] p-4 flex flex-col justify-between space-y-4 hover:border-white/15 transition-all"
+              className="rounded-xl bg-[#FFFFFF] border border-white/[0.08] p-4 flex flex-col justify-between space-y-4 hover:border-white/15 transition-all"
             >
               <div className="space-y-3">
                 {/* Header */}
@@ -141,7 +141,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                       step={50000}
                       value={v.pricePkr}
                       onChange={(e) => updateVehicle(v.id, { pricePkr: Number(e.target.value) })}
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0A16] border border-white/10 font-mono text-white text-xs"
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-[#FFFFFF] border border-white/10 font-mono text-white text-xs"
                     />
                   </div>
 
@@ -157,7 +157,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                         onChange={(e) =>
                           updateVehicle(v.id, { kmPerLitre: Number(e.target.value) })
                         }
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0A16] border border-white/10 font-mono text-white text-xs"
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-[#FFFFFF] border border-white/10 font-mono text-white text-xs"
                       />
                     ) : (
                       <input
@@ -167,7 +167,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                         onChange={(e) =>
                           updateVehicle(v.id, { kwhPer100Km: Number(e.target.value) })
                         }
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0A16] border border-white/10 font-mono text-white text-xs"
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-[#FFFFFF] border border-white/10 font-mono text-white text-xs"
                       />
                     )}
                   </div>
@@ -185,7 +185,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                       onChange={(e) =>
                         updateVehicle(v.id, { fiveYearDepreciationPct: Number(e.target.value) })
                       }
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0A16] border border-white/10 font-mono text-white text-xs"
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-[#FFFFFF] border border-white/10 font-mono text-white text-xs"
                     />
                   </div>
 
@@ -200,7 +200,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                       onChange={(e) =>
                         updateVehicle(v.id, { annualMaintenancePkr: Number(e.target.value) })
                       }
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0A16] border border-white/10 font-mono text-white text-xs"
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-[#FFFFFF] border border-white/10 font-mono text-white text-xs"
                     />
                   </div>
                 </div>

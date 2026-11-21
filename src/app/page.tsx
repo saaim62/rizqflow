@@ -36,11 +36,9 @@ export default function HomePage() {
   return (
     <div className="min-h-screen space-y-10 pb-16">
       {/* 1. Executive Hero Header */}
-      <section className="relative overflow-hidden border-b border-white/[0.06] bg-gradient-to-b from-[#0D0B18] via-[#17122B] to-[#17122B] pt-10 pb-12 sm:pt-16 sm:pb-16">
+      <section className="relative overflow-hidden border-b border-white/[0.06] bg-gradient-to-b from-[#FFFFFF] via-[#F4F4F5] to-[#F4F4F5] pt-10 pb-12 sm:pt-16 sm:pb-16">
         {/* Glow ambient background effects */}
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-10 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-
+                
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-6">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-xs font-semibold text-emerald-300">
@@ -56,11 +54,11 @@ export default function HomePage() {
             <div className="max-w-2xl space-y-4">
               <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.15]">
                 Turn PSX Blue-Chip Dividends & Gold Streaks into{' '}
-                <span className="bg-gradient-to-r from-purple-300 via-cyan-300 to-amber-300 bg-clip-text text-transparent">
+                <span className="text-emerald-600">
                   True Financial Freedom
                 </span>
               </h1>
-              <p className="text-base sm:text-lg text-zinc-300 leading-relaxed">
+              <p className="text-base sm:text-lg text-zinc-600 leading-relaxed">
                 Model real-life Pakistani living expenses — fuel, electricity, groceries, and EV swaps — paid for entirely by Grade-A halal dividend machines. Honest yields, zero yield traps, and automated FBR tax optimization.
               </p>
 
@@ -77,7 +75,7 @@ export default function HomePage() {
 
                 <Link
                   href="/cars"
-                  className="flex items-center gap-2 px-5 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-200 border border-white/10 font-semibold text-sm transition-all"
+                  className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#FFFFFF] hover:bg-zinc-50 text-zinc-700 border border-black/10 font-semibold text-sm transition-all shadow-sm"
                 >
                   <Car className="w-4 h-4 text-amber-400" />
                   <span>Car Decision Map (5-Yr TCO)</span>
@@ -85,7 +83,7 @@ export default function HomePage() {
 
                 <button
                   onClick={() => openGuide()}
-                  className="flex items-center gap-2 px-4 py-3 rounded-xl text-zinc-400 hover:text-white text-sm font-medium transition-all"
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl text-zinc-500 hover:text-zinc-800 text-sm font-medium transition-all"
                 >
                   <BookOpen className="w-4 h-4 text-emerald-400" />
                   <span>Beginner Guide</span>
@@ -167,7 +165,7 @@ export default function HomePage() {
         </section>
 
         {/* 5. Car Decision Feature Spotlight Banner */}
-        <section className="rounded-2xl bg-gradient-to-r from-amber-500/10 via-[#17122B] to-emerald-500/10 border border-white/[0.08] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
+        <section className="rounded-2xl bg-gradient-to-r from-amber-500/10 via-[#F4F4F5] to-emerald-500/10 border border-white/[0.08] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
           <div className="space-y-2 text-center md:text-left">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider">
               <Car className="w-3.5 h-3.5" />

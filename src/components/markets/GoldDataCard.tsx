@@ -37,15 +37,14 @@ export function GoldDataCard({ gold }: { gold: MetalAsset }) {
   const rs = (n: number) => `Rs ${Math.abs(n).toLocaleString('en-PK')}`;
 
   return (
-    <SpatialCard3D spotlightColor="rgba(212, 175, 55, 0.22)" className="rounded-3xl">
-      <div className="relative rounded-3xl bg-[#12101F] border border-amber-500/25 p-5 sm:p-6 overflow-hidden shadow-2xl shadow-amber-500/10">
+    <SpatialCard3D spotlightColor="rgba(217, 119, 6, 0.08)" className="rounded-3xl">
+      <div className="relative rounded-3xl bg-[#FFFFFF] border border-amber-500/25 p-5 sm:p-6 overflow-hidden shadow-2xl shadow-amber-500/10">
         {/* aurora wash */}
-        <div className="pointer-events-none absolute -top-24 -right-24 w-64 h-64 rounded-full bg-amber-500/15 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-28 -left-20 w-56 h-56 rounded-full bg-purple-500/15 blur-3xl" />
+        <div className="pointer-events-none absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500" />
 
         <div className="relative space-y-4">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-400">
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-600">
               24K Gold · Sarafa Spot
             </span>
             <span className="text-[10px] font-mono text-zinc-400 border border-white/10 rounded-full px-2 py-0.5">
@@ -92,12 +91,12 @@ export function GoldDataCard({ gold }: { gold: MetalAsset }) {
             </div>
             <div className="rounded-xl bg-white/[0.03] border border-amber-500/20 p-3 col-span-2">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-amber-400 font-semibold">
+                <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-amber-600 font-semibold">
                   <Crosshair className="w-3 h-3" /> Dip Zone (10–15% off peak)
                 </div>
                 <span
                   className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded ${
-                    inDipZone ? 'bg-amber-500/20 text-amber-300' : 'bg-white/5 text-zinc-400'
+                    inDipZone ? 'bg-amber-500/15 text-amber-700' : 'bg-white/5 text-zinc-400'
                   }`}
                 >
                   {inDipZone ? '● YOU ARE HERE' : 'outside zone'}

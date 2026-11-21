@@ -5,7 +5,7 @@ import { AlertTriangle, ShieldAlert, Info, HelpCircle } from 'lucide-react';
 
 export function WhatThisCantTellYou() {
   return (
-    <div className="rounded-2xl bg-[#0B0A16] border border-white/[0.08] p-5 sm:p-6 space-y-4 text-xs text-zinc-400">
+    <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-5 sm:p-6 space-y-4 text-xs text-zinc-400">
       <div className="flex items-center gap-2 text-white font-bold text-sm">
         <ShieldAlert className="w-4 h-4 text-amber-400" />
         <span>What This Model Can't Tell You: Institutional Realities of Pakistan</span>

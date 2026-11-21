@@ -34,7 +34,7 @@ export function RealCostLeaderboard({ decision }: RealCostLeaderboardProps) {
   };
 
   return (
-    <div className="rounded-2xl bg-[#12101F] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-5">
+    <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-white/[0.06]">
         <div>
           <div className="flex items-center gap-2">
@@ -65,7 +65,7 @@ export function RealCostLeaderboard({ decision }: RealCostLeaderboardProps) {
               className={`rounded-xl border transition-all ${
                 isCheapest
                   ? 'bg-gradient-to-r from-emerald-500/[0.07] via-black/30 to-transparent border-emerald-500/35 shadow-md shadow-emerald-500/5'
-                  : 'bg-[#0B0A16] border-white/[0.07] hover:border-white/15'
+                  : 'bg-[#FFFFFF] border-white/[0.07] hover:border-white/15'
               }`}
             >
               {/* Main Row */}
@@ -147,7 +147,7 @@ export function RealCostLeaderboard({ decision }: RealCostLeaderboardProps) {
 
               {/* Expandable 5-Line Waterfall */}
               {isExpanded && (
-                <div className="p-4 border-t border-white/[0.06] bg-[#0B0A16] space-y-3">
+                <div className="p-4 border-t border-white/[0.06] bg-[#FFFFFF] space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
                       <Layers className="w-3.5 h-3.5 text-emerald-400" />

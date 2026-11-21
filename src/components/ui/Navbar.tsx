@@ -53,7 +53,7 @@ export function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#17122B]/85 backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#F4F4F5]/85 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Brand / Logo */}
         <div className="flex items-center gap-4">
@@ -68,7 +68,7 @@ export function Navbar() {
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
                 <span className="font-bold text-lg tracking-tight text-white group-hover:text-emerald-300 transition-colors">
-                  Rizq<span className="text-aurora-gradient">Flow</span>
+                  Rizq<span className="text-emerald-600">Flow</span>
                 </span>
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
               </div>
@@ -210,7 +210,7 @@ export function Navbar() {
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-white/10 bg-[#0D0B18] px-4 py-3 space-y-1">
+        <div className="lg:hidden border-t border-white/10 bg-[#FFFFFF] px-4 py-3 space-y-1">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
             const Icon = link.icon;

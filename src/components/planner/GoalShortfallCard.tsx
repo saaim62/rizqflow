@@ -23,7 +23,7 @@ export function GoalShortfallCard({ goalOutcomes }: GoalShortfallCardProps) {
   );
 
   return (
-    <div className="rounded-2xl bg-[#12101F] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
+    <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-white/[0.06]">
         <div>
           <div className="flex items-center gap-2">
@@ -49,7 +49,7 @@ export function GoalShortfallCard({ goalOutcomes }: GoalShortfallCardProps) {
         {goalOutcomes.map((goal) => (
           <div
             key={goal.goalId}
-            className="p-3.5 rounded-xl bg-[#0B0A16] border border-white/5 space-y-2.5 flex flex-col justify-between"
+            className="p-3.5 rounded-xl bg-[#FFFFFF] border border-white/5 space-y-2.5 flex flex-col justify-between"
           >
             <div>
               <div className="flex items-start justify-between gap-2">

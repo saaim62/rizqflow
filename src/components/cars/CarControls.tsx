@@ -16,7 +16,7 @@ export function CarControls({ profile, onChange }: CarControlsProps) {
   const petrolPrice = profile.petrolPricePerLitre || 322;
 
   return (
-    <div className="rounded-2xl bg-[#12101F] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-6">
+    <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-white/[0.06]">
         <div>
           <h3 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
@@ -39,7 +39,7 @@ export function CarControls({ profile, onChange }: CarControlsProps) {
             </span>
           </label>
 
-          <div className="grid grid-cols-1 gap-1.5 bg-[#0B0A16] p-1 rounded-xl border border-white/5 text-xs">
+          <div className="grid grid-cols-1 gap-1.5 bg-[#FFFFFF] p-1 rounded-xl border border-white/5 text-xs">
             <button
               onClick={() => onChange({ solarTariffMode: 'net-metering-legacy' })}
               className={`p-2 rounded-lg text-left transition-all ${
@@ -124,7 +124,7 @@ export function CarControls({ profile, onChange }: CarControlsProps) {
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-[#0B0A16] border border-white/5 space-y-1 text-xs">
+          <div className="p-3 rounded-xl bg-[#FFFFFF] border border-white/5 space-y-1 text-xs">
             <span className="text-zinc-400 block text-[11px]">5-Year Total Distance:</span>
             <div className="font-mono font-bold text-white text-sm">
               {(dailyKm * 365 * 5).toLocaleString('en-PK')} km
@@ -179,7 +179,7 @@ export function CarControls({ profile, onChange }: CarControlsProps) {
               step={5}
               value={petrolPrice}
               onChange={(e) => onChange({ petrolPricePerLitre: Number(e.target.value) })}
-              className="w-full px-3 py-1.5 rounded-lg bg-[#0B0A16] border border-white/10 font-mono text-white text-xs"
+              className="w-full px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-white/10 font-mono text-white text-xs"
             />
           </div>
         </div>

@@ -95,7 +95,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-md my-8 rounded-2xl bg-[#0D0B18] border border-white/10 shadow-2xl shadow-emerald-500/10 flex flex-col overflow-hidden text-zinc-100">
+      <div className="relative w-full max-w-md my-8 rounded-2xl bg-[#FFFFFF] border border-white/10 shadow-2xl shadow-emerald-500/10 flex flex-col overflow-hidden text-zinc-100">
         
         {/* Header */}
         <div className="p-6 border-b border-white/[0.08] bg-gradient-to-r from-emerald-500/10 to-amber-500/10 flex items-center justify-between">
@@ -121,7 +121,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
 
         {/* Tab switchers if not logged in */}
         {!currentUser && (
-          <div className="flex border-b border-white/5 bg-[#0B0A16] p-1">
+          <div className="flex border-b border-white/5 bg-[#FFFFFF] p-1">
             <button
               onClick={() => {
                 setMode('signin');
@@ -173,7 +173,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-[#0B0A16] border border-white/10 text-white text-xs focus:border-emerald-500 focus:outline-none"
+                    className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-[#FFFFFF] border border-white/10 text-white text-xs focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -188,7 +188,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-[#0B0A16] border border-white/10 text-white text-xs focus:border-emerald-500 focus:outline-none"
+                    className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-[#FFFFFF] border border-white/10 text-white text-xs focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -215,7 +215,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your full name"
-                    className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-[#0B0A16] border border-white/10 text-white text-xs focus:border-emerald-500 focus:outline-none"
+                    className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-[#FFFFFF] border border-white/10 text-white text-xs focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -230,7 +230,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-[#0B0A16] border border-white/10 text-white text-xs focus:border-emerald-500 focus:outline-none"
+                    className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-[#FFFFFF] border border-white/10 text-white text-xs focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -245,7 +245,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-[#0B0A16] border border-white/10 text-white text-xs focus:border-emerald-500 focus:outline-none"
+                    className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-[#FFFFFF] border border-white/10 text-white text-xs focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -300,7 +300,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
                       value={newPortfolioName}
                       onChange={(e) => setNewPortfolioName(e.target.value)}
                       placeholder="e.g. Children Higher Ed Fund"
-                      className="w-full px-3 py-1.5 rounded-lg bg-[#0B0A16] border border-white/10 text-white text-xs focus:border-emerald-500 focus:outline-none"
+                      className="w-full px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-white/10 text-white text-xs focus:border-emerald-500 focus:outline-none"
                     />
                     <div className="flex justify-end gap-2">
                       <button

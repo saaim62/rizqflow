@@ -57,7 +57,7 @@ export function PsxExecutionSheet({ allocations, portfolioPkr }: PsxExecutionShe
   };
 
   return (
-    <div className="rounded-2xl bg-[#12101F] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
+    <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.06]">
         <div>
           <div className="flex items-center gap-2">
@@ -88,7 +88,7 @@ export function PsxExecutionSheet({ allocations, portfolioPkr }: PsxExecutionShe
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse text-xs font-mono">
           <thead>
-            <tr className="border-b border-white/[0.06] text-[10px] font-semibold text-zinc-400 uppercase tracking-wider bg-[#0B0A16]">
+            <tr className="border-b border-white/[0.06] text-[10px] font-semibold text-zinc-400 uppercase tracking-wider bg-[#FFFFFF]">
               <th className="py-2.5 px-3">Ticker</th>
               <th className="py-2.5 px-3 text-right">Market Price</th>
               <th className="py-2.5 px-3 text-right">Shares to Buy</th>
@@ -125,7 +125,7 @@ export function PsxExecutionSheet({ allocations, portfolioPkr }: PsxExecutionShe
             ))}
           </tbody>
           <tfoot>
-            <tr className="border-t border-white/[0.08] bg-[#0B0A16] font-bold text-xs">
+            <tr className="border-t border-white/[0.08] bg-[#FFFFFF] font-bold text-xs">
               <td colSpan={2} className="py-3 px-3 text-white">
                 Execution Totals
               </td>

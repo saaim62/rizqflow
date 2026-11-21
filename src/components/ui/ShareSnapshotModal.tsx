@@ -35,7 +35,7 @@ export function ShareSnapshotModal({
 
     // 1. Background Obsidian Void
     const bgGrad = ctx.createLinearGradient(0, 0, 1200, 630);
-    bgGrad.addColorStop(0, '#07060E');
+    bgGrad.addColorStop(0, '#FAFAFA');
     bgGrad.addColorStop(0.5, '#0B0D15');
     bgGrad.addColorStop(1, '#05070D');
     ctx.fillStyle = bgGrad;
@@ -179,7 +179,7 @@ export function ShareSnapshotModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl bg-[#12101F] border border-white/15 rounded-2xl shadow-2xl p-6 space-y-5">
+      <div className="relative w-full max-w-4xl bg-[#FFFFFF] border border-white/15 rounded-2xl shadow-2xl p-6 space-y-5">
         <div className="flex items-center justify-between pb-3 border-b border-white/10">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-emerald-400" />
