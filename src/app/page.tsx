@@ -66,7 +66,7 @@ export default function HomePage() {
               <div className="flex flex-wrap items-center gap-3 pt-2">
                 <Link
                   href="/planner"
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm transition-all shadow-lg shadow-emerald-500/25 group"
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold btn-machined text-sm transition-all shadow-lg shadow-emerald-500/25 group"
                 >
                   <Sparkles className="w-4 h-4 text-black" />
                   <span>Launch Life & Wealth Planner</span>
@@ -91,16 +91,23 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Gold intelligence card — real data, not decoration */}
-            <div className="w-full lg:w-[400px] shrink-0 self-center">
-              <GoldDataCard gold={gold} />
+            {/* Gold intelligence card — staged like a product shot:
+                studio light behind, floor shadow below, slow float */}
+            <div className="relative w-full lg:w-[400px] shrink-0 self-center">
+              <div className="scene-light absolute -inset-10 rounded-full pointer-events-none" />
+              <div className="hero-3d">
+                <div className="animate-float-slow">
+                  <GoldDataCard gold={gold} />
+                </div>
+              </div>
+              <div className="floor-shadow absolute -bottom-9 left-2 right-2 h-11 pointer-events-none" />
             </div>
           </div>
 
           {/* Ticker Pills Strip */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-4 border-t border-white/[0.08] text-xs">
             {/* Gold */}
-            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
+            <div className="p-3 rounded-xl bg-[#FFFFFF] border border-black/[0.06] shadow-[0_1px_2px_rgba(16,24,40,0.05),0_12px_26px_-10px_rgba(16,24,40,0.2)] flex flex-col justify-between">
               <span className="text-zinc-500 text-[10px] uppercase">24K Sarafa Gold</span>
               <div className="font-mono font-bold text-white text-sm mt-0.5">
                 Rs {snap.rates.goldPerTolaPkr.toLocaleString('en-PK')}
@@ -109,7 +116,7 @@ export default function HomePage() {
             </div>
 
             {/* Silver */}
-            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
+            <div className="p-3 rounded-xl bg-[#FFFFFF] border border-black/[0.06] shadow-[0_1px_2px_rgba(16,24,40,0.05),0_12px_26px_-10px_rgba(16,24,40,0.2)] flex flex-col justify-between">
               <span className="text-zinc-500 text-[10px] uppercase">24K Silver (Tola)</span>
               <div className="font-mono font-bold text-white text-sm mt-0.5">
                 Rs {snap.silverPerTolaPkr.toLocaleString('en-PK')}
@@ -118,7 +125,7 @@ export default function HomePage() {
             </div>
 
             {/* USD / PKR */}
-            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
+            <div className="p-3 rounded-xl bg-[#FFFFFF] border border-black/[0.06] shadow-[0_1px_2px_rgba(16,24,40,0.05),0_12px_26px_-10px_rgba(16,24,40,0.2)] flex flex-col justify-between">
               <span className="text-zinc-500 text-[10px] uppercase">Interbank USD</span>
               <div className="font-mono font-bold text-emerald-400 text-sm mt-0.5">
                 Rs {snap.rates.usdToPkr}
@@ -127,7 +134,7 @@ export default function HomePage() {
             </div>
 
             {/* KSE-100 */}
-            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
+            <div className="p-3 rounded-xl bg-[#FFFFFF] border border-black/[0.06] shadow-[0_1px_2px_rgba(16,24,40,0.05),0_12px_26px_-10px_rgba(16,24,40,0.2)] flex flex-col justify-between">
               <span className="text-zinc-500 text-[10px] uppercase">KSE-100 Index</span>
               <div className="font-mono font-bold text-white text-sm mt-0.5">
                 {snap.rates.kse100Index.toLocaleString('en-PK', { maximumFractionDigits: 0 })}
@@ -136,7 +143,7 @@ export default function HomePage() {
             </div>
 
             {/* Petrol */}
-            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between col-span-2 sm:col-span-1">
+            <div className="p-3 rounded-xl bg-[#FFFFFF] border border-black/[0.06] shadow-[0_1px_2px_rgba(16,24,40,0.05),0_12px_26px_-10px_rgba(16,24,40,0.2)] flex flex-col justify-between col-span-2 sm:col-span-1">
               <span className="text-zinc-500 text-[10px] uppercase">Petrol (Super)</span>
               <div className="font-mono font-bold text-amber-300 text-sm mt-0.5">
                 Rs {snap.rates.petrolPricePerLitre} / L

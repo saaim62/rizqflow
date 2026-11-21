@@ -196,3 +196,15 @@ New entries are added in the same change that fixes the error.
   class renders INK — surfaces must use `bg-[#FFFFFF]`. Caught on the
   home secondary CTA + car podium during screenshot QA (NOTES discipline
   working as intended).
+
+### 16. Cinematic depth on the professional light theme (owner, 21 Nov 2026)
+- Pro light was accepted as "pro" but rejected as flat — "no 3D feel, no
+  cinematic feeling". The synthesis (same rule as the owner's TITAN
+  portfolio: cinema in the SCENE, clean in the UI): depth from light and
+  layering, not darkness or neon. Studio-gradient canvas (white top light
+  -> deeper floor), layered elevation tokens (contact + ambient + top
+  highlight) on glass cards with hover lift, hero gold card staged as a
+  product shot (resting perspective angle, slow float, floor shadow,
+  cursor tilt + glare), floating ticker tiles, machined primary CTA.
+- Depth/motion inventory: floatY 7s on the hero object, SpatialCard3D
+  tilt on gold card + podium, glass-card hover lift app-wide.
