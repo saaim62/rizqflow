@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { METAL_ASSETS, PSX_STOCKS, MARKET_SNAPSHOT } from '@/data/marketData';
 import { useMarketSnapshot } from '@/lib/useMarketSnapshot';
 import { GoldSpotlight } from '@/components/markets/GoldSpotlight';
+import { HoloChart3D } from '@/components/markets/HoloChart3D';
+import { LivePulse } from '@/components/ui/LivePulse';
 import { GoldDataCard } from '@/components/markets/GoldDataCard';
 import { PsxMoversStrip } from '@/components/markets/PsxMoversStrip';
 import { QuickSimulator } from '@/components/markets/QuickSimulator';
@@ -154,8 +156,16 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Live heartbeat — real series trace + hourly sync countdown */}
+      <LivePulse gold={gold} />
+
       {/* Main Content Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        {/* 1b. Holographic 3D gold terminal */}
+        <section className="space-y-3">
+          <HoloChart3D data={gold.history} />
+        </section>
+
         {/* 2. Hero Gold & Silver Streak Spotlight */}
         <section className="space-y-3">
           <GoldSpotlight gold={gold} silver={silver} />

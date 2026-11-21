@@ -238,3 +238,29 @@ body::before {
   background: rgba(217, 165, 33, 0.18);
   color: #E8C15A;
 }
+
+/* ---- Holographic 3D chart + live pulse ---- */
+.holo-stage {
+  perspective: 1150px;
+}
+.holo-plane {
+  transform: rotateX(44deg) rotateZ(-4deg);
+  transform-style: preserve-3d;
+  transform-origin: 50% 60%;
+}
+.holo-sweep {
+  animation: holoScan 5.5s linear infinite;
+}
+@keyframes holoScan {
+  0% { left: -14%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { left: 102%; opacity: 0; }
+}
+.pulse-travel {
+  animation: pulseTravel 6s linear infinite;
+}
+@keyframes pulseTravel {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: -100; }
+}

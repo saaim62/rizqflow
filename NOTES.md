@@ -224,3 +224,17 @@ New entries are added in the same change that fixes the error.
   gold"); blue carries cyanx; purple carries DropRoute's electric violet.
 - The cinematic depth layer from NOTES #16 is retained (float, tilt,
   layered shadows) with dark-stage values.
+
+### 18. Holographic 3D chart + live pulse (owner, 21 Nov 2026)
+- HoloChart3D (home): the real 30-day gold series rendered as a tilted
+  holographic price plane — CSS 3D perspective, 3-layer extruded area,
+  glowing brand-gold line, light pillars at peak/current, scanner sweep,
+  floating peak/now readout chips. Visualization only; every coordinate
+  is a stamped close.
+- LivePulse (under hero): pulsing LIVE SYNC beacon, a bright segment
+  travelling the REAL gold trace, snapshot values, and a REAL countdown
+  to the next hourly /api/market-snapshot sync. No simulated price
+  ticks — PSX/Sarafa publish daily and the strip labels the trace as
+  real closes with the as-of date (Gate 2 holds).
+- Next 16 prerender rule: Date.now() must not run in a client
+  component's state initializer — set it inside useEffect.
