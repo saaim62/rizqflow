@@ -284,3 +284,46 @@ the server account automatically on first sign-in/sign-up when the
 server account is empty (one-time, flag `rizqflow_legacy_imported_v1`).
 Gate that should have caught 1–4: Gate 7 guardian pass was never run as
 an end-to-end customer flow; they are now covered by scripted browser QA.
+
+## #21 — Owner audit of the advice layer (21 Nov 2026): exact arithmetic, four modelling defects
+
+An independent from-scratch model (hand/Python, built from the stamped
+PSX data) reproduced every engine output on the owner's real portfolio
+TO THE RUPEE (final wealth, goal shortfall, all car TCOs, basket yield).
+The calculators were never wrong; the ADVICE layer was:
+
+1. **Manufactured freedom date.** The simulation escalated the dividend
+   YIELD RATE itself at `dividendGrowthPct` (10%/yr), reaching ~19.7% by
+   year 11. Fix: the yield stays flat at the current stamped yield; the
+   PSX sleeve appreciates at (bucket expected total return − yield) in
+   total-return terms. `dividendGrowthPct` no longer drives the sim.
+2. **Bucket-blind planner.** Dividends were paid on 100% of the lump sum
+   and every SIP regardless of the user's asset buckets. Fix: dividends
+   are earned only on the PSX sleeve (`psx-dividends` bucket share of
+   lump + SIP); other sleeves compound at their declared returns; goal
+   withdrawals are pro-rata across sleeves. Contributions earn a
+   half-year of dividends in their first year (monthly arrival), not a
+   full year. Profiles without buckets keep the legacy 100%-PSX reading.
+3. **Frozen basket.** `selectStockPortfolio` used two hand-picked lists
+   calibrated to stale yields and excluded BIPL (11.3%, grade A,
+   Shariah). Fix: the basket is derived from the stamped data on every
+   call — grade-A payers only, top 8 by current yield, equal weights
+   (yield-proportional weights chase the lumpiest payer).
+4. **Self-contradicting fuel figures.** The planner expense field and the
+   car engine's computed fuel for the same commute could differ ~4.6x;
+   nothing reconciled them. The owner's own profile was corrected to the
+   car engine's computed figure (see #21 follow-up in the deploy log);
+   a product-level reconciliation prompt remains future work.
+RETRACTED during the same audit: an initial finding claimed FFC/HUBC/
+EFERT were mis-flagged as Shariah. WRONG — verified against the PSX
+KMI-30 re-composition notice (accounts of 31 Dec 2025): all three ARE
+KMI-30 constituents and the data flags were correct. Lesson recorded:
+never assert Shariah status from model knowledge; check the index.
+Also fixed: the freedom-date label counted from a hardcoded Oct 2026;
+it now counts from the current month. E-scooty battery replacement is
+carried in the Yadea preset's maintenance figure (data-level, labelled)
+rather than a new engine term, keeping the types contract locked.
+Gate that should have caught 1–3: Gate 5 (modelling honesty) — the
+yield escalation and bucket-blindness were inherited from the original
+swarm build and never re-derived against the stamped data until the
+owner ordered this audit.

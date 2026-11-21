@@ -209,21 +209,24 @@ describe('Market Data Layer (src/data/marketData.ts)', () => {
 });
 
 describe('Dividend Life Planner Engine (src/lib/engine/plannerEngine.ts)', () => {
-  it('Rs 30 Lac Lump Sum: gross dividend ~Rs 20k/mo (19.5k - 21.5k), net filer ~Rs 17k/mo', () => {
+  it('Rs 30 Lac Lump Sum: dividends on the 70% PSX sleeve — gross ~Rs 18.2k/mo, net filer ~Rs 15.5k/mo', () => {
     const profile = PRESET_PROFILES['lump-sum-30lac'].profile;
     const plan = calculateLifePlan(profile);
 
-    // Blended yield is honest around 7.8% - 8.6%
-    expect(plan.blendedGrossYieldPct).toBeGreaterThanOrEqual(7.8);
-    expect(plan.blendedGrossYieldPct).toBeLessThanOrEqual(8.6);
+    // Data-driven conventional basket (top-8 grade-A yields, equal weight)
+    // at 20 Nov 2026 prices blends to 10.4%
+    expect(plan.blendedGrossYieldPct).toBeGreaterThanOrEqual(10.0);
+    expect(plan.blendedGrossYieldPct).toBeLessThanOrEqual(10.8);
 
-    // Gross dividend ~Rs 20k/mo (19,500 to 21,500)
-    expect(plan.initialMonthlyGrossDividendPkr).toBeGreaterThanOrEqual(19500);
-    expect(plan.initialMonthlyGrossDividendPkr).toBeLessThanOrEqual(21500);
+    // Dividends are earned on the PSX sleeve only: 70% of Rs 30 lac =
+    // Rs 21 lac at 10.4% -> ~Rs 18.2k/mo gross (bucket-aware engine,
+    // NOTES #21; the old engine wrongly paid dividends on the full lump)
+    expect(plan.initialMonthlyGrossDividendPkr).toBeGreaterThanOrEqual(17500);
+    expect(plan.initialMonthlyGrossDividendPkr).toBeLessThanOrEqual(19000);
 
-    // Net dividend for filer (15% WHT) ~Rs 17k/mo (16,500 to 18,500)
-    expect(plan.initialMonthlyNetDividendPkr).toBeGreaterThanOrEqual(16500);
-    expect(plan.initialMonthlyNetDividendPkr).toBeLessThanOrEqual(18500);
+    // Net dividend for filer (15% WHT) ~Rs 15.5k/mo
+    expect(plan.initialMonthlyNetDividendPkr).toBeGreaterThanOrEqual(14800);
+    expect(plan.initialMonthlyNetDividendPkr).toBeLessThanOrEqual(16200);
   });
 
   it('Non-filer tax penalty is exactly double filer tax (30% vs 15%)', () => {

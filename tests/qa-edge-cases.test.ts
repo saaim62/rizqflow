@@ -143,9 +143,13 @@ describe('QA Edge Cases: Boundary & Extreme Financial Inputs', () => {
     expect(plan.initialMonthlyGrossDividendPkr).toBe(0);
     expect(plan.initialMonthlyNetDividendPkr).toBe(0);
 
-    // Year 1 utilizes annual capital base of Rs 1,200,000
+    // Year 1: contributions arrive monthly, so they earn on average half
+    // a year of dividends: base = 0.5 x Rs 1,200,000 at the 8.68%
+    // data-driven Shariah yield, 85% net -> ~Rs 44k (NOTES #21; the old
+    // engine credited a full year on money not yet invested)
     const year1 = plan.timeline[0];
-    expect(year1.annualNetDividendPkr).toBeGreaterThan(70000); // ~8.2% * 85% net of 1.2M
+    expect(year1.annualNetDividendPkr).toBeGreaterThan(40000);
+    expect(year1.annualNetDividendPkr).toBeLessThan(48000);
     expect(year1.portfolioValuePkr).toBeGreaterThan(1200000);
 
     // Compounding growth over 15 years
@@ -162,14 +166,15 @@ describe('QA Edge Cases: Boundary & Extreme Financial Inputs', () => {
 
     const plan = calculateLifePlan(profile);
 
-    // Gross monthly dividend on Rs 10 Cr @ ~7.6% blended yield (Shariah
-    // basket at 20 Nov 2026 prices) is ~Rs 635k/mo
-    expect(plan.initialMonthlyGrossDividendPkr).toBeGreaterThan(600000);
-    expect(plan.initialMonthlyGrossDividendPkr).toBeLessThan(700000);
+    // Gross monthly dividend on Rs 10 Cr @ 8.68% blended yield
+    // (data-driven Shariah basket at 20 Nov 2026 prices; this fixture has
+    // no asset buckets, so the full lump is the PSX sleeve) is ~Rs 723k/mo
+    expect(plan.initialMonthlyGrossDividendPkr).toBeGreaterThan(700000);
+    expect(plan.initialMonthlyGrossDividendPkr).toBeLessThan(750000);
 
-    // Net monthly dividend (filer 15%) is ~Rs 539k/mo
-    expect(plan.initialMonthlyNetDividendPkr).toBeGreaterThan(500000);
-    expect(plan.initialMonthlyNetDividendPkr).toBeLessThan(600000);
+    // Net monthly dividend (filer 15%) is ~Rs 614k/mo
+    expect(plan.initialMonthlyNetDividendPkr).toBeGreaterThan(590000);
+    expect(plan.initialMonthlyNetDividendPkr).toBeLessThan(640000);
 
     // Immediate freedom achieved today (since net dividend >> total expenses of Rs 90k)
     expect(plan.freedomYears).toBe(0);
@@ -528,9 +533,10 @@ describe('QA Edge Cases: Expense Waterfall Mechanics', () => {
     const plan = calculateLifePlan(profile);
     const netDiv = plan.initialMonthlyNetDividendPkr;
 
-    // Net dividend should be roughly 23k at 20 Nov 2026 yields (24k-26k on stale data)
-    expect(netDiv).toBeGreaterThanOrEqual(22000);
-    expect(netDiv).toBeLessThanOrEqual(25000);
+    // Net dividend: Rs 43 lac at the 8.68% data-driven Shariah yield,
+    // 85% net -> ~Rs 26.4k/mo at 20 Nov 2026 yields
+    expect(netDiv).toBeGreaterThanOrEqual(25000);
+    expect(netDiv).toBeLessThanOrEqual(28000);
 
     const wf = plan.expenseWaterfall;
 

@@ -38,53 +38,22 @@ interface StockAllocation {
  * Respects Shariah-only filtering and covers core high-cash-flow sectors.
  */
 export function selectStockPortfolio(shariahOnly: boolean): StockAllocation[] {
-  const gradeA = PSX_STOCKS.filter((s) => s.grade === 'A');
-
-  if (shariahOnly) {
-    // 8 Shariah Grade-A stocks balanced across Fertilizer, Power, Islamic Bank, O&G, Auto
-    // Calibrated to produce ~8.2% - 8.3% blended yield
-    const shariahCandidates: { ticker: string; weight: number }[] = [
-      { ticker: 'FFC', weight: 12 }, // 9.2%
-      { ticker: 'HUBC', weight: 12 }, // 9.5%
-      { ticker: 'MEBL', weight: 18 }, // 7.6%
-      { ticker: 'EFERT', weight: 14 }, // 8.5%
-      { ticker: 'POL', weight: 10 }, // 10.8%
-      { ticker: 'OGDC', weight: 16 }, // 7.2%
-      { ticker: 'PPL', weight: 10 }, // 6.8%
-      { ticker: 'MTL', weight: 8 }, // 7.9%
-    ];
-
-    const allocations: StockAllocation[] = [];
-    for (const item of shariahCandidates) {
-      const stock = gradeA.find((s) => s.ticker === item.ticker && s.isShariah);
-      if (stock) {
-        allocations.push({ stock, weightPct: item.weight });
-      }
-    }
-    return allocations;
-  }
-
-  // Conventional + Shariah Blend (8 core Grade-A stocks)
-  // Calibrated to produce ~8.24% blended yield
-  const conventionalCandidates: { ticker: string; weight: number }[] = [
-    { ticker: 'MCB', weight: 14 }, // 8.8%
-    { ticker: 'UBL', weight: 14 }, // 8.4%
-    { ticker: 'HBL', weight: 12 }, // 8.0%
-    { ticker: 'MEBL', weight: 14 }, // 7.6%
-    { ticker: 'FFC', weight: 12 }, // 9.2%
-    { ticker: 'HUBC', weight: 10 }, // 9.5%
-    { ticker: 'OGDC', weight: 14 }, // 7.2%
-    { ticker: 'INDU', weight: 10 }, // 7.5%
-  ];
-
-  const allocations: StockAllocation[] = [];
-  for (const item of conventionalCandidates) {
-    const stock = gradeA.find((s) => s.ticker === item.ticker);
-    if (stock) {
-      allocations.push({ stock, weightPct: item.weight });
-    }
-  }
-  return allocations;
+  // Data-driven selection (owner audit, 21 Nov 2026 — NOTES #21). The old
+  // version used two frozen hand-picked lists whose weights were calibrated
+  // to yields from an older data stamp; it excluded BIPL (11.3%, grade A,
+  // Shariah) entirely while carrying 5.4–6.0% names. The basket is now
+  // DERIVED from the current stamped data on every call:
+  //   1. Universe: grade-A payers only (the reliability grade in the data
+  //      layer), Shariah-flagged only when the user asked for Shariah.
+  //   2. Rank by current dividend yield, take the top 8.
+  //   3. Equal weights — deliberately NOT yield-proportional: weighting
+  //      by yield concentrates the basket in the single highest payer
+  //      and chases exactly the yields most likely to be one-off.
+  const pool = PSX_STOCKS.filter((s) => s.grade === 'A' && (!shariahOnly || s.isShariah));
+  const top = [...pool].sort((a, b) => b.dividendYieldPct - a.dividendYieldPct).slice(0, 8);
+  if (top.length === 0) return [];
+  const weightPct = Number((100 / top.length).toFixed(1));
+  return top.map((stock) => ({ stock, weightPct }));
 }
 
 /**
@@ -265,31 +234,48 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
     return acc + (curr.weightPct / 100) * curr.stock.dividendYieldPct;
   }, 0);
 
+  // 3b. Asset-bucket split (owner audit, 21 Nov 2026 — NOTES #21).
+  // Dividends are earned ONLY on the PSX sleeve of the user's allocation;
+  // the old engine silently invested 100% of the lump sum and every SIP
+  // into the stock basket even when the user's buckets said 50%. Other
+  // sleeves compound at their own declared expected returns. The PSX
+  // sleeve is modelled in total-return terms: its market value appreciates
+  // at (bucket expected return − cash yield), and its dividends are paid
+  // at the CURRENT stamped yield — the yield rate itself is never grown
+  // (the old engine escalated it 10%/yr, which manufactured the freedom
+  // date; see NOTES #21).
+  const buckets = normalizeAssetSplits(profile.assetBuckets || []);
+  const psxBucket = buckets.find((b) => b.id === 'psx-dividends' || /psx/i.test(b.label));
+  const psxShare = psxBucket ? psxBucket.monthlySplitPct / 100 : 1;
+  const psxCapitalPkr = profile.lumpSumPkr * psxShare;
+  const psxExpectedReturnPct = psxBucket?.expectedAnnualReturnPct ?? blendedGrossYieldPct;
+  const appreciationPct = Math.max(0, psxExpectedReturnPct - blendedGrossYieldPct);
+
   // 4. Tax and Zakat rates
   const taxRate = profile.taxStatus === 'filer' ? 0.15 : 0.30;
   const taxRatePct = profile.taxStatus === 'filer' ? 15 : 30;
   const zakatRate = profile.includeZakat ? 0.025 : 0.0;
   const netRetentionRate = Math.max(0, 1 - taxRate - zakatRate);
 
-  // Initial Monthly Dividends
+  // Initial Monthly Dividends — on the PSX sleeve only (see 3b)
   const initialMonthlyGrossDividendPkr =
-    (profile.lumpSumPkr * (blendedGrossYieldPct / 100)) / 12;
+    (psxCapitalPkr * (blendedGrossYieldPct / 100)) / 12;
   const initialMonthlyNetDividendPkr =
     initialMonthlyGrossDividendPkr * netRetentionRate;
 
   // Non-filer tax penalty yearly (difference between 30% and 15% tax)
   const penaltyCapitalBase =
-    profile.lumpSumPkr > 0
-      ? profile.lumpSumPkr
+    psxCapitalPkr > 0
+      ? psxCapitalPkr
       : profile.monthlyInvestPkr > 0
-      ? profile.monthlyInvestPkr * 12
+      ? profile.monthlyInvestPkr * psxShare * 12
       : 0;
   const nonFilerTaxPenaltyYearlyPkr =
     penaltyCapitalBase * (blendedGrossYieldPct / 100) * (0.30 - 0.15);
 
   // 5. Recommended Allocations list
   const recommendedAllocations = normalizedAllocations.map((alloc) => {
-    const amountPkr = Math.round(profile.lumpSumPkr * (alloc.weightPct / 100));
+    const amountPkr = Math.round(psxCapitalPkr * (alloc.weightPct / 100));
     const annualNetDivPkr = Math.round(
       amountPkr * (alloc.stock.dividendYieldPct / 100) * netRetentionRate
     );
@@ -308,10 +294,10 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
   ];
   const calendarMonths = monthNames.map((m) => ({ month: m, amountPkr: 0 }));
   const calendarBasePkr =
-    profile.lumpSumPkr > 0
-      ? profile.lumpSumPkr
+    psxCapitalPkr > 0
+      ? psxCapitalPkr
       : profile.monthlyInvestPkr > 0
-      ? profile.monthlyInvestPkr * 12
+      ? profile.monthlyInvestPkr * psxShare * 12
       : 1_000_000;
 
   normalizedAllocations.forEach((alloc) => {
@@ -364,8 +350,17 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
   const yearsToRetirement = (profile.retirementAge || 60) - (profile.age || 30);
   const simulationYears = Math.min(45, Math.max(10, yearsToRetirement || 15));
   const timeline: (WealthTimelinePoint & { portfolioValuePkr: number; annualNetDividendPkr: number })[] = [];
-  let currentPortfolio = profile.lumpSumPkr;
   const annualNewCapital = profile.monthlyInvestPkr * 12;
+
+  // Sleeve state (see 3b): the PSX pot pays the dividends; every other
+  // bucket is its own pot compounding at its declared expected return.
+  let psxPot = psxCapitalPkr;
+  let otherPots = (psxBucket ? buckets.filter((b) => b !== psxBucket) : []).map((b) => ({
+    share: b.monthlySplitPct / 100,
+    returnPct: b.expectedAnnualReturnPct || 0,
+    value: profile.lumpSumPkr * (b.monthlySplitPct / 100),
+  }));
+  let currentPortfolio = profile.lumpSumPkr;
 
   // Track Goals
   const goals = profile.lifeGoals || [];
@@ -373,17 +368,30 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
 
   for (let year = 1; year <= simulationYears; year++) {
     const currentAge = profile.age + year;
-    const capitalBase = year === 1 && currentPortfolio === 0 ? annualNewCapital : currentPortfolio;
 
     const raiseMultiplier = Math.pow(1 + (profile.annualSalaryRaisePct || 0) / 100, year - 1);
     const newCapitalThisYear = annualNewCapital * raiseMultiplier;
 
-    const yieldMultiplier = Math.pow(1 + profile.dividendGrowthPct / 100, year - 1);
-    const yieldForYear = blendedGrossYieldPct * yieldMultiplier;
-
-    const annualGrossDiv = capitalBase * (yieldForYear / 100);
+    // PSX sleeve: dividends at the FLAT current stamped yield on the
+    // sleeve's market value; the value appreciates at (bucket expected
+    // total return − yield). The yield rate is never escalated.
+    // Contributions arrive monthly through the year, so they earn on
+    // average half a year of dividends (the old engine credited a full
+    // year on money that had not yet been invested).
+    const annualGrossDiv =
+      (psxPot + 0.5 * newCapitalThisYear * psxShare) * (blendedGrossYieldPct / 100);
     const annualNetDiv = annualGrossDiv * netRetentionRate;
     const monthlyNetDiv = annualNetDiv / 12;
+
+    psxPot =
+      psxPot * (1 + appreciationPct / 100) +
+      (profile.reinvestDividends ? annualNetDiv : 0) +
+      newCapitalThisYear * psxShare;
+    otherPots = otherPots.map((p) => ({
+      ...p,
+      value: p.value * (1 + p.returnPct / 100) + newCapitalThisYear * p.share,
+    }));
+    currentPortfolio = psxPot + otherPots.reduce((acc, p) => acc + p.value, 0);
 
     const inflationFactor = Math.pow(1 + profile.annualInflationPct / 100, year - 1);
     const monthlyExpenses = totalMonthlyExpenses * inflationFactor;
@@ -391,19 +399,25 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
 
     // Check goals for this year. A goal is only "funded" if the pot can
     // actually pay it — otherwise record the honest shortfall and withdraw
-    // only what exists (the old engine marked every goal FUNDED).
+    // only what exists. Withdrawals come out of every sleeve pro-rata.
     let goalWithdrawnThisYear = 0;
-    let availableForGoalsPkr =
-      capitalBase + newCapitalThisYear + (profile.reinvestDividends ? annualNetDiv : 0);
     for (const g of goals) {
       if (g.targetAge === currentAge) {
         const inflatedCost = g.costInTodaysPkr * Math.pow(1 + profile.annualInflationPct / 100, year);
         const yearsToRetire = Math.max(0, (profile.retirementAge || 60) - g.targetAge);
         const oppRate = (profile.opportunityCostReturnPct ?? 10) / 100;
         const opportunityCost = inflatedCost * Math.pow(1 + oppRate, yearsToRetire);
-        const fundedAmountPkr = Math.min(Math.max(0, availableForGoalsPkr), inflatedCost);
+        const fundedAmountPkr = Math.min(Math.max(0, currentPortfolio), inflatedCost);
         const shortfallPkr = Math.max(0, inflatedCost - fundedAmountPkr);
-        availableForGoalsPkr -= fundedAmountPkr;
+        if (fundedAmountPkr > 0 && currentPortfolio > 0) {
+          const psxFrac = psxPot / currentPortfolio;
+          psxPot -= fundedAmountPkr * psxFrac;
+          otherPots = otherPots.map((p) => ({
+            ...p,
+            value: p.value - fundedAmountPkr * (p.value / currentPortfolio),
+          }));
+          currentPortfolio -= fundedAmountPkr;
+        }
         goalWithdrawnThisYear += fundedAmountPkr;
         goalOutcomes.push({
           goalId: g.id,
@@ -417,20 +431,8 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
       }
     }
 
-    if (profile.reinvestDividends) {
-      currentPortfolio =
-        capitalBase +
-        annualNetDiv +
-        (year === 1 && profile.lumpSumPkr === 0 ? 0 : newCapitalThisYear) -
-        goalWithdrawnThisYear;
-    } else {
-      currentPortfolio =
-        capitalBase +
-        (year === 1 && profile.lumpSumPkr === 0 ? 0 : newCapitalThisYear) -
-        goalWithdrawnThisYear;
-    }
-
     currentPortfolio = Math.max(0, currentPortfolio);
+    psxPot = Math.max(0, psxPot);
 
     const yearInflation = Math.pow(1 + profile.annualInflationPct / 100, year);
     const realTodaysPkr = currentPortfolio / yearInflation;
@@ -491,8 +493,9 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
           freedomAge = Math.round(profile.age + totalY);
 
           const additionalMonths = Math.round(totalY * 12);
-          const startYear = 2026;
-          const startMonth = 10;
+          const nowDate = new Date();
+          const startYear = nowDate.getFullYear();
+          const startMonth = nowDate.getMonth();
           const totalMonths = startYear * 12 + startMonth + additionalMonths;
           const targetYear = Math.floor(totalMonths / 12);
           const targetMonthIdx = totalMonths % 12;

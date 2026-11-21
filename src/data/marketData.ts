@@ -623,7 +623,9 @@ const RAW_PRESETS: PresetProfileConfig[] = [
           pricePkr: 174000,
           kwhPer100Km: 3.5,
           fiveYearDepreciationPct: 35,
-          annualMaintenancePkr: 10000,
+          // Includes a battery-replacement reserve (~Rs 45k at year ~4
+          // amortized) — e-scooty packs are a real mid-life cost (NOTES #21)
+          annualMaintenancePkr: 19000,
         },
         {
           id: 'alektra-mini',
@@ -852,7 +854,9 @@ const RAW_PRESETS: PresetProfileConfig[] = [
           pricePkr: 174000,
           kwhPer100Km: 3.5,
           fiveYearDepreciationPct: 35,
-          annualMaintenancePkr: 10000,
+          // Includes a battery-replacement reserve (~Rs 45k at year ~4
+          // amortized) — e-scooty packs are a real mid-life cost (NOTES #21)
+          annualMaintenancePkr: 19000,
         },
       ],
     },
