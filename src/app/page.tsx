@@ -3,8 +3,9 @@
 import React from 'react';
 import Link from 'next/link';
 import { METAL_ASSETS, PSX_STOCKS, MARKET_SNAPSHOT } from '@/data/marketData';
+import { useMarketSnapshot } from '@/lib/useMarketSnapshot';
 import { GoldSpotlight } from '@/components/markets/GoldSpotlight';
-import { GoldBullion3D } from '@/components/ui/GoldBullion3D';
+import { GoldDataCard } from '@/components/markets/GoldDataCard';
 import { PsxMoversStrip } from '@/components/markets/PsxMoversStrip';
 import { QuickSimulator } from '@/components/markets/QuickSimulator';
 import { useBeginnerGuide } from '@/components/ui/BeginnerDrawer';
@@ -27,6 +28,7 @@ import {
 export default function HomePage() {
   const { openGuide } = useBeginnerGuide();
   const { formatPkrMasked } = useProfile();
+  const snap = useMarketSnapshot();
 
   const gold = METAL_ASSETS.find((m) => m.id === 'gold-24k') || METAL_ASSETS[0];
   const silver = METAL_ASSETS.find((m) => m.id === 'silver-24k') || METAL_ASSETS[1];
@@ -34,7 +36,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen space-y-10 pb-16">
       {/* 1. Executive Hero Header */}
-      <section className="relative overflow-hidden border-b border-white/[0.06] bg-gradient-to-b from-[#FBF8F0] via-[#F1EBDD] to-[#F1EBDD] pt-10 pb-12 sm:pt-16 sm:pb-16">
+      <section className="relative overflow-hidden border-b border-white/[0.06] bg-gradient-to-b from-[#0D0B18] via-[#17122B] to-[#17122B] pt-10 pb-12 sm:pt-16 sm:pb-16">
         {/* Glow ambient background effects */}
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute top-10 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -54,7 +56,7 @@ export default function HomePage() {
             <div className="max-w-2xl space-y-4">
               <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.15]">
                 Turn PSX Blue-Chip Dividends & Gold Streaks into{' '}
-                <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-purple-300 via-cyan-300 to-amber-300 bg-clip-text text-transparent">
                   True Financial Freedom
                 </span>
               </h1>
@@ -91,13 +93,9 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 3D Gold Bullion Centerpiece */}
-            <div className="w-full lg:w-[380px] shrink-0 self-center">
-              <GoldBullion3D
-                currentPrice={gold.currentPrice}
-                streakDays={Math.abs(gold.streak.currentStreak)}
-                drawdownPct={gold.streak.drawdownFromPeakPct}
-              />
+            {/* Gold intelligence card — real data, not decoration */}
+            <div className="w-full lg:w-[400px] shrink-0 self-center">
+              <GoldDataCard gold={gold} />
             </div>
           </div>
 
@@ -107,7 +105,7 @@ export default function HomePage() {
             <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
               <span className="text-zinc-500 text-[10px] uppercase">24K Sarafa Gold</span>
               <div className="font-mono font-bold text-white text-sm mt-0.5">
-                Rs {gold.currentPrice.toLocaleString('en-PK')}
+                Rs {snap.rates.goldPerTolaPkr.toLocaleString('en-PK')}
               </div>
               <span className="text-rose-400 font-mono text-[10px]">▼ 5d Dip Zone (-12.8%)</span>
             </div>
@@ -116,7 +114,7 @@ export default function HomePage() {
             <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
               <span className="text-zinc-500 text-[10px] uppercase">24K Silver (Tola)</span>
               <div className="font-mono font-bold text-white text-sm mt-0.5">
-                Rs {silver.currentPrice.toLocaleString('en-PK')}
+                Rs {snap.silverPerTolaPkr.toLocaleString('en-PK')}
               </div>
               <span className="text-rose-400 font-mono text-[10px]">▼ 3d Losing Streak</span>
             </div>
@@ -125,7 +123,7 @@ export default function HomePage() {
             <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
               <span className="text-zinc-500 text-[10px] uppercase">Interbank USD</span>
               <div className="font-mono font-bold text-emerald-400 text-sm mt-0.5">
-                Rs {MARKET_SNAPSHOT.usdPkrInterbank}
+                Rs {snap.rates.usdToPkr}
               </div>
               <span className="text-zinc-400 font-mono text-[10px]">SBP Remittance Rate</span>
             </div>
@@ -134,7 +132,7 @@ export default function HomePage() {
             <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
               <span className="text-zinc-500 text-[10px] uppercase">KSE-100 Index</span>
               <div className="font-mono font-bold text-white text-sm mt-0.5">
-                {MARKET_SNAPSHOT.kse100Index.toLocaleString('en-PK', { maximumFractionDigits: 0 })}
+                {snap.rates.kse100Index.toLocaleString('en-PK', { maximumFractionDigits: 0 })}
               </div>
               <span className="text-emerald-400 font-mono text-[10px]">▲ +{MARKET_SNAPSHOT.kse100ChangePts} pts (+{MARKET_SNAPSHOT.kse100ChangePct}%)</span>
             </div>
@@ -143,7 +141,7 @@ export default function HomePage() {
             <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between col-span-2 sm:col-span-1">
               <span className="text-zinc-500 text-[10px] uppercase">Petrol (Super)</span>
               <div className="font-mono font-bold text-amber-300 text-sm mt-0.5">
-                Rs {MARKET_SNAPSHOT.petrolPerLitre} / L
+                Rs {snap.rates.petrolPricePerLitre} / L
               </div>
               <span className="text-zinc-400 font-mono text-[10px]">Effective Nov 21, 2026</span>
             </div>
@@ -169,7 +167,7 @@ export default function HomePage() {
         </section>
 
         {/* 5. Car Decision Feature Spotlight Banner */}
-        <section className="rounded-2xl bg-gradient-to-r from-amber-500/10 via-[#FFFFFF] to-emerald-500/10 border border-white/[0.08] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
+        <section className="rounded-2xl bg-gradient-to-r from-amber-500/10 via-[#17122B] to-emerald-500/10 border border-white/[0.08] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
           <div className="space-y-2 text-center md:text-left">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider">
               <Car className="w-3.5 h-3.5" />

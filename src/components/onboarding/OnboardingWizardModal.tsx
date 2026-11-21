@@ -177,7 +177,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-3xl my-8 rounded-2xl bg-[#FBF8F0] border border-white/10 shadow-2xl shadow-emerald-500/10 flex flex-col overflow-hidden text-zinc-100">
+      <div className="relative w-full max-w-3xl my-8 rounded-2xl bg-[#0D0B18] border border-white/10 shadow-2xl shadow-emerald-500/10 flex flex-col overflow-hidden text-zinc-100">
         
         {/* Header Strip */}
         <div className="p-6 border-b border-white/[0.08] bg-gradient-to-r from-emerald-500/10 via-transparent to-amber-500/10 flex items-center justify-between">
@@ -234,7 +234,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FDFBF6] border border-white/10 text-white text-sm focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0A16] border border-white/10 text-white text-sm focus:border-emerald-500 focus:outline-none"
                     placeholder="Your full name"
                   />
                 </div>
@@ -245,7 +245,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     type="text"
                     value={portfolioName}
                     onChange={(e) => setPortfolioName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FDFBF6] border border-white/10 text-white text-sm focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0A16] border border-white/10 text-white text-sm focus:border-emerald-500 focus:outline-none"
                     placeholder="e.g. My Halal Wealth"
                   />
                 </div>
@@ -258,7 +258,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     onChange={(e) => setAge(Number(e.target.value))}
                     min={18}
                     max={75}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FDFBF6] border border-white/10 text-white text-sm font-mono focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0A16] border border-white/10 text-white text-sm font-mono focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
 
@@ -270,7 +270,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     onChange={(e) => setRetirementAge(Number(e.target.value))}
                     min={age + 1}
                     max={80}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FDFBF6] border border-white/10 text-white text-sm font-mono focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0A16] border border-white/10 text-white text-sm font-mono focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
 
@@ -279,7 +279,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value as UserRole)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FDFBF6] border border-white/10 text-white text-sm focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0A16] border border-white/10 text-white text-sm focus:border-emerald-500 focus:outline-none"
                   >
                     <option value="salaried" className="bg-zinc-900">Salaried Corporate / Tech</option>
                     <option value="freelancer" className="bg-zinc-900">Freelancer / Remote USD Earner</option>
@@ -297,7 +297,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                       className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
                         maritalStatus === 'unmarried'
                           ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300'
-                          : 'bg-[#FDFBF6] border-white/10 text-zinc-400'
+                          : 'bg-[#0B0A16] border-white/10 text-zinc-400'
                       }`}
                     >
                       Single / Unmarried
@@ -308,7 +308,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                       className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
                         maritalStatus === 'married'
                           ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300'
-                          : 'bg-[#FDFBF6] border-white/10 text-zinc-400'
+                          : 'bg-[#0B0A16] border-white/10 text-zinc-400'
                       }`}
                     >
                       Married
@@ -324,19 +324,19 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-zinc-300">Gender</label>
                 <div className="grid grid-cols-2 gap-2">
-                  <button type="button" onClick={() => setGender('male')} className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${gender === 'male' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-[#FDFBF6] border-white/10 text-zinc-400'}`}>Male</button>
-                  <button type="button" onClick={() => setGender('female')} className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${gender === 'female' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-[#FDFBF6] border-white/10 text-zinc-400'}`}>Female</button>
+                  <button type="button" onClick={() => setGender('male')} className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${gender === 'male' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-[#0B0A16] border-white/10 text-zinc-400'}`}>Male</button>
+                  <button type="button" onClick={() => setGender('female')} className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${gender === 'female' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-[#0B0A16] border-white/10 text-zinc-400'}`}>Female</button>
                 </div>
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-zinc-300">Family Members (Household Size)</label>
-                <input type="number" value={familyMembers} onChange={(e) => setFamilyMembers(Number(e.target.value))} min={1} max={30} className="w-full px-3.5 py-2.5 rounded-xl bg-[#FDFBF6] border border-white/10 text-white text-sm font-mono focus:border-emerald-500 focus:outline-none" />
+                <input type="number" value={familyMembers} onChange={(e) => setFamilyMembers(Number(e.target.value))} min={1} max={30} className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0A16] border border-white/10 text-white text-sm font-mono focus:border-emerald-500 focus:outline-none" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-zinc-300">Are You the Main Breadwinner?</label>
                 <div className="grid grid-cols-2 gap-2">
-                  <button type="button" onClick={() => setIsBreadwinner(true)} className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${isBreadwinner ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-[#FDFBF6] border-white/10 text-zinc-400'}`}>Yes, I am</button>
-                  <button type="button" onClick={() => setIsBreadwinner(false)} className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${!isBreadwinner ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-[#FDFBF6] border-white/10 text-zinc-400'}`}>Someone else</button>
+                  <button type="button" onClick={() => setIsBreadwinner(true)} className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${isBreadwinner ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-[#0B0A16] border-white/10 text-zinc-400'}`}>Yes, I am</button>
+                  <button type="button" onClick={() => setIsBreadwinner(false)} className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${!isBreadwinner ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-[#0B0A16] border-white/10 text-zinc-400'}`}>Someone else</button>
                 </div>
               </div>
             </div>
@@ -453,7 +453,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     value={monthlyIncomePkr}
                     onChange={(e) => setMonthlyIncomePkr(Number(e.target.value))}
                     step={10000}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FDFBF6] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0A16] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
                   <span className="text-[11px] text-zinc-400">{formatPkr(monthlyIncomePkr)} / month</span>
                 </div>
@@ -465,7 +465,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     value={monthlyInvestPkr}
                     onChange={(e) => setMonthlyInvestPkr(Number(e.target.value))}
                     step={5000}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FDFBF6] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0A16] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
                   <span className="text-[11px] text-emerald-400 font-semibold">
                     {savingsRatePct}% savings rate ({formatPkr(monthlyInvestPkr)} / mo)
@@ -479,7 +479,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     value={lumpSumPkr}
                     onChange={(e) => setLumpSumPkr(Number(e.target.value))}
                     step={50000}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FDFBF6] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0A16] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
                   <span className="text-[11px] text-zinc-400">Immediate capital for dividend stocks ({formatPkr(lumpSumPkr)})</span>
                 </div>
@@ -491,7 +491,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     value={currentCashReservePkr}
                     onChange={(e) => setCurrentCashReservePkr(Number(e.target.value))}
                     step={25000}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FDFBF6] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0A16] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
                   <span className="text-[11px] text-zinc-400">Emergency fund ({formatPkr(currentCashReservePkr)})</span>
                 </div>
@@ -517,7 +517,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     value={fuelAndCommute}
                     onChange={(e) => setFuelAndCommute(Number(e.target.value))}
                     step={1000}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#FDFBF6] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#0B0A16] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
 
@@ -528,7 +528,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     value={utilitiesAndInternet}
                     onChange={(e) => setUtilitiesAndInternet(Number(e.target.value))}
                     step={1000}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#FDFBF6] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#0B0A16] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
 
@@ -539,7 +539,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     value={groceriesAndFood}
                     onChange={(e) => setGroceriesAndFood(Number(e.target.value))}
                     step={2000}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#FDFBF6] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#0B0A16] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
 
@@ -550,7 +550,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     value={rentOrHousing}
                     onChange={(e) => setRentOrHousing(Number(e.target.value))}
                     step={2000}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#FDFBF6] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#0B0A16] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
 
@@ -561,7 +561,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     value={familyAndOther}
                     onChange={(e) => setFamilyAndOther(Number(e.target.value))}
                     step={1000}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#FDFBF6] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#0B0A16] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -599,7 +599,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     onChange={(e) => setDailyCommuteKm(Number(e.target.value))}
                     min={5}
                     max={150}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#FDFBF6] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#0B0A16] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
                   <span className="text-[11px] text-zinc-400">~{dailyCommuteKm * 30} km / month</span>
                 </div>
@@ -609,7 +609,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                   <select
                     value={currentVehicleType}
                     onChange={(e) => setCurrentVehicleType(e.target.value as any)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#FDFBF6] border border-white/10 text-white text-sm focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#0B0A16] border border-white/10 text-white text-sm focus:border-emerald-500 focus:outline-none"
                   >
                     <option value="petrol-car" className="bg-zinc-900">Petrol Car (Sedan / Hatchback / SUV)</option>
                     <option value="petrol-bike" className="bg-zinc-900">Petrol 70cc / 125cc Motorbike</option>
@@ -620,7 +620,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                 {currentVehicleType !== 'none' && (
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-zinc-300">Current Vehicle Resale Value (PKR)</label>
-                  <input type="number" value={currentVehicleResalePkr} onChange={(e) => setCurrentVehicleResalePkr(Number(e.target.value))} step={50000} className="w-full px-3.5 py-2 rounded-xl bg-[#FDFBF6] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none" />
+                  <input type="number" value={currentVehicleResalePkr} onChange={(e) => setCurrentVehicleResalePkr(Number(e.target.value))} step={50000} className="w-full px-3.5 py-2 rounded-xl bg-[#0B0A16] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none" />
                   <span className="text-[11px] text-zinc-400">What you could sell it for today — drives the EV-swap math ({formatPkr(currentVehicleResalePkr)})</span>
                 </div>
               )}
@@ -633,7 +633,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     onChange={(e) => setSolarKw(Number(e.target.value))}
                     min={0}
                     max={50}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#FDFBF6] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#0B0A16] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
                   <span className="text-[11px] text-zinc-400">
                     {solarKw > 0 ? `${solarKw} kW system produces ~${solarKw * 4} kWh/day` : 'No Solar (Grid Only)'}
@@ -645,7 +645,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                   <select
                     value={solarTariffMode}
                     onChange={(e) => setSolarTariffMode(e.target.value as SolarTariffMode)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#FDFBF6] border border-white/10 text-white text-sm focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#0B0A16] border border-white/10 text-white text-sm focus:border-emerald-500 focus:outline-none"
                   >
                     <option value="net-metering-legacy" className="bg-zinc-900">Legacy Net Metering (Rs 26/kWh)</option>
                     <option value="net-billing-2026" className="bg-zinc-900">2026 NEPRA Gross Billing (Rs 11/kWh)</option>
@@ -701,7 +701,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
         </div>
 
         {/* Footer Navigation Buttons */}
-        <div className="p-6 border-t border-white/[0.08] bg-[#FFFFFF] flex items-center justify-between">
+        <div className="p-6 border-t border-white/[0.08] bg-[#12101F] flex items-center justify-between">
           {step > 1 ? (
             <button
               onClick={() => setStep(step - 1)}

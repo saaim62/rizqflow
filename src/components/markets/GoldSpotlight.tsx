@@ -52,7 +52,7 @@ export function GoldSpotlight({ gold, silver }: GoldSpotlightProps) {
   const yDomain = [Math.floor(minPrice * 0.98), Math.ceil(maxPrice * 1.01)];
 
   return (
-    <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-5 sm:p-7 shadow-xl">
+    <div className="rounded-2xl bg-[#12101F] border border-white/[0.08] p-5 sm:p-7 shadow-xl">
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-white/[0.06]">
         <div className="flex items-center gap-3">
@@ -75,7 +75,7 @@ export function GoldSpotlight({ gold, silver }: GoldSpotlightProps) {
         </div>
 
         {/* Time Filter Pills */}
-        <div className="flex items-center gap-1 self-start sm:self-auto bg-[#FDFBF6] p-1 rounded-lg border border-white/5">
+        <div className="flex items-center gap-1 self-start sm:self-auto bg-[#0B0A16] p-1 rounded-lg border border-white/5">
           {(['7d', '14d', '30d'] as const).map((range) => (
             <button
               key={range}
@@ -180,7 +180,7 @@ export function GoldSpotlight({ gold, silver }: GoldSpotlightProps) {
         {/* Right Column: Silver Ticker Card & Analysis */}
         <div className="space-y-4 flex flex-col justify-between">
           {/* Silver Companion Card */}
-          <div className="rounded-xl bg-[#FDFBF6] border border-white/[0.08] p-4 relative overflow-hidden group hover:border-white/15 transition-all">
+          <div className="rounded-xl bg-[#0B0A16] border border-white/[0.08] p-4 relative overflow-hidden group hover:border-white/15 transition-all">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-slate-300" />

@@ -51,9 +51,13 @@ Before any building starts, the task brief states all five:
    match the simulated horizon, yields are computed from the stamped prices
    and declared dividends — never hand-tuned to look good. If a number is an
    approximation, the UI copy says so.
-6. **Privacy law.** Zero external network calls. All user data lives in the
-   user's browser (localStorage). Amounts are maskable. Any future backend
-   requires a new FORGE brief and explicit owner approval.
+6. **Privacy law.** All user data lives in the user's browser
+   (localStorage); amounts are maskable; no third-party network calls, no
+   analytics, no tracking. One owner-approved exception (21 Nov 2026): a
+   same-origin GET to the app's own `/api/market-snapshot`, which serves
+   only the app's stamped market snapshot and transmits nothing about the
+   user — added for the owner's hourly indicator-refresh requirement. Any
+   further backend requires a new FORGE brief and explicit owner approval.
 7. **Guardian pass.** Before a push, a read-only reviewer (human or agent
    who did not write the code) checks the diff against gates 1–6 and the
    `NOTES.md` catalog. The builder cannot mark its own work verified.

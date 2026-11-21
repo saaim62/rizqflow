@@ -16,6 +16,49 @@ export const DEFAULT_MARKET_RATES: MarketRatesConfig = {
   lastUpdated: '2026-11-21',
 };
 
+// ---------------------------------------------------------------------------
+// Stale-seed migration (Forgewarden NOTES #13): profiles and custom rates
+// saved by older builds carry the pre-fix seed values below. An EXACT match
+// with a known stale seed is healed to the current verified default on load;
+// any other value is treated as a deliberate user choice and left untouched.
+// ---------------------------------------------------------------------------
+const STALE_SEED_VALUES: Partial<Record<keyof MarketRatesConfig, number[]>> = {
+  petrolPricePerLitre: [265],
+  goldPerTolaPkr: [385000],
+  usdToPkr: [276.28],
+};
+
+export function migrateStaleSeedValues<T extends object>(obj: T): T {
+  const out: Record<string, unknown> = { ...(obj as Record<string, unknown>) };
+  (Object.keys(STALE_SEED_VALUES) as (keyof MarketRatesConfig)[]).forEach((k) => {
+    const v = out[k as string];
+    if (typeof v === 'number' && STALE_SEED_VALUES[k]?.includes(v)) {
+      out[k as string] = DEFAULT_MARKET_RATES[k];
+    }
+  });
+  return out as T;
+}
+
+const CUSTOM_KEYS_STORAGE = 'rizqflow_custom_rate_keys';
+
+export function getCustomRateKeys(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(CUSTOM_KEYS_STORAGE) || '[]');
+    return Array.isArray(parsed) ? parsed.filter((k) => typeof k === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function recordCustomRateKeys(keys: string[]) {
+  if (typeof window === 'undefined' || keys.length === 0) return;
+  try {
+    const merged = Array.from(new Set([...getCustomRateKeys(), ...keys]));
+    window.localStorage.setItem(CUSTOM_KEYS_STORAGE, JSON.stringify(merged));
+  } catch {}
+}
+
 /**
  * Returns default baseline market rates.
  */
@@ -34,7 +77,7 @@ export function loadCustomMarketRates(): MarketRatesConfig {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return getDefaultMarketRates();
     const parsed = JSON.parse(raw);
-    return {
+    const merged: MarketRatesConfig = {
       petrolPricePerLitre:
         typeof parsed.petrolPricePerLitre === 'number' && parsed.petrolPricePerLitre > 0
           ? parsed.petrolPricePerLitre
@@ -65,6 +108,7 @@ export function loadCustomMarketRates(): MarketRatesConfig {
           : DEFAULT_MARKET_RATES.solarNetBilling2026Rate,
       lastUpdated: parsed.lastUpdated || DEFAULT_MARKET_RATES.lastUpdated,
     };
+    return migrateStaleSeedValues(merged);
   } catch {
     return getDefaultMarketRates();
   }
@@ -74,6 +118,7 @@ export function loadCustomMarketRates(): MarketRatesConfig {
  * Save customized market rates to client localStorage.
  */
 export function saveCustomMarketRates(overrides: Partial<MarketRatesConfig>): MarketRatesConfig {
+  recordCustomRateKeys(Object.keys(overrides));
   const current = loadCustomMarketRates();
   const updated: MarketRatesConfig = {
     ...current,
@@ -97,6 +142,7 @@ export function resetMarketRates(): MarketRatesConfig {
   if (typeof window !== 'undefined') {
     try {
       window.localStorage.removeItem(STORAGE_KEY);
+      window.localStorage.removeItem(CUSTOM_KEYS_STORAGE);
     } catch {}
   }
   return getDefaultMarketRates();

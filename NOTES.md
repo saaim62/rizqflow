@@ -152,3 +152,35 @@ New entries are added in the same change that fixes the error.
 - **Note:** the dark/light toggle in the navbar is currently vestigial —
   no component consumes the theme state since the swarm overhaul. The app
   ships the light theme only until a true dual theme is built.
+
+### 13. Pulse bar showed Petrol Rs 265/L in Nov 2026 (owner screenshot, 21 Nov 2026)
+- **Root cause:** three value sources had diverged historically — seeded
+  presets, `marketRates` defaults, and the user's own SAVED profile. The
+  pulse bar prefers `profile.petrolPricePerLitre`, and profiles persisted
+  by older builds carried the pre-fix seed (265). Fixing defaults alone
+  never healed stored profiles.
+- **Fix:** one snapshot discipline. `migrateStaleSeedValues()` heals EXACT
+  stale seeds (petrol 265, gold 385000, USD 276.28) to current defaults at
+  every load path (custom rates + ProfileProvider init/portfolio switch);
+  deliberate user values are never touched. Pulse bar + home pills now read
+  the shared `useMarketSnapshot()` hook, which syncs hourly with the
+  same-origin `/api/market-snapshot` route and never clobbers fields the
+  user customized (tracked in `rizqflow_custom_rate_keys`).
+- **Honesty note:** PSX/Sarafa/OGRA figures are daily-published; hourly
+  sync propagates the latest verified snapshot, it does not invent a live
+  feed. The bar stamps the last sync time.
+
+### 14. Theme journey (owner, 21 Nov 2026)
+- Black marble + gold: "way too dark". Light ivory marble: "awful".
+  Owner's actual brief: "3D animated professional website with amazing
+  colors and art." Final direction: AURORA SPATIAL — deep ink-violet base,
+  animated aurora gradient pools (violet/cyan/amber) on the body, true
+  emerald for growth, rich amber for gold data, violet->cyan->gold brand
+  gradient, indigo glass panels, 3D tilt cards kept. Implemented through
+  the same @theme scale system (white restored to true white; panel hexes
+  swept to ink tones; podium restaged as a violet stage).
+- The decorative GoldBullion3D hero was replaced by GoldDataCard at the
+  owner's instruction: current spot, all-time peak IN PKR + date, off-peak
+  drop IN PKR + %, dip-zone band IN PKR with an in-zone marker, streak,
+  and the 30-day sparkline — all computed from the stamped series.
+  (GoldBullion3D.tsx remains in the tree, unused.)

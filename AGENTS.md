@@ -28,5 +28,5 @@ Warden Gates:
 
 ## Execution Guardrails
 - **Token Cap:** Do not exceed 1.5 hours of continuous generation per run. Ship in verifiable increments.
-- **Privacy First:** 100% client-side. No external API calls, no analytics, no tracking.
+- **Privacy First:** user data is 100% client-side. No third-party API calls, no analytics, no tracking. The single permitted request is a same-origin GET to `/api/market-snapshot` (the app's own stamped data; see FORGEWARDEN Gate 6 as amended 21 Nov 2026).
 - **Data Updates:** when refreshing prices, change `marketData.ts`, the engine test ranges that encode yields, and `DATA_AS_OF` together — then run the full gate (ci/test/build).

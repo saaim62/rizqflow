@@ -78,7 +78,7 @@ export function GoldBullion3D({
 
           {/* Top Ingot Stamp Header */}
           <div className="relative z-10 flex items-center justify-between">
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#FDFBF6] backdrop-blur-sm border border-black/20 text-amber-950 font-bold text-[10px] tracking-widest uppercase">
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#0B0A16] backdrop-blur-sm border border-black/20 text-amber-950 font-bold text-[10px] tracking-widest uppercase">
               <Sparkles className="w-3 h-3 text-amber-900" />
               <span>SARAFA KARACHI</span>
             </div>

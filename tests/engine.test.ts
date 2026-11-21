@@ -559,6 +559,22 @@ describe('Phase 3: PSX Execution Sheet & Dip-Buy Strategy Simulator', () => {
 });
 
 describe('Phase 3: Live & Custom Market Rates Layer', () => {
+  it('heals exact stale seed values and leaves deliberate user values untouched', async () => {
+    const { migrateStaleSeedValues, DEFAULT_MARKET_RATES } = await import('@/lib/marketRates');
+    const healed = migrateStaleSeedValues({
+      petrolPricePerLitre: 265,
+      goldPerTolaPkr: 385000,
+      usdToPkr: 276.28,
+      gridRatePerKwh: 55,
+    });
+    expect(healed.petrolPricePerLitre).toBe(DEFAULT_MARKET_RATES.petrolPricePerLitre);
+    expect(healed.goldPerTolaPkr).toBe(DEFAULT_MARKET_RATES.goldPerTolaPkr);
+    expect(healed.usdToPkr).toBe(DEFAULT_MARKET_RATES.usdToPkr);
+    expect(healed.gridRatePerKwh).toBe(55);
+    const custom = migrateStaleSeedValues({ petrolPricePerLitre: 330 });
+    expect(custom.petrolPricePerLitre).toBe(330);
+  });
+
   it('returns default Nov 21 2026 Pakistan economic defaults', () => {
     const rates = getDefaultMarketRates();
     expect(rates.petrolPricePerLitre).toBe(322);

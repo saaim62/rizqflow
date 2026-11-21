@@ -96,7 +96,7 @@ export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitte
           return (
             <div
               key={bucket.id}
-              className="p-2.5 rounded-xl bg-[#FDFBF6] border border-white/5 space-y-1.5"
+              className="p-2.5 rounded-xl bg-[#0B0A16] border border-white/5 space-y-1.5"
             >
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">

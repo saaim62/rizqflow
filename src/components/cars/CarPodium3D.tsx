@@ -24,7 +24,7 @@ export function CarPodium3D({ cheapest, runnerUp }: CarPodium3DProps) {
   return (
     <SpatialCard3D
       spotlightColor="rgba(212, 175, 55, 0.18)"
-      className="p-6 sm:p-8 bg-gradient-to-br from-[#FFFFFF] via-[#F8EFD2] to-[#F1E3B8] border border-[#B08D2A]/40"
+      className="p-6 sm:p-8 bg-gradient-to-br from-[#17122B] via-[#2A1E52] to-[#0D0A1A] border border-purple-400/30"
     >
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="space-y-4">
@@ -34,10 +34,10 @@ export function CarPodium3D({ cheapest, runnerUp }: CarPodium3DProps) {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs uppercase font-extrabold tracking-wider text-amber-700 font-mono">
+                <span className="text-xs uppercase font-extrabold tracking-wider text-amber-300 font-mono">
                   #1 Lowest 5-Year True TCO
                 </span>
-                <span className="px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-800 text-[10px] font-bold uppercase">
+                <span className="px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold uppercase">
                   PODIUM WINNER
                 </span>
               </div>
@@ -47,12 +47,12 @@ export function CarPodium3D({ cheapest, runnerUp }: CarPodium3DProps) {
             </div>
           </div>
 
-          <p className="text-xs sm:text-sm text-zinc-600 max-w-xl leading-relaxed">
+          <p className="text-xs sm:text-sm text-zinc-300 max-w-xl leading-relaxed">
             By factoring in fuel, charging tariffs, 35% depreciation, and 10% equity opportunity cost, this vehicle delivers the lowest true monthly economic drain on your household.
           </p>
 
           {fiveYearDiff > 0 && runnerUp && (
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-600/30 text-xs text-emerald-700 font-mono">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-xs text-emerald-300 font-mono">
               <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
               <span>
                 Saves <strong className="text-white">{formatCompactPkrMasked(fiveYearDiff)}</strong> over 5 years vs {runnerUp.name}!

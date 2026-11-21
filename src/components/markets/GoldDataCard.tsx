@@ -1,0 +1,118 @@
+'use client';
+
+import React from 'react';
+import { TrendingDown, Flame, Crosshair, History } from 'lucide-react';
+import { MetalAsset } from '@/types';
+import { DATA_AS_OF_SHORT } from '@/data/marketData';
+import { Sparkline } from '@/components/markets/Sparkline';
+import { SpatialCard3D } from '@/components/ui/SpatialCard3D';
+
+/**
+ * GoldDataCard — replaces the decorative GoldBullion3D in the home hero
+ * (owner, 21 Nov 2026: "change this gold card to something better and with
+ * actual data on it"). Every number is computed from the stamped gold
+ * series: current spot, the peak price IN PKR and its date, the off-peak
+ * drop IN PKR and %, the dip-zone band IN PKR, and the live streak.
+ */
+export function GoldDataCard({ gold }: { gold: MetalAsset }) {
+  const history = gold.history;
+  const current = gold.currentPrice;
+  const prev = history.length > 1 ? history[history.length - 2].price : current;
+  const todayChange = current - prev;
+  const todayPct = prev > 0 ? (todayChange / prev) * 100 : 0;
+
+  const peakPoint = history.reduce((a, b) => (b.price > a.price ? b : a), history[0]);
+  const lowPoint = history.reduce((a, b) => (b.price < a.price ? b : a), history[0]);
+  const dropPkr = current - peakPoint.price; // negative
+  const dropPct = peakPoint.price > 0 ? (dropPkr / peakPoint.price) * 100 : 0;
+
+  // Dip zone = 10–15% below the peak, in PKR (the band the planner's
+  // "SIP dip accumulation" language refers to).
+  const dipHigh = Math.round(peakPoint.price * 0.9);
+  const dipLow = Math.round(peakPoint.price * 0.85);
+  const inDipZone = current <= dipHigh && current >= dipLow;
+
+  const fmtDate = (iso: string) =>
+    new Date(iso + 'T00:00:00').toLocaleDateString('en-PK', { day: 'numeric', month: 'short' });
+  const rs = (n: number) => `Rs ${Math.abs(n).toLocaleString('en-PK')}`;
+
+  return (
+    <SpatialCard3D spotlightColor="rgba(212, 175, 55, 0.22)" className="rounded-3xl">
+      <div className="relative rounded-3xl bg-[#12101F] border border-amber-500/25 p-5 sm:p-6 overflow-hidden shadow-2xl shadow-amber-500/10">
+        {/* aurora wash */}
+        <div className="pointer-events-none absolute -top-24 -right-24 w-64 h-64 rounded-full bg-amber-500/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-28 -left-20 w-56 h-56 rounded-full bg-purple-500/15 blur-3xl" />
+
+        <div className="relative space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-400">
+              24K Gold · Sarafa Spot
+            </span>
+            <span className="text-[10px] font-mono text-zinc-400 border border-white/10 rounded-full px-2 py-0.5">
+              Data as of {DATA_AS_OF_SHORT}
+            </span>
+          </div>
+
+          <div>
+            <div className="flex items-end gap-2 flex-wrap">
+              <span className="text-3xl sm:text-4xl font-black font-mono tabular-nums text-white leading-none">
+                {rs(current)}
+              </span>
+              <span className="text-xs text-zinc-400 mb-0.5">/ tola</span>
+            </div>
+            <div className="mt-1.5 flex items-center gap-2 text-xs font-mono">
+              <span className={todayChange <= 0 ? 'text-rose-400' : 'text-emerald-400'}>
+                {todayChange <= 0 ? '▼' : '▲'} {rs(todayChange)} today ({todayPct.toFixed(1)}%)
+              </span>
+              <span className="text-zinc-500">·</span>
+              <span className="text-rose-400 flex items-center gap-1">
+                <Flame className="w-3 h-3" /> {Math.abs(gold.streak.currentStreak)}d down streak
+              </span>
+            </div>
+          </div>
+
+          <Sparkline data={history} color="gold" height={52} strokeWidth={2} />
+
+          <div className="grid grid-cols-2 gap-2.5 text-xs">
+            <div className="rounded-xl bg-white/[0.03] border border-white/[0.07] p-3">
+              <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">
+                <History className="w-3 h-3" /> All-Time Peak
+              </div>
+              <div className="mt-1 font-mono font-bold text-white text-sm">{rs(peakPoint.price)}</div>
+              <div className="text-[10px] text-zinc-500 font-mono">{fmtDate(peakPoint.date)} 2026</div>
+            </div>
+            <div className="rounded-xl bg-white/[0.03] border border-white/[0.07] p-3">
+              <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">
+                <TrendingDown className="w-3 h-3" /> Off-Peak Drop
+              </div>
+              <div className="mt-1 font-mono font-bold text-rose-400 text-sm">
+                −{rs(dropPkr)} ({dropPct.toFixed(1)}%)
+              </div>
+              <div className="text-[10px] text-zinc-500 font-mono">peak → today, in PKR</div>
+            </div>
+            <div className="rounded-xl bg-white/[0.03] border border-amber-500/20 p-3 col-span-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-amber-400 font-semibold">
+                  <Crosshair className="w-3 h-3" /> Dip Zone (10–15% off peak)
+                </div>
+                <span
+                  className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded ${
+                    inDipZone ? 'bg-amber-500/20 text-amber-300' : 'bg-white/5 text-zinc-400'
+                  }`}
+                >
+                  {inDipZone ? '● YOU ARE HERE' : 'outside zone'}
+                </span>
+              </div>
+              <div className="mt-1 font-mono font-bold text-white text-sm">
+                {rs(dipHigh)} <span className="text-zinc-500 font-normal">down to</span> {rs(dipLow)}
+              </div>
+              <div className="text-[10px] text-zinc-500 font-mono">
+                30-day low: {rs(lowPoint.price)} ({fmtDate(lowPoint.date)}) · SIP dip-accumulation band
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </SpatialCard3D>
+  );
+}

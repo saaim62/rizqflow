@@ -22,6 +22,7 @@ import {
   switchUserPortfolio,
   saveProfileToActivePortfolio,
 } from '@/lib/auth';
+import { migrateStaleSeedValues } from '@/lib/marketRates';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { OnboardingWizardModal } from '@/components/onboarding/OnboardingWizardModal';
 
@@ -125,7 +126,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         // Find active portfolio profile
         const activePort = user.portfolios.find((p) => p.id === user.activePortfolioId);
         if (activePort) {
-          setProfileState(activePort.profile);
+          setProfileState(migrateStaleSeedValues(activePort.profile));
         }
       }
     }
@@ -134,11 +135,11 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     const hash = window.location.hash;
     const decodedFromHash = decodeProfileFromHash(hash, defaultProfile);
     if (decodedFromHash) {
-      setProfileState(decodedFromHash);
+      setProfileState(migrateStaleSeedValues(decodedFromHash));
       showToast('Loaded shared plan from URL!');
     } else if (!session) {
       const stored = loadProfileFromStorage(defaultProfile);
-      setProfileState(stored);
+      setProfileState(migrateStaleSeedValues(stored));
     }
 
     setHasLoaded(true);
@@ -260,7 +261,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
         const activePort = user.portfolios.find((p) => p.id === user.activePortfolioId);
         if (activePort) {
-          setProfileState(activePort.profile);
+          setProfileState(migrateStaleSeedValues(activePort.profile));
         }
       }
       return res;
@@ -279,7 +280,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
         const activePort = user.portfolios.find((p) => p.id === user.activePortfolioId);
         if (activePort) {
-          setProfileState(activePort.profile);
+          setProfileState(migrateStaleSeedValues(activePort.profile));
         }
       }
       return res;

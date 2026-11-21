@@ -25,8 +25,8 @@ export function EmergencyFundCard({ plan, profile }: EmergencyFundCardProps) {
   return (
     <div className={`rounded-2xl border p-5 sm:p-6 transition-all shadow-md ${
       isFunded
-        ? 'bg-[#FFFFFF] border-emerald-500/30'
-        : 'bg-[#FFFFFF] border-amber-500/30'
+        ? 'bg-[#12101F] border-emerald-500/30'
+        : 'bg-[#12101F] border-amber-500/30'
     }`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -76,7 +76,7 @@ export function EmergencyFundCard({ plan, profile }: EmergencyFundCardProps) {
         </div>
 
         {/* Bar */}
-        <div className="h-3 w-full bg-[#FDFBF6] rounded-full overflow-hidden p-0.5 border border-white/10">
+        <div className="h-3 w-full bg-[#0B0A16] rounded-full overflow-hidden p-0.5 border border-white/10">
           <div
             className={`h-full rounded-full transition-all duration-500 ${
               isFunded

@@ -38,7 +38,7 @@ export function DistanceCrossoverChart({
   const data = decision.crossoverSeries;
 
   return (
-    <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
+    <div className="rounded-2xl bg-[#12101F] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-white/[0.06]">
         <div>
           <div className="flex items-center gap-2">
@@ -139,7 +139,7 @@ export function DistanceCrossoverChart({
         )}
       </div>
 
-      <div className="p-3 rounded-xl bg-[#FDFBF6] border border-white/5 text-xs text-zinc-400 flex items-start gap-2">
+      <div className="p-3 rounded-xl bg-[#0B0A16] border border-white/5 text-xs text-zinc-400 flex items-start gap-2">
         <Sparkles className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
         <p className="leading-relaxed">
           <strong>Key Takeaway:</strong> Low-mileage drivers (under 15–20 km/day) often find keeping an older petrol car cheaper because EV depreciation & capital opportunity cost outweigh fuel savings. At higher commutes (&gt; 35 km/day), the EV line flattens out, providing monumental compound savings!

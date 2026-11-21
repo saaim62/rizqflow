@@ -2,11 +2,13 @@
 
 import React, { useState } from 'react';
 import { useProfile } from '@/components/providers/ProfileProvider';
-import { DEFAULT_MARKET_RATES } from '@/lib/marketRates';
+import { DEFAULT_MARKET_RATES, saveCustomMarketRates } from '@/lib/marketRates';
+import { useMarketSnapshot } from '@/lib/useMarketSnapshot';
 import { SlidersHorizontal, X, RotateCcw, Check, Sun, Fuel, DollarSign, Coins } from 'lucide-react';
 
 export function MarketPulseBar() {
   const { profile, updateProfile, showToast, hideAmounts } = useProfile();
+  const snap = useMarketSnapshot();
   const [isOpen, setIsOpen] = useState(false);
 
   // Temporary local edit state for modal
@@ -31,6 +33,13 @@ export function MarketPulseBar() {
       petrolPricePerLitre: Number(petrolRate),
       gridRatePerKwh: Number(gridRate),
     });
+    saveCustomMarketRates({
+      goldPerTolaPkr: Number(goldRate),
+      usdToPkr: Number(usdRate),
+      petrolPricePerLitre: Number(petrolRate),
+      gridRatePerKwh: Number(gridRate),
+    });
+    snap.refresh();
     setIsOpen(false);
     showToast('Market benchmark rates updated!');
   };
@@ -45,7 +54,7 @@ export function MarketPulseBar() {
   return (
     <>
       {/* Top Pulse Bar */}
-      <div className="w-full bg-[#F6F1E7] border-b border-white/[0.06] text-[11px] font-mono text-zinc-400 py-1.5 px-4 sm:px-6">
+      <div className="w-full bg-[#07060E] border-b border-white/[0.06] text-[11px] font-mono text-zinc-400 py-1.5 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
           <div className="flex items-center gap-4 sm:gap-6 shrink-0">
             {/* Live Indicator */}
@@ -58,7 +67,7 @@ export function MarketPulseBar() {
             <div className="flex items-center gap-1.5">
               <span className="text-zinc-500">24K GOLD:</span>
               <span className="font-bold text-amber-300">
-                {hideAmounts ? '•••••' : `Rs ${(profile.goldPerTolaPkr || 379836).toLocaleString('en-PK')}`}
+                {hideAmounts ? '•••••' : `Rs ${snap.rates.goldPerTolaPkr.toLocaleString('en-PK')}`}
               </span>
               <span className="text-rose-400 text-[10px]">▼ 5d</span>
             </div>
@@ -67,7 +76,7 @@ export function MarketPulseBar() {
             <div className="flex items-center gap-1.5">
               <span className="text-zinc-500">SILVER:</span>
               <span className="font-bold text-slate-300">
-                {hideAmounts ? '•••••' : 'Rs 4,708'}
+                {hideAmounts ? '•••••' : `Rs ${snap.silverPerTolaPkr.toLocaleString('en-PK')}`}
               </span>
               <span className="text-rose-400 text-[10px]">▼ 3d</span>
             </div>
@@ -76,7 +85,7 @@ export function MarketPulseBar() {
             <div className="flex items-center gap-1.5">
               <span className="text-zinc-500">USD/PKR:</span>
               <span className="font-bold text-emerald-400">
-                Rs {profile.usdToPkr || DEFAULT_MARKET_RATES.usdToPkr}
+                Rs {snap.rates.usdToPkr}
               </span>
             </div>
 
@@ -84,7 +93,7 @@ export function MarketPulseBar() {
             <div className="hidden md:flex items-center gap-1.5">
               <span className="text-zinc-500">PETROL:</span>
               <span className="font-bold text-white">
-                Rs {profile.petrolPricePerLitre || DEFAULT_MARKET_RATES.petrolPricePerLitre}/L
+                Rs {snap.rates.petrolPricePerLitre}/L
               </span>
             </div>
 
@@ -92,10 +101,20 @@ export function MarketPulseBar() {
             <div className="hidden lg:flex items-center gap-1.5">
               <span className="text-zinc-500">GRID:</span>
               <span className="font-bold text-white">
-                Rs {profile.gridRatePerKwh || DEFAULT_MARKET_RATES.gridRatePerKwh}/kWh
+                Rs {snap.rates.gridRatePerKwh}/kWh
               </span>
             </div>
           </div>
+
+          {/* Hourly sync stamp + manual refresh */}
+          <button
+            onClick={() => snap.refresh()}
+            title="Rates re-sync automatically every hour — tap to refresh now"
+            className="hidden sm:flex items-center gap-1 px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors shrink-0"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>{snap.updatedAt ? `Synced ${new Date(snap.updatedAt).toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' })}` : 'Hourly sync'}</span>
+          </button>
 
           {/* Adjust Rates Button */}
           <button
@@ -111,7 +130,7 @@ export function MarketPulseBar() {
       {/* Adjust Rates Modal */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md bg-[#FBF8F0] border border-white/10 rounded-2xl shadow-2xl p-6 space-y-5">
+          <div className="relative w-full max-w-md bg-[#0D0B18] border border-white/10 rounded-2xl shadow-2xl p-6 space-y-5">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="w-4 h-4 text-amber-400" />
