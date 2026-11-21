@@ -51,13 +51,24 @@ Before any building starts, the task brief states all five:
    match the simulated horizon, yields are computed from the stamped prices
    and declared dividends — never hand-tuned to look good. If a number is an
    approximation, the UI copy says so.
-6. **Privacy law.** All user data lives in the user's browser
-   (localStorage); amounts are maskable; no third-party network calls, no
+6. **Privacy law.** Amounts are maskable; no third-party network calls, no
    analytics, no tracking. One owner-approved exception (21 Nov 2026): a
    same-origin GET to the app's own `/api/market-snapshot`, which serves
    only the app's stamped market snapshot and transmits nothing about the
-   user — added for the owner's hourly indicator-refresh requirement. Any
-   further backend requires a new FORGE brief and explicit owner approval.
+   user — added for the owner's hourly indicator-refresh requirement.
+   **Amendment 2 (owner instruction, 21 Nov 2026):** accounts and
+   portfolios are stored server-side, on the owner's own server, in
+   RizqFlow's own dedicated Postgres container (separate instance,
+   volume and credentials from any other product's database) — the
+   owner ruled that a user who signs in on any device must see the
+   same portfolios everywhere, which browser-only storage cannot do. Terms of the amendment: passwords are
+   scrypt-hashed server-side (never stored or logged in plain text),
+   sessions are random tokens stored hashed and carried in an httpOnly
+   cookie, the only endpoints are the same-origin `/api/auth/*`,
+   `/api/me` and `/api/portfolios/*`, no user data leaves the owner's
+   server, and anonymous (signed-out) use keeps working from
+   localStorage exactly as before. Any further backend still requires a
+   new FORGE brief and explicit owner approval.
 7. **Guardian pass.** Before a push, a read-only reviewer (human or agent
    who did not write the code) checks the diff against gates 1–6 and the
    `NOTES.md` catalog. The builder cannot mark its own work verified.

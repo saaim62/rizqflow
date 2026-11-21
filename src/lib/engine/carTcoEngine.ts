@@ -207,7 +207,11 @@ export function evaluateCarDecision(profile: UserProfile): CarDecisionSummary {
   }
 
   return {
-    results,
+    // Ranked order (lowest 5-year TCO first) is the single source of truth:
+    // the podium, the leaderboard and the verdict must never disagree.
+    // (Previously this returned the unsorted array and the podium crowned
+    // whichever vehicle happened to be first in the profile.)
+    results: sorted,
     cheapestVehicleId: cheapest ? cheapest.vehicleId : null,
     verdictSentence,
     crossoverKmPerDay,

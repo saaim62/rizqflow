@@ -15,16 +15,53 @@ services:
     container_name: rizqflow-web
     working_dir: /app
     command: npm run start
+    # .env.server exists ONLY on the host (never in git): it carries
+    # DATABASE_URL plus the POSTGRES_* settings for RizqFlow's OWN db
+    # service below. RizqFlow's database is a separate Postgres container
+    # with its own volume — it does not touch DropRoute's database.
+    # Without .env.server the site still serves; only /api/auth/* and
+    # /api/me /api/portfolios answer 503.
+    env_file:
+      - .env.server
     environment:
       NODE_ENV: production
       PORT: "3000"
     volumes:
       - ./:/app
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
       - droproute_default
+      - rizqflow_net
     mem_limit: 512m
     restart: unless-stopped
+
+  # RizqFlow's own accounts database — separate instance, separate volume,
+  # separate credentials from DropRoute's Postgres. Reachable only on the
+  # private rizqflow_net network (no published ports).
+  db:
+    image: postgres:15-alpine
+    container_name: rizqflow-db
+    command: postgres -c shared_buffers=64MB -c max_connections=20
+    env_file:
+      - .env.server
+    volumes:
+      - rizqflow_pgdata:/var/lib/postgresql/data
+    networks:
+      - rizqflow_net
+    mem_limit: 256m
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rizqflow -d rizqflow"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  rizqflow_pgdata:
 
 networks:
   droproute_default:
     external: true
+  rizqflow_net:

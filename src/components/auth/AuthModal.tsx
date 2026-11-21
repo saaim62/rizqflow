@@ -2,20 +2,20 @@
 
 import React, { useState } from 'react';
 import { useProfile } from '@/components/providers/ProfileProvider';
-import { 
-  User, 
-  Mail, 
-  Lock, 
-  Sparkles, 
-  X, 
-  Plus, 
-  Check, 
-  LogOut, 
-  FolderKanban, 
-  ArrowRight,
-  ShieldCheck,
-  CheckCircle2,
-  KeyRound
+import {
+  User,
+  Mail,
+  Lock,
+  Sparkles,
+  X,
+  Plus,
+  Check,
+  LogOut,
+  FolderKanban,
+  Eye,
+  Pencil,
+  Trash2,
+  CloudUpload,
 } from 'lucide-react';
 
 interface AuthModalProps {
@@ -26,17 +26,21 @@ interface AuthModalProps {
   onRecalibrate?: () => void;
 }
 
+const fmtRs = (n?: number) => (n ? `Rs ${n.toLocaleString('en-PK')}` : '—');
+
 export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboarding, onRecalibrate }: AuthModalProps) {
-  const { 
-    currentUser, 
-    signInUser, 
-    signUpUser, 
-    signOutUser, 
-    userPortfolios, 
-    activePortfolioId, 
-    switchActivePortfolio, 
+  const {
+    currentUser,
+    signInUser,
+    signUpUser,
+    signOutUser,
+    userPortfolios,
+    activePortfolioId,
+    switchActivePortfolio,
     createNewPortfolio,
-    showToast 
+    deleteUserPortfolio,
+    renameUserPortfolio,
+    showToast
   } = useProfile();
 
   const [mode, setMode] = useState<'signin' | 'signup' | 'portfolios'>(
@@ -47,14 +51,23 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
   const [name, setName] = useState('');
   const [newPortfolioName, setNewPortfolioName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [isCreatingPortfolio, setIsCreatingPortfolio] = useState(false);
+
+  // Portfolio management UI state
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const res = signInUser(email, password);
+    setBusy(true);
+    const res = await signInUser(email, password);
+    setBusy(false);
     if (res.success) {
       showToast(`Welcome back, ${res.user?.name || 'Investor'}!`);
       onClose();
@@ -63,18 +76,22 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
     }
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     if (!name.trim()) {
       setError('Please enter your name.');
       return;
     }
-    const res = signUpUser(name, email, password);
+    setBusy(true);
+    const res = await signUpUser(name, email, password);
+    setBusy(false);
     if (res.success) {
       showToast(`Welcome to RizqFlow, ${name}!`);
       onClose();
-      if (onOpenOnboarding) {
+      // Only launch the setup wizard when the account has no portfolio yet
+      // (e.g. legacy portfolios were imported instead — no wizard needed).
+      if ((res.portfolios?.length ?? 0) === 0 && onOpenOnboarding) {
         onOpenOnboarding();
       }
     } else {
@@ -82,10 +99,12 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
     }
   };
 
-  const handleCreatePortfolio = (e: React.FormEvent) => {
+  const handleCreatePortfolio = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPortfolioName.trim()) return;
-    const res = createNewPortfolio(newPortfolioName);
+    setBusy(true);
+    const res = await createNewPortfolio(newPortfolioName);
+    setBusy(false);
     if (res.success) {
       showToast(`Created portfolio "${newPortfolioName}"!`);
       setNewPortfolioName('');
@@ -93,15 +112,37 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
     }
   };
 
+  const handleRename = async (id: string) => {
+    if (!renameValue.trim()) return;
+    setBusy(true);
+    const res = await renameUserPortfolio(id, renameValue.trim());
+    setBusy(false);
+    if (res.success) {
+      showToast('Portfolio renamed.');
+      setRenamingId(null);
+    }
+  };
+
+  const handleDelete = async (id: string, portName: string) => {
+    setBusy(true);
+    const res = await deleteUserPortfolio(id);
+    setBusy(false);
+    if (res.success) {
+      showToast(`Deleted portfolio "${portName}".`);
+      setConfirmDeleteId(null);
+      setExpandedId(null);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
       <div className="relative w-full max-w-md my-8 rounded-2xl bg-[#0C0C0F] border border-white/10 shadow-2xl shadow-emerald-500/10 flex flex-col overflow-hidden text-zinc-100">
-        
+
         {/* Header */}
         <div className="p-6 border-b border-white/[0.08] bg-gradient-to-r from-emerald-500/10 to-amber-500/10 flex items-center justify-between">
           <div className="space-y-0.5">
             <div className="flex items-center gap-1.5">
-              <span className="font-bold text-lg text-white">Rizq<span className="text-emerald-400">Flow</span> Portfolios</span>
+              <span className="font-bold text-lg text-white">Rizq<span className="text-[#E8C15A]">Flow</span> Portfolios</span>
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
             </div>
             <p className="text-xs text-zinc-400">
@@ -155,9 +196,12 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
             </div>
           )}
 
-          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 text-[11px] leading-relaxed text-zinc-400">
-            Accounts are stored <span className="text-zinc-200 font-semibold">only in this browser, on this device</span> —
-            nothing is sent to a server. Clearing browser data deletes them permanently.
+          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 text-[11px] leading-relaxed text-zinc-400 flex gap-2">
+            <CloudUpload className="w-4 h-4 text-[#E8C15A] shrink-0 mt-0.5" />
+            <span>
+              Your account and portfolios are stored <span className="text-zinc-200 font-semibold">securely on the RizqFlow server</span> —
+              sign in on any device (phone, laptop, Mac) and you will see the same portfolios everywhere.
+            </span>
           </div>
 
           {/* SIGN IN FORM */}
@@ -179,7 +223,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-zinc-300">Password / PIN</label>
+                <label className="text-xs font-semibold text-zinc-300">Password</label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-zinc-500 absolute left-3 top-3" />
                   <input
@@ -195,9 +239,10 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
 
               <button
                 type="submit"
-                className="w-full mt-2 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs transition-all shadow-md shadow-emerald-500/20"
+                disabled={busy}
+                className="w-full mt-2 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 text-black font-bold text-xs transition-all shadow-md shadow-emerald-500/20"
               >
-                Sign In to My Portfolio
+                {busy ? 'Signing in…' : 'Sign In to My Portfolio'}
               </button>
             </form>
           )}
@@ -244,7 +289,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="Minimum 6 characters"
                     className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-[#0C0C0F] border border-white/10 text-white text-xs focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
@@ -252,9 +297,10 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
 
               <button
                 type="submit"
-                className="w-full mt-2 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black font-extrabold text-xs transition-all shadow-lg shadow-emerald-500/25"
+                disabled={busy}
+                className="w-full mt-2 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 disabled:opacity-60 text-black font-extrabold text-xs transition-all shadow-lg shadow-emerald-500/25"
               >
-                Create Account & Calibrate Portfolio
+                {busy ? 'Creating account…' : 'Create Account & Calibrate Portfolio'}
               </button>
             </form>
           )}
@@ -312,7 +358,8 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
                       </button>
                       <button
                         type="submit"
-                        className="px-3 py-1 rounded-md bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-xs"
+                        disabled={busy}
+                        className="px-3 py-1 rounded-md bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 text-black font-semibold text-xs"
                       >
                         Create
                       </button>
@@ -320,42 +367,138 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
                   </form>
                 )}
 
-                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                {userPortfolios.length === 0 && (
+                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] text-zinc-400">
+                    No portfolios yet. Run the Setup Wizard below to create your first one with your own numbers.
+                  </div>
+                )}
+
+                <div className="space-y-1.5 max-h-72 overflow-y-auto">
                   {userPortfolios.map((port) => {
                     const isActive = port.id === activePortfolioId;
+                    const isExpanded = expandedId === port.id;
+                    const p = port.profile;
                     return (
                       <div
                         key={port.id}
-                        onClick={() => {
-                          switchActivePortfolio(port.id);
-                          showToast(`Switched to: ${port.name}`);
-                          onClose();
-                        }}
-                        className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                        className={`p-3 rounded-xl border transition-all ${
                           isActive
                             ? 'bg-emerald-500/15 border-emerald-500/40 text-white'
                             : 'bg-white/[0.02] border-white/5 hover:border-white/15 text-zinc-300'
                         }`}
                       >
-                        <div className="flex items-center gap-2.5">
-                          <FolderKanban className={`w-4 h-4 ${isActive ? 'text-emerald-400' : 'text-zinc-500'}`} />
-                          <div>
-                            <div className="font-semibold text-xs text-white">{port.name}</div>
-                            <div className="text-[10px] text-zinc-400 font-mono">
-                              Income: {port.profile.monthlyIncomePkr ? `Rs ${(port.profile.monthlyIncomePkr / 1000).toFixed(0)}k/mo` : 'Rs 0'} · {port.profile.shariahOnly ? 'Halal' : 'Blend'}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <FolderKanban className={`w-4 h-4 shrink-0 ${isActive ? 'text-emerald-400' : 'text-zinc-500'}`} />
+                            <div className="min-w-0">
+                              {renamingId === port.id ? (
+                                <div className="flex items-center gap-1.5">
+                                  <input
+                                    type="text"
+                                    value={renameValue}
+                                    onChange={(e) => setRenameValue(e.target.value)}
+                                    className="px-2 py-1 rounded-md bg-[#0C0C0F] border border-white/15 text-white text-xs focus:border-emerald-500 focus:outline-none w-36"
+                                    autoFocus
+                                  />
+                                  <button
+                                    onClick={() => handleRename(port.id)}
+                                    disabled={busy}
+                                    className="px-2 py-1 rounded-md bg-emerald-500 text-black text-[10px] font-bold disabled:opacity-60"
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    onClick={() => setRenamingId(null)}
+                                    className="px-2 py-1 text-[10px] text-zinc-400 hover:text-white"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="font-semibold text-xs text-white truncate">{port.name}</div>
+                              )}
+                              <div className="text-[10px] text-zinc-400 font-mono">
+                                Income: {p.monthlyIncomePkr ? `Rs ${(p.monthlyIncomePkr / 1000).toFixed(0)}k/mo` : 'Rs 0'} · {p.shariahOnly ? 'Halal' : 'Blend'}
+                              </div>
                             </div>
                           </div>
+
+                          {isActive ? (
+                            <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400 shrink-0">
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Active</span>
+                            </span>
+                          ) : (
+                            <button
+                              onClick={async () => {
+                                await switchActivePortfolio(port.id);
+                                showToast(`Switched to: ${port.name}`);
+                              }}
+                              className="text-[10px] font-semibold text-[#E8C15A] hover:text-white shrink-0"
+                            >
+                              Switch &rarr;
+                            </button>
+                          )}
                         </div>
 
-                        {isActive ? (
-                          <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400">
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Active</span>
-                          </span>
-                        ) : (
-                          <span className="text-[10px] text-zinc-500 group-hover:text-zinc-300">
-                            Switch &rarr;
-                          </span>
+                        {/* Management actions */}
+                        <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-white/5">
+                          <button
+                            onClick={() => setExpandedId(isExpanded ? null : port.id)}
+                            className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-[10px] font-semibold text-zinc-300"
+                          >
+                            <Eye className="w-3 h-3" /> {isExpanded ? 'Hide' : 'View'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setRenamingId(port.id);
+                              setRenameValue(port.name);
+                            }}
+                            className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-[10px] font-semibold text-zinc-300"
+                          >
+                            <Pencil className="w-3 h-3" /> Rename
+                          </button>
+                          {confirmDeleteId === port.id ? (
+                            <>
+                              <span className="text-[10px] text-rose-300 ml-1">Delete permanently?</span>
+                              <button
+                                onClick={() => handleDelete(port.id, port.name)}
+                                disabled={busy}
+                                className="px-2 py-1 rounded-md bg-rose-500 text-white text-[10px] font-bold disabled:opacity-60"
+                              >
+                                Yes, delete
+                              </button>
+                              <button
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="px-2 py-1 text-[10px] text-zinc-400 hover:text-white"
+                              >
+                                Keep
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmDeleteId(port.id)}
+                              className="flex items-center gap-1 px-2 py-1 rounded-md bg-rose-500/10 hover:bg-rose-500/20 text-[10px] font-semibold text-rose-300 ml-auto"
+                            >
+                              <Trash2 className="w-3 h-3" /> Delete
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Expanded full details */}
+                        {isExpanded && (
+                          <div className="mt-2.5 pt-2.5 border-t border-white/5 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px]">
+                            <div className="flex justify-between"><span className="text-zinc-500">Age</span><span className="font-mono text-zinc-200">{p.age ?? '—'}</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Retires at</span><span className="font-mono text-zinc-200">{p.retirementAge ?? '—'}</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Income</span><span className="font-mono text-zinc-200">{fmtRs(p.monthlyIncomePkr)}/mo</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Invests</span><span className="font-mono text-zinc-200">{fmtRs(p.monthlyInvestPkr)}/mo</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Lump sum</span><span className="font-mono text-zinc-200">{fmtRs(p.lumpSumPkr)}</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Cash reserve</span><span className="font-mono text-zinc-200">{fmtRs(p.currentCashReservePkr)}</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Annual raise</span><span className="font-mono text-zinc-200">{p.annualSalaryRaisePct ?? '—'}%</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Daily commute</span><span className="font-mono text-zinc-200">{p.dailyCommuteKm ?? '—'} km</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Life goals</span><span className="font-mono text-zinc-200">{p.lifeGoals?.length ?? 0}</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Updated</span><span className="font-mono text-zinc-200">{new Date(port.updatedAt).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' })}</span></div>
+                          </div>
                         )}
                       </div>
                     );
@@ -368,13 +511,14 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
                 type="button"
                 onClick={() => {
                   onClose();
-                  if (onRecalibrate) onRecalibrate();
+                  if (userPortfolios.length === 0 && onOpenOnboarding) onOpenOnboarding();
+                  else if (onRecalibrate) onRecalibrate();
                   else if (onOpenOnboarding) onOpenOnboarding();
                 }}
                 className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-200 border border-white/10 text-xs font-semibold flex items-center justify-center gap-2 transition-all"
               >
                 <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Recalibrate Active Portfolio (Setup Wizard)</span>
+                <span>{userPortfolios.length === 0 ? 'Run the Setup Wizard' : 'Recalibrate Active Portfolio (Setup Wizard)'}</span>
               </button>
             </div>
           )}

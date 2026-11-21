@@ -87,7 +87,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
   const emergencyGap = Math.max(0, emergencyTarget - currentCashReservePkr);
   const savingsRatePct = monthlyIncomePkr > 0 ? Math.round((monthlyInvestPkr / monthlyIncomePkr) * 100) : 0;
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     const goals = [];
     if (weddingAge > age) {
       goals.push({
@@ -165,7 +165,11 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
       updateProfile(compiledProfile);
       showToast('Active portfolio recalibrated & saved!');
     } else if (currentUser) {
-      createNewPortfolio(portfolioName, compiledProfile);
+      const res = await createNewPortfolio(portfolioName, compiledProfile);
+      if (!res.success) {
+        showToast('Could not save the portfolio to the server — please try again.');
+        return;
+      }
       showToast(`Portfolio "${portfolioName}" configured & loaded successfully!`);
     } else {
       updateProfile(compiledProfile);

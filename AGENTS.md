@@ -12,7 +12,9 @@ Warden Gates:
 3. No seeded accounts, no hardcoded credentials, no real person's data as defaults.
 4. `src/types/index.ts` is the locked contract; engines stay pure.
 5. Modelling honesty: computed flags only; labels match the simulated horizon.
-6. Zero external network calls; all user data stays in the browser.
+6. No third-party network calls. Accounts & portfolios live on the owner's
+   server DB (Gate 6 Amendment 2, owner instruction 21 Nov 2026) so a
+   sign-in on any device sees the same data; anonymous use stays local.
 7. Guardian pass by a reviewer who did not write the code.
 8. New errors go into `NOTES.md` in the same change that fixes them.
 
@@ -20,7 +22,8 @@ Warden Gates:
 - `src/types/index.ts`: THE LOCKED CONTRACT. All data shapes live here. Do not deviate or use `any` to bypass types.
 - `src/data/marketData.ts`: Seeded market data (PSX stocks, gold/silver series, presets) + `MARKET_SNAPSHOT`. Header must always carry current `DATA_AS_OF` and `DATA_SOURCES` — update them in the same change as any price update.
 - `src/lib/engine/`: Pure calculation engines (wealth compounding, car TCO, streak detection). No I/O, no globals.
-- `src/lib/auth.ts`: Local-only accounts & multi-portfolio storage (localStorage). Never seed users. Passwords are salted v2 hashes; this is device-local demo auth, not server auth — never describe it as secure authentication.
+- `src/lib/auth.ts`: LEGACY localStorage account store — kept only as the one-time import source for pre-server accounts (see ProfileProvider's importLegacyPortfolios). Never seed users.
+- `src/lib/server/` + `src/app/api/`: Server accounts (Postgres `rizqflow` DB via DATABASE_URL; scrypt password hashes; hashed session tokens in an httpOnly cookie). Signup creates NO portfolio — the wizard creates the first one. Every portfolio query is scoped by user_id.
 - `src/lib/format.ts`: Currency/number formatting (PKR Lac/Cr).
 - `src/components/providers/ProfileProvider.tsx`: Global state (profile, portfolios, auth session, theme, privacy mask, onboarding mode).
 - `src/components/onboarding/OnboardingWizardModal.tsx`: 6-step setup wizard. `mode='create'` makes a new portfolio; `mode='update'` recalibrates the active portfolio in place.
@@ -28,5 +31,5 @@ Warden Gates:
 
 ## Execution Guardrails
 - **Token Cap:** Do not exceed 1.5 hours of continuous generation per run. Ship in verifiable increments.
-- **Privacy First:** user data is 100% client-side. No third-party API calls, no analytics, no tracking. The single permitted request is a same-origin GET to `/api/market-snapshot` (the app's own stamped data; see FORGEWARDEN Gate 6 as amended 21 Nov 2026).
+- **Privacy First:** no third-party API calls, no analytics, no tracking. Permitted same-origin requests: GET `/api/market-snapshot` (stamped data) and the accounts API (`/api/auth/*`, `/api/me`, `/api/portfolios/*`) under FORGEWARDEN Gate 6 Amendment 2 (21 Nov 2026) — user portfolios are stored ONLY on the owner's server.
 - **Data Updates:** when refreshing prices, change `marketData.ts`, the engine test ranges that encode yields, and `DATA_AS_OF` together — then run the full gate (ci/test/build).

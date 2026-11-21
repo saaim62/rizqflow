@@ -246,3 +246,41 @@ New entries are added in the same change that fixes the error.
   DropRoute was unharmed (verified HTTPS 200), but the pattern is banned
   here: prebuild in a memory-capped throwaway container, run via the
   compose volume pattern (see docker-compose.prod.yml header).
+
+### 20. Portfolio management QA round + server accounts (owner, 21 Nov 2026)
+Owner's customer report: "I see 2 portfolios but only generated 1; I can't
+see my full portfolios, nor edit or delete them." Full-flow QA found and
+fixed five defects:
+1. **Phantom portfolio.** Signup silently seeded a portfolio from
+   PRESET_PROFILES[0] (a fictional junior engineer: 200k income) and the
+   post-signup wizard then created the user's real portfolio as a second
+   one. Fix: server signup creates NO portfolio; the wizard creates the
+   first one with the user's own numbers.
+2. **Wrong-profile planner.** The wizard was permanently mounted, so its
+   draft useState initializers ran once at first mount (from a stale /
+   preset profile) and never re-synced — recalibrating showed numbers
+   from a profile that matched neither saved portfolio. Fix: the wizard
+   now mounts only while open, so drafts initialize from the current
+   profile every time.
+3. **Preset overwrite.** While signed in, clicking a home-page preset
+   replaced the active profile and the persist effect then saved it OVER
+   the user's portfolio. Fix: signed-in preset clicks create a NEW
+   portfolio from the preset; anonymous behavior unchanged.
+4. **No portfolio management.** The account modal only had Switch. Now
+   every portfolio row has View (full details), Rename (inline), and
+   Delete (two-step confirm); server enforces ownership on every call.
+5. **Cars podium contradiction.** evaluateCarDecision returned results
+   UNSORTED while the leaderboard sorted its own copy — the podium
+   crowned results[0] (profile order = the current vehicle) while the
+   leaderboard crowned the true cheapest. Fix: the engine returns the
+   ranked array; regression test in tests/server-auth.test.ts.
+**Architecture change (FORGEWARDEN Gate 6, Amendment 2):** accounts and
+portfolios moved from localStorage-only to the owner's server (RizqFlow's
+own Postgres container on the host — separate instance/volume/credentials
+from DropRoute's database, per the owner's explicit instruction; scrypt password hashes; hashed
+session tokens in httpOnly cookies; `src/lib/server/*`, `/api/auth/*`,
+`/api/me`, `/api/portfolios/*`). Pre-server local portfolios import into
+the server account automatically on first sign-in/sign-up when the
+server account is empty (one-time, flag `rizqflow_legacy_imported_v1`).
+Gate that should have caught 1–4: Gate 7 guardian pass was never run as
+an end-to-end customer flow; they are now covered by scripted browser QA.

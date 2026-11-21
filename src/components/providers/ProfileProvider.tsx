@@ -1,30 +1,27 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { UserProfile } from '@/types';
 import { PRESET_PROFILES } from '@/data/marketData';
-import { 
-  loadProfileFromStorage, 
-  saveProfileToStorage, 
-  encodeProfileToHash, 
-  decodeProfileFromHash 
+import {
+  loadProfileFromStorage,
+  saveProfileToStorage,
+  encodeProfileToHash,
+  decodeProfileFromHash
 } from '@/lib/stateUrl';
 import { formatPkr, formatCompactPkr, maskAmount, FormatPkrOptions } from '@/lib/format';
-import {
-  UserAccount,
-  PortfolioRecord,
-  getActiveSession,
-  getRegisteredUsers,
-  signIn,
-  signUp,
-  signOut,
-  createPortfolioForUser,
-  switchUserPortfolio,
-  saveProfileToActivePortfolio,
-} from '@/lib/auth';
+import { PortfolioRecord, getRegisteredUsers } from '@/lib/auth';
+import { api, ApiUser } from '@/lib/api';
 import { migrateStaleSeedValues } from '@/lib/marketRates';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { OnboardingWizardModal } from '@/components/onboarding/OnboardingWizardModal';
+
+export interface AuthActionResult {
+  success: boolean;
+  user?: ApiUser;
+  portfolios?: PortfolioRecord[];
+  error?: string;
+}
 
 interface ProfileContextType {
   profile: UserProfile;
@@ -41,15 +38,17 @@ interface ProfileContextType {
   formatPkrMasked: (n: number, options?: FormatPkrOptions) => string;
   formatCompactPkrMasked: (n: number) => string;
 
-  // Multi-user & Auth additions
-  currentUser: UserAccount | null;
+  // Server-backed accounts (same data on every device)
+  currentUser: ApiUser | null;
   userPortfolios: PortfolioRecord[];
   activePortfolioId: string;
-  signInUser: (email: string, pass: string) => { success: boolean; user?: UserAccount; error?: string };
-  signUpUser: (name: string, email: string, pass: string, initialProfile?: UserProfile, portfolioName?: string) => { success: boolean; user?: UserAccount; error?: string };
+  signInUser: (email: string, pass: string) => Promise<AuthActionResult>;
+  signUpUser: (name: string, email: string, pass: string) => Promise<AuthActionResult>;
   signOutUser: () => void;
-  switchActivePortfolio: (portfolioId: string) => void;
-  createNewPortfolio: (name: string, baseProfile?: UserProfile) => { success: boolean; user?: UserAccount; portfolio?: PortfolioRecord };
+  switchActivePortfolio: (portfolioId: string) => Promise<void>;
+  createNewPortfolio: (name: string, baseProfile?: UserProfile) => Promise<{ success: boolean; portfolio?: PortfolioRecord }>;
+  deleteUserPortfolio: (portfolioId: string) => Promise<{ success: boolean }>;
+  renameUserPortfolio: (portfolioId: string, name: string) => Promise<{ success: boolean }>;
   openAuthModal: (mode?: 'signin' | 'signup' | 'portfolios') => void;
   openOnboardingModal: (mode?: 'create' | 'update') => void;
 }
@@ -64,6 +63,8 @@ export function useProfile() {
   return ctx;
 }
 
+const LEGACY_IMPORT_FLAG = 'rizqflow_legacy_imported_v1';
+
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const defaultProfile = (PRESET_PROFILES[0]?.profile || PRESET_PROFILES[0]) as UserProfile;
 
@@ -73,10 +74,15 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [toast, setToast] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState<boolean>(false);
 
-  // Auth State
-  const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
+  // Auth State (server-backed)
+  const [currentUser, setCurrentUser] = useState<ApiUser | null>(null);
   const [userPortfolios, setUserPortfolios] = useState<PortfolioRecord[]>([]);
   const [activePortfolioId, setActivePortfolioId] = useState<string>('');
+
+  // JSON of the profile as last loaded from / saved to the server. The sync
+  // effect only PUTs when the live profile differs from this snapshot, so
+  // hydrating or switching portfolios never echoes back as a save.
+  const lastSyncedRef = useRef<string>('');
 
   // Modals state
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
@@ -84,7 +90,6 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [onboardingModalOpen, setOnboardingModalOpen] = useState<boolean>(false);
   const [onboardingMode, setOnboardingMode] = useState<'create' | 'update'>('create');
 
-  // Show temporary toast message
   const showToast = useCallback((msg: string) => {
     setToast(msg);
     setTimeout(() => {
@@ -92,17 +97,65 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     }, 3500);
   }, []);
 
-  // Hydrate from localStorage or URL hash & load active session
+  const applyServerState = useCallback((user: ApiUser, portfolios: PortfolioRecord[]) => {
+    setCurrentUser(user);
+    setUserPortfolios(portfolios);
+    const activeId = user.activePortfolioId || (portfolios.length > 0 ? portfolios[portfolios.length - 1].id : '');
+    setActivePortfolioId(activeId);
+    const activePort = portfolios.find((p) => p.id === activeId);
+    if (activePort) {
+      const healed = migrateStaleSeedValues(activePort.profile);
+      lastSyncedRef.current = JSON.stringify(healed);
+      setProfileState(healed);
+    }
+  }, []);
+
+  /**
+   * One-time import of pre-server (localStorage) portfolios. Runs when a
+   * server account has no portfolios yet but this browser holds legacy
+   * local portfolios under the same email — the upgrade path for users
+   * who signed up before accounts moved to the server.
+   */
+  const importLegacyPortfolios = useCallback(
+    async (user: ApiUser): Promise<PortfolioRecord[] | null> => {
+      try {
+        if (typeof window === 'undefined') return null;
+        if (window.localStorage.getItem(LEGACY_IMPORT_FLAG)) return null;
+        const legacyUsers = getRegisteredUsers();
+        const legacy = legacyUsers.find((u) => u.email.toLowerCase() === user.email.toLowerCase());
+        if (!legacy || legacy.portfolios.length === 0) return null;
+
+        const created: PortfolioRecord[] = [];
+        for (const p of legacy.portfolios) {
+          const res = await api.createPortfolio(p.name, p.profile);
+          created.push(res.portfolio);
+        }
+        const legacyActiveIdx = legacy.portfolios.findIndex((p) => p.id === legacy.activePortfolioId);
+        const match = legacyActiveIdx >= 0 ? created[legacyActiveIdx] : created[created.length - 1];
+        if (match) {
+          await api.setActive(match.id);
+          user = { ...user, activePortfolioId: match.id };
+        }
+        window.localStorage.setItem(LEGACY_IMPORT_FLAG, 'true');
+        showToast(`Imported ${created.length} portfolio${created.length > 1 ? 's' : ''} from this browser into your account.`);
+        return created;
+      } catch (err) {
+        console.error('Legacy portfolio import failed', err);
+        return null;
+      }
+    },
+    [showToast]
+  );
+
+  // Hydrate: privacy/theme, then server session, then anonymous fallbacks
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // 1. Privacy setting
     const savedPrivacy = window.localStorage.getItem('rizqflow_hide_amounts');
     if (savedPrivacy === 'true') {
       setHideAmounts(true);
     }
 
-    // 2. Theme setting
     const savedTheme = window.localStorage.getItem('rizqflow_theme') as 'dark' | 'light' | null;
     if (savedTheme) {
       setTheme(savedTheme);
@@ -113,49 +166,60 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // 3. User Session
-    const session = getActiveSession();
-    if (session) {
-      const users = getRegisteredUsers();
-      const user = users.find((u) => u.id === session.userId);
-      if (user) {
-        setCurrentUser(user);
-        setUserPortfolios(user.portfolios);
-        setActivePortfolioId(user.activePortfolioId);
+    (async () => {
+      let signedIn = false;
+      try {
+        const { user, portfolios } = await api.me();
+        let finalPortfolios = portfolios;
+        if (portfolios.length === 0) {
+          const imported = await importLegacyPortfolios(user);
+          if (imported) finalPortfolios = imported;
+        }
+        applyServerState(user, finalPortfolios);
+        signedIn = true;
+      } catch {
+        signedIn = false; // no server session — anonymous mode below
+      }
 
-        // Find active portfolio profile
-        const activePort = user.portfolios.find((p) => p.id === user.activePortfolioId);
-        if (activePort) {
-          setProfileState(migrateStaleSeedValues(activePort.profile));
+      if (!signedIn) {
+        const hash = window.location.hash;
+        const decodedFromHash = decodeProfileFromHash(hash, defaultProfile);
+        if (decodedFromHash) {
+          setProfileState(migrateStaleSeedValues(decodedFromHash));
+          showToast('Loaded shared plan from URL!');
+        } else {
+          const stored = loadProfileFromStorage(defaultProfile);
+          setProfileState(migrateStaleSeedValues(stored));
         }
       }
-    }
 
-    // 4. URL Hash check (overrides default if present)
-    const hash = window.location.hash;
-    const decodedFromHash = decodeProfileFromHash(hash, defaultProfile);
-    if (decodedFromHash) {
-      setProfileState(migrateStaleSeedValues(decodedFromHash));
-      showToast('Loaded shared plan from URL!');
-    } else if (!session) {
-      const stored = loadProfileFromStorage(defaultProfile);
-      setProfileState(migrateStaleSeedValues(stored));
-    }
+      setHasLoaded(true);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    setHasLoaded(true);
-  }, [defaultProfile, showToast]);
-
-  // Persist profile to localStorage & active user portfolio whenever it changes
+  // Persist: anonymous mirror locally; signed-in profile syncs to the server
   useEffect(() => {
-    if (hasLoaded) {
-      saveProfileToStorage(profile);
-      if (currentUser && activePortfolioId) {
-        saveProfileToActivePortfolio(currentUser.id, activePortfolioId, profile);
-      }
-    }
-  }, [profile, hasLoaded, currentUser, activePortfolioId]);
+    if (!hasLoaded) return;
+    saveProfileToStorage(profile);
+    if (!currentUser || !activePortfolioId) return;
+    const json = JSON.stringify(profile);
+    if (json === lastSyncedRef.current) return;
+    const targetId = activePortfolioId;
+    const timer = setTimeout(() => {
+      api
+        .updatePortfolio(targetId, { profile })
+        .then((res) => {
+          lastSyncedRef.current = JSON.stringify(res.portfolio.profile);
+          setUserPortfolios((prev) => prev.map((p) => (p.id === res.portfolio.id ? res.portfolio : p)));
+        })
+        .catch(() => {
+          showToast('Could not sync your portfolio to the server — it will retry on the next change.');
+        });
+    }, 900);
+    return () => clearTimeout(timer);
+  }, [profile, hasLoaded, currentUser, activePortfolioId, showToast]);
 
-  // Update profile partially
   const updateProfile = useCallback((updated: Partial<UserProfile>) => {
     setProfileState((prev) => ({
       ...prev,
@@ -163,7 +227,6 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
-  // Reset to preset
   const resetToPreset = useCallback(
     (presetId: string) => {
       let found: any = null;
@@ -179,15 +242,24 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
       if (found) {
         const nextProfile = (found.profile || found) as UserProfile;
-        setProfileState(nextProfile);
-        saveProfileToStorage(nextProfile);
-        showToast(`Reset to preset: ${found.name || presetId}`);
+        if (currentUser) {
+          // Signed in: a preset must NEVER silently overwrite a saved
+          // portfolio (the persist effect used to do exactly that). Save
+          // the preset as a NEW portfolio instead.
+          void createNewPortfolioRef.current(found.name || 'Preset Portfolio', nextProfile).then((res) => {
+            if (res.success) showToast(`Preset saved as a new portfolio: ${found.name || presetId}`);
+          });
+        } else {
+          setProfileState(nextProfile);
+          saveProfileToStorage(nextProfile);
+          showToast(`Reset to preset: ${found.name || presetId}`);
+        }
       }
     },
-    [showToast]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentUser, showToast]
   );
 
-  // Toggle Hide Amounts
   const toggleHideAmounts = useCallback(() => {
     setHideAmounts((prev) => {
       const next = !prev;
@@ -198,7 +270,6 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // Toggle Theme
   const toggleTheme = useCallback(() => {
     setTheme((prev) => {
       const next = prev === 'dark' ? 'light' : 'dark';
@@ -214,7 +285,6 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // Share plan URL
   const sharePlan = useCallback(async (): Promise<string> => {
     const hash = encodeProfileToHash(profile);
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -232,7 +302,6 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     return fullUrl;
   }, [profile, showToast]);
 
-  // Masked formatting helpers
   const formatPkrMasked = useCallback(
     (n: number, options?: FormatPkrOptions) => {
       const formatted = formatPkr(n, options);
@@ -249,84 +318,147 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     [hideAmounts]
   );
 
-  // Auth Actions
-  const signInUser = useCallback(
-    (email: string, pass: string) => {
-      const res = signIn(email, pass);
-      const user = res.user;
-      if (res.success && user) {
-        setCurrentUser(user);
-        setUserPortfolios(user.portfolios);
-        setActivePortfolioId(user.activePortfolioId);
+  // ---- Server account actions ----
 
-        const activePort = user.portfolios.find((p) => p.id === user.activePortfolioId);
-        if (activePort) {
-          setProfileState(migrateStaleSeedValues(activePort.profile));
+  const signInUser = useCallback(
+    async (email: string, pass: string): Promise<AuthActionResult> => {
+      try {
+        const { user, portfolios } = await api.signIn(email, pass);
+        let finalPortfolios = portfolios;
+        let finalUser = user;
+        if (portfolios.length === 0) {
+          const imported = await importLegacyPortfolios(user);
+          if (imported) {
+            finalPortfolios = imported;
+            const activeLegacy = imported[imported.length - 1];
+            if (activeLegacy) finalUser = { ...user, activePortfolioId: activeLegacy.id };
+          }
         }
+        applyServerState(finalUser, finalPortfolios);
+        return { success: true, user: finalUser, portfolios: finalPortfolios };
+      } catch (err: any) {
+        return { success: false, error: err?.message || 'Failed to sign in.' };
       }
-      return res;
     },
-    []
+    [applyServerState, importLegacyPortfolios]
   );
 
   const signUpUser = useCallback(
-    (name: string, email: string, pass: string, initialProfile?: UserProfile, portfolioName?: string) => {
-      const res = signUp(name, email, pass, initialProfile || profile, portfolioName);
-      const user = res.user;
-      if (res.success && user) {
-        setCurrentUser(user);
-        setUserPortfolios(user.portfolios);
-        setActivePortfolioId(user.activePortfolioId);
-
-        const activePort = user.portfolios.find((p) => p.id === user.activePortfolioId);
-        if (activePort) {
-          setProfileState(migrateStaleSeedValues(activePort.profile));
+    async (name: string, email: string, pass: string): Promise<AuthActionResult> => {
+      try {
+        const { user, portfolios } = await api.signUp(name, email, pass);
+        let finalPortfolios = portfolios;
+        let finalUser = user;
+        if (portfolios.length === 0) {
+          const imported = await importLegacyPortfolios(user);
+          if (imported) {
+            finalPortfolios = imported;
+            const last = imported[imported.length - 1];
+            if (last) finalUser = { ...user, activePortfolioId: last.id };
+          }
         }
+        applyServerState(finalUser, finalPortfolios);
+        return { success: true, user: finalUser, portfolios: finalPortfolios };
+      } catch (err: any) {
+        return { success: false, error: err?.message || 'Failed to create account.' };
       }
-      return res;
     },
-    [profile]
+    [applyServerState, importLegacyPortfolios]
   );
 
   const signOutUser = useCallback(() => {
-    signOut();
+    void api.signOut().catch(() => {});
     setCurrentUser(null);
     setUserPortfolios([]);
     setActivePortfolioId('');
+    lastSyncedRef.current = '';
+    setProfileState(defaultProfile);
     showToast('Signed out successfully.');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showToast]);
 
   const switchActivePortfolio = useCallback(
-    (portfolioId: string) => {
-      if (!currentUser) return;
-      const targetProfile = switchUserPortfolio(currentUser.id, portfolioId);
-      if (targetProfile) {
-        setActivePortfolioId(portfolioId);
-        setProfileState(targetProfile);
-        // Refresh portfolios list
-        const users = getRegisteredUsers();
-        const user = users.find((u) => u.id === currentUser.id);
-        if (user) {
-          setUserPortfolios(user.portfolios);
-        }
+    async (portfolioId: string) => {
+      const target = userPortfolios.find((p) => p.id === portfolioId);
+      if (!target || !currentUser) return;
+      try {
+        await api.setActive(portfolioId);
+      } catch {
+        showToast('Could not switch portfolio on the server.');
+        return;
       }
+      setActivePortfolioId(portfolioId);
+      setCurrentUser({ ...currentUser, activePortfolioId: portfolioId });
+      const healed = migrateStaleSeedValues(target.profile);
+      lastSyncedRef.current = JSON.stringify(healed);
+      setProfileState(healed);
     },
-    [currentUser]
+    [currentUser, userPortfolios, showToast]
   );
 
   const createNewPortfolio = useCallback(
-    (name: string, baseProfile?: UserProfile) => {
+    async (name: string, baseProfile?: UserProfile): Promise<{ success: boolean; portfolio?: PortfolioRecord }> => {
       if (!currentUser) return { success: false };
-      const res = createPortfolioForUser(currentUser.id, name, baseProfile || profile);
-      if (res.success && res.user && res.portfolio) {
-        setCurrentUser(res.user);
-        setUserPortfolios(res.user.portfolios);
+      try {
+        const res = await api.createPortfolio(name, baseProfile || profile);
+        setUserPortfolios((prev) => [...prev, res.portfolio]);
         setActivePortfolioId(res.portfolio.id);
+        setCurrentUser({ ...currentUser, activePortfolioId: res.portfolio.id });
+        lastSyncedRef.current = JSON.stringify(res.portfolio.profile);
         setProfileState(res.portfolio.profile);
+        return { success: true, portfolio: res.portfolio };
+      } catch {
+        showToast('Could not create the portfolio on the server.');
+        return { success: false };
       }
-      return res;
     },
-    [currentUser, profile]
+    [currentUser, profile, showToast]
+  );
+  const createNewPortfolioRef = useRef(createNewPortfolio);
+  createNewPortfolioRef.current = createNewPortfolio;
+
+  const deleteUserPortfolio = useCallback(
+    async (portfolioId: string): Promise<{ success: boolean }> => {
+      if (!currentUser) return { success: false };
+      try {
+        const res = await api.deletePortfolio(portfolioId);
+        setUserPortfolios(res.portfolios);
+        const nextActiveId = res.activePortfolioId || '';
+        setActivePortfolioId(nextActiveId);
+        setCurrentUser({ ...currentUser, activePortfolioId: res.activePortfolioId });
+        if (portfolioId === activePortfolioId) {
+          const next = res.portfolios.find((p) => p.id === nextActiveId);
+          if (next) {
+            lastSyncedRef.current = JSON.stringify(next.profile);
+            setProfileState(next.profile);
+          } else {
+            lastSyncedRef.current = '';
+            setProfileState(defaultProfile);
+          }
+        }
+        return { success: true };
+      } catch {
+        showToast('Could not delete the portfolio.');
+        return { success: false };
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentUser, activePortfolioId, showToast]
+  );
+
+  const renameUserPortfolio = useCallback(
+    async (portfolioId: string, name: string): Promise<{ success: boolean }> => {
+      if (!currentUser) return { success: false };
+      try {
+        const res = await api.updatePortfolio(portfolioId, { name });
+        setUserPortfolios((prev) => prev.map((p) => (p.id === res.portfolio.id ? res.portfolio : p)));
+        return { success: true };
+      } catch {
+        showToast('Could not rename the portfolio.');
+        return { success: false };
+      }
+    },
+    [currentUser, showToast]
   );
 
   const openAuthModal = useCallback((mode: 'signin' | 'signup' | 'portfolios' = 'signin') => {
@@ -363,6 +495,8 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         signOutUser,
         switchActivePortfolio,
         createNewPortfolio,
+        deleteUserPortfolio,
+        renameUserPortfolio,
         openAuthModal,
         openOnboardingModal,
       }}
@@ -378,12 +512,16 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         onRecalibrate={() => openOnboardingModal('update')}
       />
 
-      {/* Global Onboarding Setup Wizard Modal */}
-      <OnboardingWizardModal
-        isOpen={onboardingModalOpen}
-        mode={onboardingMode}
-        onClose={() => setOnboardingModalOpen(false)}
-      />
+      {/* Global Onboarding Setup Wizard Modal — mounted only while open so
+          its draft form re-initializes from the current profile every time
+          (a permanently mounted wizard kept stale first-mount values). */}
+      {onboardingModalOpen && (
+        <OnboardingWizardModal
+          isOpen={onboardingModalOpen}
+          mode={onboardingMode}
+          onClose={() => setOnboardingModalOpen(false)}
+        />
+      )}
 
       {/* Floating Toast notification */}
       {toast && (
