@@ -10,7 +10,7 @@ interface VerdictBannerProps {
 
 export function VerdictBanner({ decision }: VerdictBannerProps) {
   return (
-    <div className="rounded-2xl bg-gradient-to-r from-emerald-500/15 via-[#11131A] to-amber-500/10 border border-emerald-500/30 p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+    <div className="rounded-2xl bg-gradient-to-r from-emerald-500/15 via-[#0D0B08] to-amber-500/10 border border-emerald-500/30 p-6 sm:p-8 shadow-2xl relative overflow-hidden">
       <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">

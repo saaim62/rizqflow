@@ -23,8 +23,8 @@ export function CarPodium3D({ cheapest, runnerUp }: CarPodium3DProps) {
 
   return (
     <SpatialCard3D
-      spotlightColor="rgba(16, 185, 129, 0.18)"
-      className="p-6 sm:p-8 bg-gradient-to-br from-[#0E121B] via-[#0D0F17] to-[#080B10] border border-emerald-500/30"
+      spotlightColor="rgba(212, 175, 55, 0.18)"
+      className="p-6 sm:p-8 bg-gradient-to-br from-[#0E121B] via-[#0B0906] to-[#080B10] border border-emerald-500/30"
     >
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="space-y-4">

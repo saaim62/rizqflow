@@ -1213,8 +1213,8 @@ describe('QA Edge Cases: Market Rates Live Overrides & Defaults Matrix', () => {
   it('verifies exact Nov 21 2026 Pakistan economic defaults benchmark rates', () => {
     const defaults = getDefaultMarketRates();
     expect(defaults.petrolPricePerLitre).toBe(322);
-    expect(defaults.goldPerTolaPkr).toBe(385000);
-    expect(defaults.usdToPkr).toBe(276.28);
+    expect(defaults.goldPerTolaPkr).toBe(379836); // APSGJA 21 Nov 2026 — swarm test had locked the stale 385,000 hero figure
+    expect(defaults.usdToPkr).toBe(276.51); // SBP interbank close 20 Nov 2026
     expect(defaults.gridRatePerKwh).toBe(55);
     expect(defaults.kse100Index).toBe(177382);
     expect(defaults.solarNetMeteringLegacyRate).toBe(26);

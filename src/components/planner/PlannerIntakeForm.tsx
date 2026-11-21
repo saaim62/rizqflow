@@ -83,7 +83,7 @@ export function PlannerIntakeForm({
   return (
     <div className="space-y-5">
       {/* 1. Presets Selector Bar */}
-      <div className="rounded-2xl bg-[#11131A] border border-white/[0.08] p-4 shadow-lg space-y-3">
+      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-4 shadow-lg space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
@@ -126,7 +126,7 @@ export function PlannerIntakeForm({
       </div>
 
       {/* 2. Global Modifiers Bar */}
-      <div className="rounded-2xl bg-[#11131A] border border-white/[0.08] p-4 shadow-lg flex flex-wrap items-center gap-2">
+      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-4 shadow-lg flex flex-wrap items-center gap-2">
         {/* Shariah Only */}
         <button
           onClick={() => updateProfileField('shariahOnly', !profile.shariahOnly)}
@@ -186,7 +186,7 @@ export function PlannerIntakeForm({
       </div>
 
       {/* 3. Income, Raises & Monthly SIP */}
-      <div className="rounded-2xl bg-[#11131A] border border-white/[0.08] overflow-hidden shadow-lg">
+      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] overflow-hidden shadow-lg">
         <button
           onClick={() => toggleSection('income')}
           className="w-full flex items-center justify-between p-4 bg-black/30 hover:bg-black/40 transition-colors text-left"
@@ -280,7 +280,7 @@ export function PlannerIntakeForm({
       </div>
 
       {/* 4. Multi-Asset Monthly Split */}
-      <div className="rounded-2xl bg-[#11131A] border border-white/[0.08] overflow-hidden shadow-lg">
+      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] overflow-hidden shadow-lg">
         <button
           onClick={() => toggleSection('assets')}
           className="w-full flex items-center justify-between p-4 bg-black/30 hover:bg-black/40 transition-colors text-left"
@@ -310,7 +310,7 @@ export function PlannerIntakeForm({
       </div>
 
       {/* 5. Dated Life Goals CRUD */}
-      <div className="rounded-2xl bg-[#11131A] border border-white/[0.08] overflow-hidden shadow-lg">
+      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] overflow-hidden shadow-lg">
         <button
           onClick={() => toggleSection('goals')}
           className="w-full flex items-center justify-between p-4 bg-black/30 hover:bg-black/40 transition-colors text-left"
@@ -342,7 +342,7 @@ export function PlannerIntakeForm({
       </div>
 
       {/* 6. Monthly Living Expenses */}
-      <div className="rounded-2xl bg-[#11131A] border border-white/[0.08] overflow-hidden shadow-lg">
+      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] overflow-hidden shadow-lg">
         <button
           onClick={() => toggleSection('expenses')}
           className="w-full flex items-center justify-between p-4 bg-black/30 hover:bg-black/40 transition-colors text-left"
@@ -424,7 +424,7 @@ export function PlannerIntakeForm({
       </div>
 
       {/* 7. Age & Household Profile */}
-      <div className="rounded-2xl bg-[#11131A] border border-white/[0.08] overflow-hidden shadow-lg">
+      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] overflow-hidden shadow-lg">
         <button
           onClick={() => toggleSection('profile')}
           className="w-full flex items-center justify-between p-4 bg-black/30 hover:bg-black/40 transition-colors text-left"

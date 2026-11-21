@@ -28,7 +28,7 @@ export function PayoutCalendarChart({ monthlyPayoutCalendar }: PayoutCalendarCha
   }, []);
 
   return (
-    <div className="rounded-2xl bg-[#11131A] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
+    <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-white/[0.06]">
         <div>
           <div className="flex items-center gap-2">
@@ -61,21 +61,21 @@ export function PayoutCalendarChart({ monthlyPayoutCalendar }: PayoutCalendarCha
             <BarChart data={monthlyPayoutCalendar} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <XAxis
                 dataKey="month"
-                stroke="#52525B"
-                tick={{ fill: '#A1A1AA', fontSize: 11 }}
+                stroke="#5C574D"
+                tick={{ fill: '#A8A294', fontSize: 11 }}
                 tickLine={false}
                 axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
               />
               <YAxis
-                stroke="#52525B"
-                tick={{ fill: '#A1A1AA', fontSize: 11 }}
+                stroke="#5C574D"
+                tick={{ fill: '#A8A294', fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(val) => formatCompactPkrMasked(val)}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#11131A',
+                  backgroundColor: '#0D0B08',
                   borderColor: 'rgba(255, 255, 255, 0.15)',
                   borderRadius: '0.75rem',
                   boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
@@ -90,7 +90,7 @@ export function PayoutCalendarChart({ monthlyPayoutCalendar }: PayoutCalendarCha
                   return (
                     <Cell
                       key={`cell-${index}`}
-                      fill={isHigh ? '#10B981' : '#27272A'}
+                      fill={isHigh ? '#D4AF37' : '#27272A'}
                       opacity={isHigh ? 0.9 : 0.3}
                     />
                   );

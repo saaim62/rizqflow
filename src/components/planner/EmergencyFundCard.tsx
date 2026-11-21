@@ -25,8 +25,8 @@ export function EmergencyFundCard({ plan, profile }: EmergencyFundCardProps) {
   return (
     <div className={`rounded-2xl border p-5 sm:p-6 transition-all shadow-md ${
       isFunded
-        ? 'bg-[#11131A] border-emerald-500/30'
-        : 'bg-[#11131A] border-amber-500/30'
+        ? 'bg-[#0D0B08] border-emerald-500/30'
+        : 'bg-[#0D0B08] border-amber-500/30'
     }`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">

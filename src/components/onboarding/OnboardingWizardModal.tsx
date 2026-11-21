@@ -177,7 +177,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-3xl my-8 rounded-2xl bg-[#0F1118] border border-white/10 shadow-2xl shadow-emerald-500/10 flex flex-col overflow-hidden text-zinc-100">
+      <div className="relative w-full max-w-3xl my-8 rounded-2xl bg-[#0A0806] border border-white/10 shadow-2xl shadow-emerald-500/10 flex flex-col overflow-hidden text-zinc-100">
         
         {/* Header Strip */}
         <div className="p-6 border-b border-white/[0.08] bg-gradient-to-r from-emerald-500/10 via-transparent to-amber-500/10 flex items-center justify-between">
@@ -701,7 +701,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
         </div>
 
         {/* Footer Navigation Buttons */}
-        <div className="p-6 border-t border-white/[0.08] bg-[#0A0C12] flex items-center justify-between">
+        <div className="p-6 border-t border-white/[0.08] bg-[#080706] flex items-center justify-between">
           {step > 1 ? (
             <button
               onClick={() => setStep(step - 1)}

@@ -95,7 +95,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-md my-8 rounded-2xl bg-[#0F1118] border border-white/10 shadow-2xl shadow-emerald-500/10 flex flex-col overflow-hidden text-zinc-100">
+      <div className="relative w-full max-w-md my-8 rounded-2xl bg-[#0A0806] border border-white/10 shadow-2xl shadow-emerald-500/10 flex flex-col overflow-hidden text-zinc-100">
         
         {/* Header */}
         <div className="p-6 border-b border-white/[0.08] bg-gradient-to-r from-emerald-500/10 to-amber-500/10 flex items-center justify-between">

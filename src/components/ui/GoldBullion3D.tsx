@@ -63,7 +63,7 @@ export function GoldBullion3D({
               #D97706 18%, 
               #FBBF24 40%, 
               #FFFBEB 50%, 
-              #F59E0B 62%, 
+              #D4AF37 62%, 
               #B45309 85%, 
               #78350F 100%)`,
           }}

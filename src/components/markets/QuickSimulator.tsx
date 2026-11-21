@@ -35,7 +35,7 @@ export function QuickSimulator() {
   const taxPenalty = Math.round((nonFilerTax - filerTax) / 12);
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-[#11131A] via-[#11131A] to-[#0D1017] border border-white/[0.08] p-6 sm:p-8 shadow-xl">
+    <div className="rounded-2xl bg-gradient-to-br from-[#0D0B08] via-[#0D0B08] to-[#0D1017] border border-white/[0.08] p-6 sm:p-8 shadow-xl">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-white/[0.08]">
         <div>
           <div className="flex items-center gap-2">

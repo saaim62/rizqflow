@@ -3,12 +3,12 @@ import { MarketRatesConfig, UserProfile } from '@/types';
 const STORAGE_KEY = 'rizqflow_custom_market_rates';
 
 /**
- * Live Pakistan Economic Defaults as of November 21, 2026.
+ * Pakistan economic defaults — seeded reference values as of November 21, 2026 (see DATA_AS_OF in src/data/marketData.ts).
  */
 export const DEFAULT_MARKET_RATES: MarketRatesConfig = {
   petrolPricePerLitre: 322,
-  goldPerTolaPkr: 385000,
-  usdToPkr: 276.28,
+  goldPerTolaPkr: 379836,
+  usdToPkr: 276.51,
   gridRatePerKwh: 55,
   kse100Index: 177382,
   solarNetMeteringLegacyRate: 26,

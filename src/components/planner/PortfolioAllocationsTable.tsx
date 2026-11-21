@@ -19,7 +19,7 @@ export function PortfolioAllocationsTable({
 
   if (!allocations || allocations.length === 0) {
     return (
-      <div className="rounded-2xl bg-[#11131A] border border-white/[0.08] p-6 text-center text-zinc-400 text-xs">
+      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-6 text-center text-zinc-400 text-xs">
         No portfolio allocations generated yet. Allocate capital above.
       </div>
     );
@@ -29,7 +29,7 @@ export function PortfolioAllocationsTable({
   const totalAnnualNet = allocations.reduce((sum, item) => sum + item.annualNetDivPkr, 0);
 
   return (
-    <div className="rounded-2xl bg-[#11131A] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
+    <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-white/[0.06]">
         <div>
           <div className="flex items-center gap-2">

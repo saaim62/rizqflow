@@ -562,8 +562,8 @@ describe('Phase 3: Live & Custom Market Rates Layer', () => {
   it('returns default Nov 21 2026 Pakistan economic defaults', () => {
     const rates = getDefaultMarketRates();
     expect(rates.petrolPricePerLitre).toBe(322);
-    expect(rates.goldPerTolaPkr).toBe(385000);
-    expect(rates.usdToPkr).toBe(276.28);
+    expect(rates.goldPerTolaPkr).toBe(379836); // APSGJA 21 Nov 2026 — swarm test had locked the stale 385,000 hero figure
+    expect(rates.usdToPkr).toBe(276.51); // SBP interbank close 20 Nov 2026
     expect(rates.gridRatePerKwh).toBe(55);
     expect(rates.kse100Index).toBe(177382);
     expect(rates.solarNetMeteringLegacyRate).toBe(26);

@@ -116,9 +116,9 @@ export function BeginnerGuideProvider({ children }: { children: React.ReactNode 
           />
 
           {/* Drawer Container */}
-          <div className="relative w-full max-w-2xl bg-[#0F1118] border-l border-white/10 shadow-2xl flex flex-col h-full z-10 animate-in slide-in-from-right duration-300">
+          <div className="relative w-full max-w-2xl bg-[#0A0806] border-l border-white/10 shadow-2xl flex flex-col h-full z-10 animate-in slide-in-from-right duration-300">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 bg-[#11131A]">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 bg-[#0D0B08]">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
                   <BookOpen className="w-5 h-5" />
@@ -143,7 +143,7 @@ export function BeginnerGuideProvider({ children }: { children: React.ReactNode 
             </div>
 
             {/* Quick Topic Chips */}
-            <div className="flex gap-2 p-3 px-6 overflow-x-auto border-b border-white/5 bg-[#090A0F]/80 no-scrollbar">
+            <div className="flex gap-2 p-3 px-6 overflow-x-auto border-b border-white/5 bg-[#070605]/80 no-scrollbar">
               {TOPICS.map((t) => {
                 const Icon = t.icon;
                 const isSelected = activeTopic === t.id;
@@ -280,7 +280,7 @@ export function BeginnerGuideProvider({ children }: { children: React.ReactNode 
 
                   <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-white/10">
                     <div className="relative">
-                      <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-blue-400 ring-4 ring-[#0F1118]" />
+                      <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-blue-400 ring-4 ring-[#0A0806]" />
                       <h4 className="text-sm font-semibold text-white">1. Board Announcement</h4>
                       <p className="text-xs text-zinc-400 mt-1">
                         The company announces results (e.g. "Rs 5/share interim dividend") and specifies the <strong>Book Closure</strong> dates (e.g. March 18 to March 25).
@@ -288,7 +288,7 @@ export function BeginnerGuideProvider({ children }: { children: React.ReactNode 
                     </div>
 
                     <div className="relative">
-                      <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-4 ring-[#0F1118]" />
+                      <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-4 ring-[#0A0806]" />
                       <h4 className="text-sm font-semibold text-white">2. Ex-Dividend Date (T+2 Settlement)</h4>
                       <p className="text-xs text-zinc-400 mt-1">
                         Because PSX trades settle in 2 business days (T+2), the stock begins trading "Ex-Dividend" usually 2 working days before book closure. You must purchase <strong>BEFORE</strong> the Ex-Date to have your name in the CDC ledger.
@@ -296,7 +296,7 @@ export function BeginnerGuideProvider({ children }: { children: React.ReactNode 
                     </div>
 
                     <div className="relative">
-                      <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-amber-400 ring-4 ring-[#0F1118]" />
+                      <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-amber-400 ring-4 ring-[#0A0806]" />
                       <h4 className="text-sm font-semibold text-white">3. Price Adjustment on Ex-Date</h4>
                       <p className="text-xs text-zinc-400 mt-1">
                         On the morning of the Ex-Date, the PSX automatically adjusts the opening stock price downward by the exact dividend amount. There is no "free money" glitch — dividend investing is about long-term ownership and compounding cash generation.
@@ -304,7 +304,7 @@ export function BeginnerGuideProvider({ children }: { children: React.ReactNode 
                     </div>
 
                     <div className="relative">
-                      <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-purple-400 ring-4 ring-[#0F1118]" />
+                      <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-purple-400 ring-4 ring-[#0A0806]" />
                       <h4 className="text-sm font-semibold text-white">4. Cash Payout (Warrant / Direct Credit)</h4>
                       <p className="text-xs text-zinc-400 mt-1">
                         Within 10 to 15 working days following book closure, funds are credited directly to your registered Pakistani bank account via 1-Link CDC e-Dividend.
@@ -436,7 +436,7 @@ export function BeginnerGuideProvider({ children }: { children: React.ReactNode 
             </div>
 
             {/* Footer with Action */}
-            <div className="p-4 px-6 border-t border-white/10 bg-[#11131A] flex items-center justify-between text-xs text-zinc-400">
+            <div className="p-4 px-6 border-t border-white/10 bg-[#0D0B08] flex items-center justify-between text-xs text-zinc-400">
               <span className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 Seeded PSX data (as of 20 Nov 2026) & simulated models

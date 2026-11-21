@@ -124,7 +124,7 @@ function MarketsTerminal() {
         </div>
 
         {/* Metal Detail Box */}
-        <div className="rounded-2xl bg-[#11131A] border border-white/[0.08] p-5 sm:p-7 shadow-xl">
+        <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-5 sm:p-7 shadow-xl">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left 4 cols: Key Stats */}
             <div className="lg:col-span-4 space-y-5 flex flex-col justify-between">
@@ -191,37 +191,37 @@ function MarketsTerminal() {
                       <linearGradient id="metalChartGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop
                           offset="5%"
-                          stopColor={activeMetalId === 'gold-24k' ? '#F59E0B' : '#E2E8F0'}
+                          stopColor={activeMetalId === 'gold-24k' ? '#D4AF37' : '#E8E3D8'}
                           stopOpacity={0.35}
                         />
                         <stop
                           offset="95%"
-                          stopColor={activeMetalId === 'gold-24k' ? '#F59E0B' : '#E2E8F0'}
+                          stopColor={activeMetalId === 'gold-24k' ? '#D4AF37' : '#E8E3D8'}
                           stopOpacity={0.0}
                         />
                       </linearGradient>
                     </defs>
                     <XAxis
                       dataKey="displayDate"
-                      stroke="#52525B"
-                      tick={{ fill: '#A1A1AA', fontSize: 11 }}
+                      stroke="#5C574D"
+                      tick={{ fill: '#A8A294', fontSize: 11 }}
                       tickLine={false}
                       axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
                     />
                     <YAxis
                       domain={yDomain}
-                      stroke="#52525B"
-                      tick={{ fill: '#A1A1AA', fontSize: 11 }}
+                      stroke="#5C574D"
+                      tick={{ fill: '#A8A294', fontSize: 11 }}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={(val) => `Rs ${(val / 1000).toFixed(0)}k`}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: '#11131A',
+                        backgroundColor: '#0D0B08',
                         borderColor:
                           activeMetalId === 'gold-24k'
-                            ? 'rgba(245, 158, 11, 0.4)'
+                            ? 'rgba(212, 175, 55, 0.4)'
                             : 'rgba(226, 232, 240, 0.4)',
                         borderRadius: '0.75rem',
                         boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
@@ -233,7 +233,7 @@ function MarketsTerminal() {
                     <Area
                       type="monotone"
                       dataKey="price"
-                      stroke={activeMetalId === 'gold-24k' ? '#F59E0B' : '#CBD5E1'}
+                      stroke={activeMetalId === 'gold-24k' ? '#D4AF37' : '#CBD5E1'}
                       strokeWidth={2.5}
                       fillOpacity={1}
                       fill="url(#metalChartGrad)"

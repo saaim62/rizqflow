@@ -113,3 +113,27 @@ New entries are added in the same change that fixes the error.
 - **Fix:** Added `normalizeAssetSplits` engine function with 1-click "Auto-Balance 100%"
   in `MultiAssetSplitter.tsx`, covered by comprehensive QA boundary tests.
 - **Gate:** Warden Gate 4 & 5 (Contract lock & honesty in modelling).
+
+---
+
+## 2026-11-21 — Black marble + gold re-skin (owner request) + swarm regressions
+
+### 10. Swarm overhaul reintroduced stale market defaults
+- **Symptom:** the 3D overhaul commit (e6c2047) added `src/lib/marketRates.ts`
+  with gold Rs 385,000 and USD/PKR 276.28 — the same stale hero numbers the
+  fix round had already corrected — plus a 385,000 fallback in
+  MarketPulseBar.
+- **Fix:** defaults aligned to the verified snapshot (gold 379,836,
+  USD 276.51, petrol 322, KSE-100 177,382); comment no longer calls them
+  "Live".
+- **Gate:** Warden Gate 2. Lesson: any new data-bearing file must source
+  its numbers from `marketData.ts` constants, never retype them.
+
+### 11. Theme re-skin: emerald glass -> black marble + gold
+- **Change (owner-directed, not an error):** palette unified with the
+  DropRoute / portfolio (TITAN) identity — warm black marble surfaces,
+  metallic gold accents, 3D glass kept. Implemented by mapping the gold
+  scale onto Tailwind's emerald/amber scales in `globals.css` `@theme`
+  (blue -> champagne, purple -> bronze, zinc -> warm marble neutrals) and
+  sweeping hardcoded panel/chart hexes. Rose/red untouched: they encode
+  losses and danger in market data.

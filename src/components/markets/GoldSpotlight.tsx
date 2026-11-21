@@ -52,7 +52,7 @@ export function GoldSpotlight({ gold, silver }: GoldSpotlightProps) {
   const yDomain = [Math.floor(minPrice * 0.98), Math.ceil(maxPrice * 1.01)];
 
   return (
-    <div className="rounded-2xl bg-[#11131A] border border-white/[0.08] p-5 sm:p-7 shadow-xl">
+    <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-5 sm:p-7 shadow-xl">
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-white/[0.06]">
         <div className="flex items-center gap-3">
@@ -129,29 +129,29 @@ export function GoldSpotlight({ gold, silver }: GoldSpotlightProps) {
                 <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="goldGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.0} />
+                      <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#D4AF37" stopOpacity={0.0} />
                     </linearGradient>
                   </defs>
                   <XAxis
                     dataKey="displayDate"
-                    stroke="#52525B"
-                    tick={{ fill: '#71717A', fontSize: 11 }}
+                    stroke="#5C574D"
+                    tick={{ fill: '#7D7769', fontSize: 11 }}
                     tickLine={false}
                     axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
                   />
                   <YAxis
                     domain={yDomain}
-                    stroke="#52525B"
-                    tick={{ fill: '#71717A', fontSize: 11 }}
+                    stroke="#5C574D"
+                    tick={{ fill: '#7D7769', fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(val) => `Rs ${(val / 1000).toFixed(0)}k`}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#11131A',
-                      borderColor: 'rgba(245, 158, 11, 0.3)',
+                      backgroundColor: '#0D0B08',
+                      borderColor: 'rgba(212, 175, 55, 0.3)',
                       borderRadius: '0.75rem',
                       boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
                       padding: '8px 12px',
@@ -162,7 +162,7 @@ export function GoldSpotlight({ gold, silver }: GoldSpotlightProps) {
                   <Area
                     type="monotone"
                     dataKey="price"
-                    stroke="#F59E0B"
+                    stroke="#D4AF37"
                     strokeWidth={2.5}
                     fillOpacity={1}
                     fill="url(#goldGradient)"

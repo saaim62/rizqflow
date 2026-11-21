@@ -45,7 +45,7 @@ export function MarketPulseBar() {
   return (
     <>
       {/* Top Pulse Bar */}
-      <div className="w-full bg-[#07080D] border-b border-white/[0.06] text-[11px] font-mono text-zinc-400 py-1.5 px-4 sm:px-6">
+      <div className="w-full bg-[#060504] border-b border-white/[0.06] text-[11px] font-mono text-zinc-400 py-1.5 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
           <div className="flex items-center gap-4 sm:gap-6 shrink-0">
             {/* Live Indicator */}
@@ -58,7 +58,7 @@ export function MarketPulseBar() {
             <div className="flex items-center gap-1.5">
               <span className="text-zinc-500">24K GOLD:</span>
               <span className="font-bold text-amber-300">
-                {hideAmounts ? '•••••' : `Rs ${(profile.goldPerTolaPkr || 385000).toLocaleString('en-PK')}`}
+                {hideAmounts ? '•••••' : `Rs ${(profile.goldPerTolaPkr || 379836).toLocaleString('en-PK')}`}
               </span>
               <span className="text-rose-400 text-[10px]">▼ 5d</span>
             </div>
@@ -111,7 +111,7 @@ export function MarketPulseBar() {
       {/* Adjust Rates Modal */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md bg-[#0F1118] border border-white/10 rounded-2xl shadow-2xl p-6 space-y-5">
+          <div className="relative w-full max-w-md bg-[#0A0806] border border-white/10 rounded-2xl shadow-2xl p-6 space-y-5">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="w-4 h-4 text-amber-400" />

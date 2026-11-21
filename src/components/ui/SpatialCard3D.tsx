@@ -61,7 +61,7 @@ export function SpatialCard3D({
         transform: transformStyle,
         transition: 'transform 0.15s cubic-bezier(0.25, 1, 0.5, 1)',
       }}
-      className={`relative rounded-2xl bg-[#0D0F17] border border-white/[0.08] shadow-xl overflow-hidden will-change-transform ${className}`}
+      className={`relative rounded-2xl bg-[#0B0906] border border-white/[0.08] shadow-xl overflow-hidden will-change-transform ${className}`}
     >
       {/* Dynamic Specular Spotlight Layer */}
       <div

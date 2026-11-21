@@ -1,19 +1,93 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   BLACK MARBLE + GOLD — DropRoute / TITAN family theme (owner, 21 Nov 2026).
+   The app was authored on Tailwind's emerald/amber/zinc scales, so the gold
+   system is mapped onto those scales here: every emerald-* utility now
+   renders metallic gold, amber-* renders the same gold family, blue-* is
+   champagne, purple-* is bronze, and zinc-* is warm marble neutral.
+   Rose/red stay untouched — they carry loss/danger meaning in market data.
+   ========================================================================== */
+@theme {
+  --color-emerald-50: #FBF6E0;
+  --color-emerald-100: #F6EBC4;
+  --color-emerald-200: #EFDB9A;
+  --color-emerald-300: #E6CB6E;
+  --color-emerald-400: #DEC04C;
+  --color-emerald-500: #D4AF37;
+  --color-emerald-600: #B08D2A;
+  --color-emerald-700: #8A6D1F;
+  --color-emerald-800: #63501A;
+  --color-emerald-900: #3E3212;
+  --color-emerald-950: #241C09;
+
+  --color-teal-100: #F6EBC4;
+  --color-teal-200: #EFDB9A;
+  --color-teal-300: #E6CB6E;
+  --color-teal-400: #DEC04C;
+  --color-teal-500: #C9A227;
+  --color-teal-600: #A58521;
+  --color-teal-700: #7D6419;
+
+  --color-amber-100: #F6EBC4;
+  --color-amber-200: #EFDB9A;
+  --color-amber-300: #E6CB6E;
+  --color-amber-400: #DEC04C;
+  --color-amber-500: #D4AF37;
+  --color-amber-600: #B08D2A;
+  --color-amber-700: #8A6D1F;
+
+  --color-yellow-200: #F6EBC4;
+  --color-yellow-300: #EFDB9A;
+  --color-yellow-400: #E6CB6E;
+
+  --color-blue-200: #EDE6D2;
+  --color-blue-300: #DCD2BC;
+  --color-blue-400: #C4B797;
+  --color-blue-500: #A99B78;
+  --color-blue-600: #8A7D5E;
+
+  --color-purple-300: #DCBE8C;
+  --color-purple-400: #C79E5F;
+  --color-purple-500: #AB813F;
+  --color-purple-600: #8A652E;
+
+  --color-slate-200: #E8E3D8;
+  --color-slate-300: #D5CFBF;
+  --color-slate-400: #A8A294;
+  --color-slate-500: #7D7769;
+
+  --color-zinc-50: #FAF8F4;
+  --color-zinc-100: #F4F1EA;
+  --color-zinc-200: #E8E3D8;
+  --color-zinc-300: #D5CFBF;
+  --color-zinc-400: #A8A294;
+  --color-zinc-500: #7D7769;
+  --color-zinc-600: #5C574D;
+  --color-zinc-700: #454138;
+  --color-zinc-800: #2B2823;
+  --color-zinc-900: #1D1B17;
+  --color-zinc-950: #131110;
+}
+
+
 :root {
-  --background: #04050A;
-  --foreground: #F3F4F6;
-  --card: #0D0F17;
-  --card-border: rgba(255, 255, 255, 0.08);
-  --card-border-hover: rgba(255, 255, 255, 0.18);
-  --emerald-accent: #10B981;
+  --background: #050403;
+  --foreground: #F5F1E6;
+  --card: #0D0B08;
+  --card-border: rgba(212, 175, 55, 0.14);
+  --card-border-hover: rgba(212, 175, 55, 0.32);
+  --emerald-accent: #D4AF37;
   --rose-accent: #F43F5E;
-  --gold-accent: #F59E0B;
-  --sapphire-accent: #38BDF8;
+  --gold-accent: #D4AF37;
+  --sapphire-accent: #C4B797;
 }
 
 body {
   background-color: var(--background);
+  background-image:
+    radial-gradient(1100px 520px at 12% -5%, rgba(212, 175, 55, 0.075), transparent 60%),
+    radial-gradient(900px 480px at 88% 0%, rgba(212, 175, 55, 0.05), transparent 60%);
   color: var(--foreground);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   overflow-x: hidden;
@@ -36,23 +110,23 @@ body::before {
 
 /* Glass surface styling with subtle top specular rim */
 .glass-panel {
-  background: rgba(13, 15, 23, 0.75);
+  background: rgba(13, 11, 8, 0.78);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(212, 175, 55, 0.14);
+  box-shadow: inset 0 1px 0 rgba(212, 175, 55, 0.16), 0 20px 40px -15px rgba(0, 0, 0, 0.75);
 }
 
 .glass-card {
-  background: #0E1018;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  background: #0E0C09;
+  border: 1px solid rgba(212, 175, 55, 0.12);
+  box-shadow: inset 0 1px 0 rgba(212, 175, 55, 0.13), 0 10px 30px -18px rgba(0, 0, 0, 0.9);
   transition: all 0.25s ease-out;
 }
 
 .glass-card:hover {
-  border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 12px 30px -10px rgba(0, 0, 0, 0.8);
+  border-color: rgba(212, 175, 55, 0.3);
+  box-shadow: inset 0 1px 0 rgba(212, 175, 55, 0.22), 0 12px 30px -10px rgba(0, 0, 0, 0.85);
 }
 
 /* 3D transforms */
@@ -74,14 +148,14 @@ body::before {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #04050A;
+  background: #050403;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(212, 175, 55, 0.22);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(212, 175, 55, 0.4);
 }
 
 /* Tabular nums */
@@ -136,4 +210,17 @@ body::before {
   .animate-orb-1, .animate-orb-2 {
     animation: none !important;
   }
+}
+
+/* Metallic gold gradient text (headlines, brand marks) */
+.text-gold-gradient {
+  background-image: linear-gradient(105deg, #F6EBC4 0%, #D4AF37 42%, #8A6D1F 68%, #E9D189 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+::selection {
+  background: rgba(212, 175, 55, 0.35);
+  color: #FFF8E1;
 }

@@ -90,7 +90,7 @@ export function StockScreener({ stocks, initialTicker }: StockScreenerProps) {
   return (
     <div className="space-y-6">
       {/* Controls Bar */}
-      <div className="rounded-2xl bg-[#11131A] border border-white/[0.08] p-4 sm:p-6 space-y-4 shadow-lg">
+      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-4 sm:p-6 space-y-4 shadow-lg">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Search Box */}
           <div className="relative flex-1 max-w-md">
@@ -190,7 +190,7 @@ export function StockScreener({ stocks, initialTicker }: StockScreenerProps) {
       </div>
 
       {/* Stocks Table (Desktop) & Cards (Mobile) */}
-      <div className="rounded-2xl bg-[#11131A] border border-white/[0.08] overflow-hidden shadow-xl">
+      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] overflow-hidden shadow-xl">
         <div className="hidden lg:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>

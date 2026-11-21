@@ -21,7 +21,7 @@ interface DistanceCrossoverChartProps {
   currentDailyKm: number;
 }
 
-const LINE_COLORS = ['#10B981', '#F59E0B', '#3B82F6', '#EC4899', '#8B5CF6', '#14B8A6'];
+const LINE_COLORS = ['#D4AF37', '#D4AF37', '#3B82F6', '#EC4899', '#8B5CF6', '#C9A227'];
 
 export function DistanceCrossoverChart({
   decision,
@@ -38,7 +38,7 @@ export function DistanceCrossoverChart({
   const data = decision.crossoverSeries;
 
   return (
-    <div className="rounded-2xl bg-[#11131A] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
+    <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-white/[0.06]">
         <div>
           <div className="flex items-center gap-2">
@@ -69,22 +69,22 @@ export function DistanceCrossoverChart({
             <LineChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
               <XAxis
                 dataKey="kmPerDay"
-                stroke="#52525B"
-                tick={{ fill: '#A1A1AA', fontSize: 11 }}
+                stroke="#5C574D"
+                tick={{ fill: '#A8A294', fontSize: 11 }}
                 tickLine={false}
                 axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
                 tickFormatter={(val) => `${val}km`}
               />
               <YAxis
-                stroke="#52525B"
-                tick={{ fill: '#A1A1AA', fontSize: 11 }}
+                stroke="#5C574D"
+                tick={{ fill: '#A8A294', fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(val) => `Rs ${(val / 1000).toFixed(0)}k`}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#11131A',
+                  backgroundColor: '#0D0B08',
                   borderColor: 'rgba(255, 255, 255, 0.15)',
                   borderRadius: '0.75rem',
                   boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
@@ -107,12 +107,12 @@ export function DistanceCrossoverChart({
               {/* Vertical Reference Line for current daily commute */}
               <ReferenceLine
                 x={currentDailyKm}
-                stroke="#10B981"
+                stroke="#D4AF37"
                 strokeDasharray="3 3"
                 strokeWidth={2}
                 label={{
                   value: `You (${currentDailyKm} km)`,
-                  fill: '#10B981',
+                  fill: '#D4AF37',
                   fontSize: 10,
                   position: 'top',
                 }}

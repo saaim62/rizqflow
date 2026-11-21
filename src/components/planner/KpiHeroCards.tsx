@@ -31,7 +31,7 @@ export function KpiHeroCards({ plan, profile }: KpiHeroCardsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* Card 1: Monthly Net Dividend */}
-      <div className="rounded-2xl bg-[#11131A] border border-white/[0.08] p-5 shadow-lg relative overflow-hidden group hover:border-white/15 transition-all">
+      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-5 shadow-lg relative overflow-hidden group hover:border-white/15 transition-all">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
@@ -75,7 +75,7 @@ export function KpiHeroCards({ plan, profile }: KpiHeroCardsProps) {
       </div>
 
       {/* Card 2: Dividend Freedom Date */}
-      <div className="rounded-2xl bg-[#11131A] border border-white/[0.08] p-5 shadow-lg relative overflow-hidden group hover:border-white/15 transition-all">
+      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-5 shadow-lg relative overflow-hidden group hover:border-white/15 transition-all">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
@@ -116,7 +116,7 @@ export function KpiHeroCards({ plan, profile }: KpiHeroCardsProps) {
       </div>
 
       {/* Card 3: Blended Yield & Filer Tax Callout */}
-      <div className="rounded-2xl bg-[#11131A] border border-white/[0.08] p-5 shadow-lg relative overflow-hidden group hover:border-white/15 transition-all sm:col-span-2 lg:col-span-1">
+      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-5 shadow-lg relative overflow-hidden group hover:border-white/15 transition-all sm:col-span-2 lg:col-span-1">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
