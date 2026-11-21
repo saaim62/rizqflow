@@ -21,7 +21,12 @@ export const metadata: Metadata = {
   description:
     'Turn Pakistan Stock Exchange (PSX) blue-chip dividend machines, 24K Sarafa Gold streaks, and 5-Year Car TCO decisions into real-life financial freedom.',
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icon.png', type: 'image/png', sizes: '512x512' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    apple: '/apple-icon.png',
   },
 };
 

@@ -1,0 +1,16 @@
+# RizqFlow production service — runs beside DropRoute on the same host.
+# Joins DropRoute's network so its Caddy can reverse-proxy rizqflow:3000.
+services:
+  rizqflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rizqflow-web
+    networks:
+      - droproute_default
+    mem_limit: 512m
+    restart: unless-stopped
+
+networks:
+  droproute_default:
+    external: true
