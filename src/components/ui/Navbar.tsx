@@ -1,0 +1,215 @@
+'use client';
+
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { 
+  BookOpen, 
+  TrendingUp, 
+  Compass, 
+  BarChart3, 
+  Car, 
+  Eye, 
+  EyeOff, 
+  Share2, 
+  Sun, 
+  Moon, 
+  Menu, 
+  X, 
+  Sparkles,
+  RotateCcw
+} from 'lucide-react';
+import { useBeginnerGuide } from './BeginnerDrawer';
+import { useProfile } from '@/components/providers/ProfileProvider';
+
+export function Navbar() {
+  const pathname = usePathname();
+  const { openGuide } = useBeginnerGuide();
+  const { 
+    hideAmounts, 
+    toggleHideAmounts, 
+    theme, 
+    toggleTheme, 
+    sharePlan,
+    resetToPreset 
+  } = useProfile();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const navLinks = [
+    { href: '/', label: 'Overview', icon: Compass },
+    { href: '/markets', label: 'Gold & PSX Streaks', icon: TrendingUp },
+    { href: '/planner', label: 'Life Planner', icon: BarChart3 },
+    { href: '/cars', label: 'Car Decision Map', icon: Car, badge: '5-Yr TCO' },
+  ];
+
+  return (
+    <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#090A0F]/85 backdrop-blur-md">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        {/* Brand / Logo */}
+        <div className="flex items-center gap-4">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="relative flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/20 via-emerald-500/5 to-amber-500/20 border border-emerald-500/30 group-hover:border-emerald-400/60 transition-colors">
+              <span className="font-extrabold text-base bg-gradient-to-r from-emerald-400 to-amber-300 bg-clip-text text-transparent">
+                RF
+              </span>
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 animate-ping opacity-75" />
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400" />
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-lg tracking-tight text-white group-hover:text-emerald-300 transition-colors">
+                  Rizq<span className="text-emerald-400">Flow</span>
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              </div>
+              <span className="text-[10px] font-medium tracking-wider uppercase text-zinc-400 -mt-0.5">
+                PSX & SARAFA
+              </span>
+            </div>
+          </Link>
+
+          {/* Pakistan Market Live Badge */}
+          <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[11px] font-medium text-zinc-300">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>KSE-100 & Sarafa Live</span>
+          </div>
+        </div>
+
+        {/* Desktop Nav Links */}
+        <nav className="hidden lg:flex items-center gap-1">
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href;
+            const Icon = link.icon;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  isActive
+                    ? 'bg-white/10 text-white border border-white/15 shadow-sm font-semibold'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-emerald-400' : 'text-zinc-500'}`} />
+                <span>{link.label}</span>
+                {link.badge && (
+                  <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[9px] font-mono font-bold">
+                    {link.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Right Action Controls */}
+        <div className="flex items-center gap-2">
+          {/* Hide Amounts Privacy Toggle */}
+          <button
+            onClick={toggleHideAmounts}
+            className={`p-2 rounded-lg border text-xs font-semibold transition-all ${
+              hideAmounts
+                ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                : 'bg-white/5 text-zinc-400 border-white/5 hover:text-white hover:bg-white/10'
+            }`}
+            title={hideAmounts ? 'Show Financial Figures' : 'Hide Financial Figures (Privacy Mode)'}
+            aria-label="Toggle Amount Masking"
+          >
+            {hideAmounts ? <EyeOff className="w-4 h-4 text-amber-400" /> : <Eye className="w-4 h-4" />}
+          </button>
+
+          {/* Share Plan URL button */}
+          <button
+            onClick={() => sharePlan()}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/5 text-xs font-medium transition-all"
+            title="Copy Shareable URL Hash"
+          >
+            <Share2 className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden sm:inline">Share</span>
+          </button>
+
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white border border-white/5 transition-all"
+            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+            aria-label="Toggle Theme"
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4" />}
+          </button>
+
+          {/* Beginner Guide Drawer CTA */}
+          <button
+            onClick={() => openGuide()}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/25 text-xs font-semibold transition-all"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Guide</span>
+          </button>
+
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="lg:hidden p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5"
+            aria-label="Toggle navigation menu"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu Dropdown */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden border-t border-white/10 bg-[#0F1118] px-4 py-3 space-y-1">
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href;
+            const Icon = link.icon;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium ${
+                  isActive
+                    ? 'bg-white/10 text-white font-semibold'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Icon className="w-4 h-4 text-emerald-400" />
+                  <span>{link.label}</span>
+                </div>
+                {link.badge && (
+                  <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-mono">
+                    {link.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+          <div className="pt-2 border-t border-white/5 flex gap-2">
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                openGuide();
+              }}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-xs font-semibold"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Beginner Guide</span>
+            </button>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                sharePlan();
+              }}
+              className="px-3 py-2 rounded-lg bg-white/5 text-zinc-300 border border-white/10 text-xs font-semibold"
+            >
+              <Share2 className="w-3.5 h-3.5 text-emerald-400" />
+            </button>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}

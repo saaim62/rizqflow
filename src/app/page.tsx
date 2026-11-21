@@ -1,69 +1,184 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import React from 'react';
+import Link from 'next/link';
+import { METAL_ASSETS, PSX_STOCKS } from '@/data/marketData';
+import { GoldSpotlight } from '@/components/markets/GoldSpotlight';
+import { PsxMoversStrip } from '@/components/markets/PsxMoversStrip';
+import { QuickSimulator } from '@/components/markets/QuickSimulator';
+import { useBeginnerGuide } from '@/components/ui/BeginnerDrawer';
+import { useProfile } from '@/components/providers/ProfileProvider';
+import { 
+  TrendingUp, 
+  Sparkles, 
+  ShieldCheck, 
+  ArrowRight, 
+  BookOpen, 
+  Car, 
+  Coins, 
+  Percent, 
+  HelpCircle,
+  Landmark,
+  Zap,
+  Fuel
+} from 'lucide-react';
+
+export default function HomePage() {
+  const { openGuide } = useBeginnerGuide();
+  const { formatPkrMasked } = useProfile();
+
+  const gold = METAL_ASSETS.find((m) => m.id === 'gold-24k') || METAL_ASSETS[0];
+  const silver = METAL_ASSETS.find((m) => m.id === 'silver-24k') || METAL_ASSETS[1];
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="min-h-screen space-y-10 pb-16">
+      {/* 1. Executive Hero Header */}
+      <section className="relative overflow-hidden border-b border-white/[0.06] bg-gradient-to-b from-[#0F1118] via-[#090A0F] to-[#090A0F] pt-10 pb-12 sm:pt-16 sm:pb-16">
+        {/* Glow ambient background effects */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-10 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-6">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-xs font-semibold text-emerald-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              Pakistan Financial Intelligence Platform
+            </span>
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-zinc-400">
+              KSE-100 · Sarafa 24K · Car TCO
+            </span>
+          </div>
+
+          <div className="max-w-3xl space-y-4">
+            <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.15]">
+              Turn PSX Blue-Chip Dividends & Gold Streaks into{' '}
+              <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
+                True Financial Freedom
+              </span>
+            </h1>
+            <p className="text-base sm:text-lg text-zinc-300 leading-relaxed">
+              Model real-life Pakistani living expenses — fuel, electricity, groceries, and EV swaps — paid for entirely by Grade-A halal dividend machines. Honest yields, zero yield traps, and automated FBR tax optimization.
+            </p>
+          </div>
+
+          {/* Quick CTA Actions */}
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <Link
+              href="/planner"
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm transition-all shadow-lg shadow-emerald-500/25 group"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              <Sparkles className="w-4 h-4 text-black" />
+              <span>Launch Life & Wealth Planner</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+
+            <Link
+              href="/cars"
+              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-200 border border-white/10 font-semibold text-sm transition-all"
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              <Car className="w-4 h-4 text-amber-400" />
+              <span>Car Decision Map (5-Yr TCO)</span>
+            </Link>
+
+            <button
+              onClick={() => openGuide()}
+              className="flex items-center gap-2 px-4 py-3 rounded-xl text-zinc-400 hover:text-white text-sm font-medium transition-all"
+            >
+              <BookOpen className="w-4 h-4 text-emerald-400" />
+              <span>Beginner Guide</span>
+            </button>
+          </div>
+
+          {/* Ticker Pills Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-4 border-t border-white/[0.08] text-xs">
+            {/* Gold */}
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
+              <span className="text-zinc-500 text-[10px] uppercase">24K Sarafa Gold</span>
+              <div className="font-mono font-bold text-white text-sm mt-0.5">
+                Rs 385,000
+              </div>
+              <span className="text-rose-400 font-mono text-[10px]">▼ 5d Dip Zone (-12.8%)</span>
+            </div>
+
+            {/* Silver */}
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
+              <span className="text-zinc-500 text-[10px] uppercase">24K Silver (Tola)</span>
+              <div className="font-mono font-bold text-white text-sm mt-0.5">
+                Rs 4,708
+              </div>
+              <span className="text-rose-400 font-mono text-[10px]">▼ 3d Losing Streak</span>
+            </div>
+
+            {/* USD / PKR */}
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
+              <span className="text-zinc-500 text-[10px] uppercase">Interbank USD</span>
+              <div className="font-mono font-bold text-emerald-400 text-sm mt-0.5">
+                Rs 276.28
+              </div>
+              <span className="text-zinc-400 font-mono text-[10px]">SBP Remittance Rate</span>
+            </div>
+
+            {/* KSE-100 */}
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
+              <span className="text-zinc-500 text-[10px] uppercase">KSE-100 Index</span>
+              <div className="font-mono font-bold text-white text-sm mt-0.5">
+                177,382
+              </div>
+              <span className="text-emerald-400 font-mono text-[10px]">▲ +2,410 pts (+1.4%)</span>
+            </div>
+
+            {/* Petrol */}
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between col-span-2 sm:col-span-1">
+              <span className="text-zinc-500 text-[10px] uppercase">Petrol (Super)</span>
+              <div className="font-mono font-bold text-amber-300 text-sm mt-0.5">
+                Rs 322 / L
+              </div>
+              <span className="text-zinc-400 font-mono text-[10px]">Effective Nov 21, 2026</span>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      </section>
+
+      {/* Main Content Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        {/* 2. Hero Gold & Silver Streak Spotlight */}
+        <section className="space-y-3">
+          <GoldSpotlight gold={gold} silver={silver} />
+        </section>
+
+        {/* 3. PSX Streak Movers Strip */}
+        <section className="space-y-3">
+          <PsxMoversStrip stocks={PSX_STOCKS} />
+        </section>
+
+        {/* 4. Instant Rs 30 Lac Quick Simulator */}
+        <section className="space-y-3">
+          <QuickSimulator />
+        </section>
+
+        {/* 5. Car Decision Feature Spotlight Banner */}
+        <section className="rounded-2xl bg-gradient-to-r from-amber-500/10 via-[#11131A] to-emerald-500/10 border border-white/[0.08] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
+          <div className="space-y-2 text-center md:text-left">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider">
+              <Car className="w-3.5 h-3.5" />
+              New Feature: 5-Year Car TCO Map
+            </div>
+            <h3 className="text-lg font-bold text-white">
+              Should You Keep Your Petrol Car or Switch to EV?
+            </h3>
+            <p className="text-xs sm:text-sm text-zinc-300 max-w-2xl">
+              Model true Pakistani vehicle economics: 2026 gross-billing solar tariffs (Rs 11/kWh foregone export), 5-year depreciation, bank financing quotes, and 10% capital opportunity costs.
+            </p>
+          </div>
+
+          <Link
+            href="/cars"
+            className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs transition-all shadow-md shadow-amber-500/20 shrink-0"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+            Launch Car Decision Map &rarr;
+          </Link>
+        </section>
+      </div>
     </div>
   );
 }
