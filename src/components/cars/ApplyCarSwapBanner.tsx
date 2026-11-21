@@ -45,7 +45,7 @@ export function ApplyCarSwapBanner({ decision, profile }: ApplyCarSwapBannerProp
   };
 
   return (
-    <div className="rounded-2xl bg-gradient-to-r from-emerald-500/15 via-[#F4F4F5] to-amber-500/10 border border-emerald-500/30 p-5 sm:p-6 shadow-xl space-y-3">
+    <div className="rounded-2xl bg-gradient-to-r from-emerald-500/15 via-[#121214] to-amber-500/10 border border-emerald-500/30 p-5 sm:p-6 shadow-xl space-y-3">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">

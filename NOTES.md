@@ -208,3 +208,19 @@ New entries are added in the same change that fixes the error.
   cursor tilt + glare), floating ticker tiles, machined primary CTA.
 - Depth/motion inventory: floatY 7s on the hero object, SpatialCard3D
   tilt on gold card + podium, glass-card hover lift app-wide.
+
+### 17. Theme, definitive: exact DropRoute + TITAN portfolio tokens (owner, 21 Nov 2026)
+- Owner instruction: "use the exact same background theme and colors that
+  we used for my portfolio and dropRoute." Tokens were lifted VERBATIM
+  from the source repos, not reinterpreted:
+  - droproute/apps/web/src/app/globals.css: obsidian #050505, graphite
+    #0A0A0C/#121214/#1C1C1F, gold ramp 300 #F7E08C / 400 #E8C15A /
+    500 #D9A521 / 600 #A87F16, surface-glass rgba(13,13,15,0.7), the exact
+    glass-panel/glass-card gradient+shadow recipes, body art = one gold
+    breath radial rgba(217,165,33,0.05) + grain.
+  - portfolio_v4/app/globals.css: ink #060607, cream #F5F1E6 (the ink
+    token), muted #A7A7B3, faint #6D6D78, cyanx #2DD4EE.
+- Emerald/amber/teal/yellow scales all carry the gold ramp ("Brand IS
+  gold"); blue carries cyanx; purple carries DropRoute's electric violet.
+- The cinematic depth layer from NOTES #16 is retained (float, tilt,
+  layered shadows) with dark-stage values.

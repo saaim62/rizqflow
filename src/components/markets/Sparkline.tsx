@@ -33,13 +33,13 @@ export function Sparkline({
   const isUp = lastPrice >= firstPrice;
   const strokeColor =
     color === 'gold' || color === 'amber'
-      ? '#D4AF37'
+      ? '#D9A521'
       : color === 'rose'
       ? '#F43F5E'
       : color === 'emerald'
-      ? '#D4AF37'
+      ? '#D9A521'
       : isUp
-      ? '#D4AF37'
+      ? '#D9A521'
       : '#F43F5E';
 
   if (!mounted) {

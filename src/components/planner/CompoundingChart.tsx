@@ -45,7 +45,7 @@ export function CompoundingChart({
   }));
 
   return (
-    <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
+    <div className="rounded-2xl bg-[#0C0C0F] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-white/[0.06]">
         <div>
           <div className="flex items-center gap-2">
@@ -77,8 +77,8 @@ export function CompoundingChart({
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="compoundingNominal" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="#D4AF37" stopOpacity={0.0} />
+                  <stop offset="5%" stopColor="#D9A521" stopOpacity={0.35} />
+                  <stop offset="95%" stopColor="#D9A521" stopOpacity={0.0} />
                 </linearGradient>
                 <linearGradient id="compoundingReal" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#C9A227" stopOpacity={0.25} />
@@ -101,7 +101,7 @@ export function CompoundingChart({
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#FFFFFF',
+                  backgroundColor: '#0C0C0F',
                   borderColor: 'rgba(255, 255, 255, 0.15)',
                   borderRadius: '0.75rem',
                   boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
@@ -125,7 +125,7 @@ export function CompoundingChart({
               <Area
                 type="monotone"
                 dataKey="nominal"
-                stroke="#D4AF37"
+                stroke="#D9A521"
                 strokeWidth={2.5}
                 fillOpacity={1}
                 fill="url(#compoundingNominal)"

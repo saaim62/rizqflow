@@ -9,80 +9,80 @@
    Rose/red stay untouched — they carry loss/danger meaning in market data.
    ========================================================================== */
 @theme {
-  --color-emerald-50: #ECFDF5;
-  --color-emerald-100: #D1FAE5;
-  --color-emerald-200: #A7F3D0;
-  --color-emerald-300: #10B981;
-  --color-emerald-400: #059669;
-  --color-emerald-500: #10B981;
-  --color-emerald-600: #059669;
-  --color-emerald-700: #047857;
-  --color-emerald-800: #065F46;
-  --color-emerald-900: #064E3B;
-  --color-emerald-950: #022C22;
+  --color-emerald-50: #FDF9EC;
+  --color-emerald-100: #FBF3D5;
+  --color-emerald-200: #F9EBC0;
+  --color-emerald-300: #F7E08C;
+  --color-emerald-400: #E8C15A;
+  --color-emerald-500: #D9A521;
+  --color-emerald-600: #A87F16;
+  --color-emerald-700: #856310;
+  --color-emerald-800: #5F470E;
+  --color-emerald-900: #3D2E08;
+  --color-emerald-950: #241B04;
 
   --color-teal-100: #F6EBC4;
   --color-teal-200: #EFDB9A;
-  --color-teal-300: #14B8A6;
-  --color-teal-400: #0D9488;
-  --color-teal-500: #14B8A6;
+  --color-teal-300: #E8C15A;
+  --color-teal-400: #D9A521;
+  --color-teal-500: #A87F16;
   --color-teal-600: #A58521;
   --color-teal-700: #7D6419;
 
-  --color-amber-100: #FEF3C7;
-  --color-amber-200: #FDE68A;
-  --color-amber-300: #F59E0B;
-  --color-amber-400: #D97706;
-  --color-amber-500: #F59E0B;
-  --color-amber-600: #D97706;
-  --color-amber-700: #8A6D1F;
+  --color-amber-100: #FBF3D5;
+  --color-amber-200: #F9EBC0;
+  --color-amber-300: #F7E08C;
+  --color-amber-400: #E8C15A;
+  --color-amber-500: #D9A521;
+  --color-amber-600: #A87F16;
+  --color-amber-700: #856310;
 
-  --color-yellow-200: #FEF08A;
-  --color-yellow-300: #EAB308;
-  --color-yellow-400: #CA8A04;
+  --color-yellow-200: #F9EBC0;
+  --color-yellow-300: #F7E08C;
+  --color-yellow-400: #E8C15A;
 
-  --color-blue-200: #EDE6D2;
-  --color-blue-300: #0EA5E9;
-  --color-blue-400: #0284C7;
-  --color-blue-500: #0EA5E9;
-  --color-blue-600: #0284C7;
+  --color-blue-200: #B0F2FA;
+  --color-blue-300: #8BEBF7;
+  --color-blue-400: #2DD4EE;
+  --color-blue-500: #14B8D4;
+  --color-blue-600: #0E8FA8;
 
-  --color-purple-300: #8B5CF6;
-  --color-purple-400: #7C3AED;
+  --color-purple-300: #C4B5FD;
+  --color-purple-400: #A78BFA;
   --color-purple-500: #8B5CF6;
   --color-purple-600: #7C3AED;
 
   --color-slate-200: #E8E3D8;
-  --color-slate-300: #94A3B8;
-  --color-slate-400: #64748B;
+  --color-slate-300: #C9C6BC;
+  --color-slate-400: #A7A7B3;
   --color-slate-500: #7D7769;
 
-  --color-zinc-50: #FAFAFA;
-  --color-zinc-100: #F4F4F5;
-  --color-zinc-200: #E4E4E7;
-  --color-zinc-300: #A1A1AA;
-  --color-zinc-400: #71717A;
-  --color-zinc-500: #52525B;
-  --color-zinc-600: #3F3F46;
-  --color-zinc-700: #27272A;
-  --color-zinc-800: #18181B;
-  --color-zinc-900: #101828;
-  --color-zinc-950: #0B0B10;
+  --color-zinc-50: #FAFAF8;
+  --color-zinc-100: #F4F4F2;
+  --color-zinc-200: #E7E5DF;
+  --color-zinc-300: #C9C6BC;
+  --color-zinc-400: #A7A7B3;
+  --color-zinc-500: #6D6D78;
+  --color-zinc-600: #52525B;
+  --color-zinc-700: #1C1C1F;
+  --color-zinc-800: #121214;
+  --color-zinc-900: #0A0A0C;
+  --color-zinc-950: #050505;
 
-  /* Semantic ink token: "white" utilities carry primary text + hairlines on the light theme. */
-  --color-white: #101828;
+  /* Ink token = portfolio cream #F5F1E6 (text/hairline system on obsidian). */
+  --color-white: #F5F1E6;
 
-  --color-rose-300: #F43F5E;
-  --color-rose-400: #E11D48;
+  --color-rose-300: #FDA4AF;
+  --color-rose-400: #FB7185;
 }
 
 
 :root {
-  --background: #FAFAFA;
-  --foreground: #101828;
-  --card: #FFFFFF;
-  --card-border: rgba(16, 24, 40, 0.08);
-  --card-border-hover: rgba(16, 24, 40, 0.16);
+  --background: #050505;
+  --foreground: #F5F1E6;
+  --card: #0C0C0F;
+  --card-border: rgba(255, 255, 255, 0.08);
+  --card-border-hover: rgba(217, 165, 33, 0.32);
   --emerald-accent: #D4AF37;
   --rose-accent: #F43F5E;
   --gold-accent: #D4AF37;
@@ -91,7 +91,7 @@
 
 body {
   background-color: var(--background);
-  background-image: linear-gradient(180deg, #FFFFFF 0%, #F4F5F7 52%, #EBEDF0 100%);
+  background-image: radial-gradient(ellipse 90% 55% at 50% -20%, rgba(217, 165, 33, 0.05), transparent);
   background-attachment: fixed;
   background-image: none;
   color: var(--foreground);
@@ -116,24 +116,31 @@ body::before {
 
 /* Glass surface styling with subtle top specular rim */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.88);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018) 42%, rgba(0, 0, 0, 0.12));
+  background-color: rgba(13, 13, 15, 0.7);
+  backdrop-filter: blur(12px) saturate(1.5);
+  -webkit-backdrop-filter: blur(12px) saturate(1.5);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(16, 24, 40, 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(16, 24, 40, 0.05), 0 16px 36px -16px rgba(16, 24, 40, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 -1px 0 rgba(0, 0, 0, 0.35), 0 32px 80px -28px rgba(0, 0, 0, 0.9);
 }
 
 .glass-card {
-  background: #FFFFFF;
-  border: 1px solid rgba(16, 24, 40, 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(16, 24, 40, 0.05), 0 4px 10px -2px rgba(16, 24, 40, 0.05), 0 18px 36px -14px rgba(16, 24, 40, 0.15);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012) 45%, rgba(0, 0, 0, 0.1));
+  background-color: rgba(15, 15, 17, 0.62);
+  backdrop-filter: blur(12px) saturate(1.5);
+  -webkit-backdrop-filter: blur(12px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 24px 55px -22px rgba(0, 0, 0, 0.85);
   transition: all 0.25s ease-out;
 }
 
 .glass-card:hover {
-  border-color: rgba(16, 24, 40, 0.16);
+  border-color: rgba(217, 165, 33, 0.3);
   transform: translateY(-2px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 2px 4px rgba(16, 24, 40, 0.05), 0 8px 16px -4px rgba(16, 24, 40, 0.07), 0 26px 48px -16px rgba(16, 24, 40, 0.2);
+  background-color: rgba(21, 21, 24, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 32px 70px -22px rgba(0, 0, 0, 0.92), 0 0 28px rgba(217, 165, 33, 0.05);
 }
 
 /* 3D transforms */
@@ -155,14 +162,14 @@ body::before {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #FAFAFA;
+  background: #050505;
 }
 ::-webkit-scrollbar-thumb {
-  background: #D4D4D8;
+  background: rgba(217, 165, 33, 0.3);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #A1A1AA;
+  background: rgba(217, 165, 33, 0.5);
 }
 
 /* Tabular nums */
@@ -228,6 +235,6 @@ body::before {
 }
 
 ::selection {
-  background: #D1FAE5;
-  color: #101828;
+  background: rgba(217, 165, 33, 0.18);
+  color: #E8C15A;
 }

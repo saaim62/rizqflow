@@ -63,7 +63,7 @@ export function GoldBullion3D({
               #D97706 18%, 
               #FBBF24 40%, 
               #FFFBEB 50%, 
-              #D4AF37 62%, 
+              #D9A521 62%, 
               #B45309 85%, 
               #78350F 100%)`,
           }}
@@ -78,7 +78,7 @@ export function GoldBullion3D({
 
           {/* Top Ingot Stamp Header */}
           <div className="relative z-10 flex items-center justify-between">
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#FFFFFF] backdrop-blur-sm border border-black/20 text-amber-950 font-bold text-[10px] tracking-widest uppercase">
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#0C0C0F] backdrop-blur-sm border border-black/20 text-amber-950 font-bold text-[10px] tracking-widest uppercase">
               <Sparkles className="w-3 h-3 text-amber-900" />
               <span>SARAFA KARACHI</span>
             </div>
@@ -100,7 +100,7 @@ export function GoldBullion3D({
           {/* Bottom Ingot Stamp Footer */}
           <div className="relative z-10 flex items-center justify-between text-amber-950 text-[10px] font-bold font-mono">
             <span>OFFICIAL SPOT BENCHMARK</span>
-            <span className="px-1.5 py-0.5 rounded bg-black/[0.04] border border-black/10">
+            <span className="px-1.5 py-0.5 rounded bg-black/[0.04] border border-white/10">
               HALLMARKED
             </span>
           </div>

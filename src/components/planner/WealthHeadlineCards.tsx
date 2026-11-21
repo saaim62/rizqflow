@@ -43,7 +43,7 @@ export function WealthHeadlineCards({ plan, profile }: WealthHeadlineCardsProps)
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {/* 1. Today's Money Net Worth */}
-        <div className="rounded-xl bg-[#FFFFFF] border border-white/[0.08] p-4 flex flex-col justify-between relative overflow-hidden group hover:border-white/15 transition-all">
+        <div className="rounded-xl bg-[#0C0C0F] border border-white/[0.08] p-4 flex flex-col justify-between relative overflow-hidden group hover:border-white/15 transition-all">
           <div>
             <div className="flex items-center justify-between text-zinc-400 text-[10px] uppercase font-semibold">
               <span>Today's Real Wealth</span>
@@ -61,7 +61,7 @@ export function WealthHeadlineCards({ plan, profile }: WealthHeadlineCardsProps)
         </div>
 
         {/* 2. USD Wealth */}
-        <div className="rounded-xl bg-[#FFFFFF] border border-white/[0.08] p-4 flex flex-col justify-between relative overflow-hidden group hover:border-white/15 transition-all">
+        <div className="rounded-xl bg-[#0C0C0F] border border-white/[0.08] p-4 flex flex-col justify-between relative overflow-hidden group hover:border-white/15 transition-all">
           <div>
             <div className="flex items-center justify-between text-zinc-400 text-[10px] uppercase font-semibold">
               <span className="flex items-center gap-1">
@@ -82,7 +82,7 @@ export function WealthHeadlineCards({ plan, profile }: WealthHeadlineCardsProps)
         </div>
 
         {/* 3. Gold Tolas */}
-        <div className="rounded-xl bg-[#FFFFFF] border border-white/[0.08] p-4 flex flex-col justify-between relative overflow-hidden group hover:border-white/15 transition-all">
+        <div className="rounded-xl bg-[#0C0C0F] border border-white/[0.08] p-4 flex flex-col justify-between relative overflow-hidden group hover:border-white/15 transition-all">
           <div>
             <div className="flex items-center justify-between text-zinc-400 text-[10px] uppercase font-semibold">
               <span className="flex items-center gap-1">
@@ -102,7 +102,7 @@ export function WealthHeadlineCards({ plan, profile }: WealthHeadlineCardsProps)
         </div>
 
         {/* 4. Safe Monthly Income (4% Rule) */}
-        <div className="rounded-xl bg-[#FFFFFF] border border-white/[0.08] p-4 flex flex-col justify-between relative overflow-hidden group hover:border-white/15 transition-all">
+        <div className="rounded-xl bg-[#0C0C0F] border border-white/[0.08] p-4 flex flex-col justify-between relative overflow-hidden group hover:border-white/15 transition-all">
           <div>
             <div className="flex items-center justify-between text-zinc-400 text-[10px] uppercase font-semibold">
               <span className="flex items-center gap-1">
@@ -121,7 +121,7 @@ export function WealthHeadlineCards({ plan, profile }: WealthHeadlineCardsProps)
         </div>
 
         {/* 5. Dividend Freedom Date & Age */}
-        <div className="rounded-xl bg-[#FFFFFF] border border-white/[0.08] p-4 flex flex-col justify-between relative overflow-hidden group hover:border-white/15 transition-all col-span-2 lg:col-span-1">
+        <div className="rounded-xl bg-[#0C0C0F] border border-white/[0.08] p-4 flex flex-col justify-between relative overflow-hidden group hover:border-white/15 transition-all col-span-2 lg:col-span-1">
           <div>
             <div className="flex items-center justify-between text-zinc-400 text-[10px] uppercase font-semibold">
               <span className="flex items-center gap-1">

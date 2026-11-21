@@ -35,7 +35,7 @@ export function ShareSnapshotModal({
 
     // 1. Background Obsidian Void
     const bgGrad = ctx.createLinearGradient(0, 0, 1200, 630);
-    bgGrad.addColorStop(0, '#FAFAFA');
+    bgGrad.addColorStop(0, '#050505');
     bgGrad.addColorStop(0.5, '#0B0D15');
     bgGrad.addColorStop(1, '#05070D');
     ctx.fillStyle = bgGrad;
@@ -60,10 +60,10 @@ export function ShareSnapshotModal({
     ctx.strokeRect(20, 20, 1160, 590);
 
     // 4. Header Wordmark
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = '#0C0C0F';
     ctx.font = 'bold 36px -apple-system, sans-serif';
     ctx.fillText('Rizq', 60, 85);
-    ctx.fillStyle = '#D4AF37';
+    ctx.fillStyle = '#D9A521';
     ctx.fillText('Flow', 135, 85);
 
     // Tagline / Market Badge
@@ -79,22 +79,22 @@ export function ShareSnapshotModal({
     ctx.stroke();
 
     // 5. Freedom Milestone Banner
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = '#0C0C0F';
     ctx.strokeStyle = 'rgba(212, 175, 55, 0.35)';
     ctx.lineWidth = 1.5;
     ctx.roundRect(60, 145, 1080, 140, 16);
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = '#D4AF37';
+    ctx.fillStyle = '#D9A521';
     ctx.font = 'bold 14px monospace';
     ctx.fillText('DIVIDEND FREEDOM MILESTONE', 90, 185);
 
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = '#0C0C0F';
     ctx.font = 'bold 42px -apple-system, sans-serif';
     ctx.fillText(plan.freedomDateLabel, 90, 240);
 
-    ctx.fillStyle = '#D4AF37';
+    ctx.fillStyle = '#D9A521';
     ctx.font = 'bold 18px monospace';
     const ageText = plan.freedomAge ? `Achieved at Age ${plan.freedomAge}` : 'Lifetime Compounder';
     ctx.fillText(ageText, 850, 240);
@@ -111,7 +111,7 @@ export function ShareSnapshotModal({
     ctx.font = 'bold 14px monospace';
     ctx.fillText("TODAY'S PURCHASING POWER", 85, 345);
 
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = '#0C0C0F';
     ctx.font = 'bold 34px monospace';
     const realText = hideAmounts
       ? 'Rs •••••'
@@ -132,7 +132,7 @@ export function ShareSnapshotModal({
     ctx.font = 'bold 14px monospace';
     ctx.fillText('MONTHLY NET DIVIDEND', 455, 345);
 
-    ctx.fillStyle = '#D4AF37';
+    ctx.fillStyle = '#D9A521';
     ctx.font = 'bold 34px monospace';
     const divText = hideAmounts
       ? 'Rs •••••'
@@ -153,7 +153,7 @@ export function ShareSnapshotModal({
     ctx.font = 'bold 14px monospace';
     ctx.fillText('HEDGE CONVERSIONS', 825, 345);
 
-    ctx.fillStyle = '#D4AF37';
+    ctx.fillStyle = '#D9A521';
     ctx.font = 'bold 28px monospace';
     const goldText = hideAmounts ? '••••• tolas' : `${Math.round(plan.finalWealthGoldTolas)} Tolas Gold`;
     ctx.fillText(goldText, 825, 395);
@@ -168,7 +168,7 @@ export function ShareSnapshotModal({
     ctx.font = '12px -apple-system, sans-serif';
     ctx.fillText('Verified with RizqFlow Client Engine • 100% Client-Side Privacy • SECP Non-Advisory Simulation', 60, 560);
 
-    ctx.fillStyle = '#D4AF37';
+    ctx.fillStyle = '#D9A521';
     ctx.font = 'bold 12px monospace';
     ctx.fillText('Bismillah for Halal Barakah', 950, 560);
 
@@ -179,7 +179,7 @@ export function ShareSnapshotModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl bg-[#FFFFFF] border border-white/15 rounded-2xl shadow-2xl p-6 space-y-5">
+      <div className="relative w-full max-w-4xl bg-[#0C0C0F] border border-white/15 rounded-2xl shadow-2xl p-6 space-y-5">
         <div className="flex items-center justify-between pb-3 border-b border-white/10">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-emerald-400" />

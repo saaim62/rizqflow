@@ -123,7 +123,7 @@ export function LifeGoalsManager({
         {lifeGoals.map((g) => (
           <div
             key={g.id}
-            className="p-3 rounded-xl bg-[#FFFFFF] border border-white/5 flex items-center justify-between gap-3 text-xs"
+            className="p-3 rounded-xl bg-[#0C0C0F] border border-white/5 flex items-center justify-between gap-3 text-xs"
           >
             <div>
               <div className="font-bold text-white text-xs">{g.name}</div>

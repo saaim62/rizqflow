@@ -36,7 +36,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen space-y-10 pb-16">
       {/* 1. Executive Hero Header */}
-      <section className="relative overflow-hidden border-b border-white/[0.06] bg-gradient-to-b from-[#FFFFFF] via-[#F4F4F5] to-[#F4F4F5] pt-10 pb-12 sm:pt-16 sm:pb-16">
+      <section className="relative overflow-hidden border-b border-white/[0.06] bg-gradient-to-b from-[#0C0C0F] via-[#121214] to-[#121214] pt-10 pb-12 sm:pt-16 sm:pb-16">
         {/* Glow ambient background effects */}
                 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-6">
@@ -54,11 +54,11 @@ export default function HomePage() {
             <div className="max-w-2xl space-y-4">
               <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.15]">
                 Turn PSX Blue-Chip Dividends & Gold Streaks into{' '}
-                <span className="text-emerald-600">
+                <span className="text-[#E8C15A]">
                   True Financial Freedom
                 </span>
               </h1>
-              <p className="text-base sm:text-lg text-zinc-600 leading-relaxed">
+              <p className="text-base sm:text-lg text-zinc-400 leading-relaxed">
                 Model real-life Pakistani living expenses — fuel, electricity, groceries, and EV swaps — paid for entirely by Grade-A halal dividend machines. Honest yields, zero yield traps, and automated FBR tax optimization.
               </p>
 
@@ -75,7 +75,7 @@ export default function HomePage() {
 
                 <Link
                   href="/cars"
-                  className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#FFFFFF] hover:bg-zinc-50 text-zinc-700 border border-black/10 font-semibold text-sm transition-all shadow-sm"
+                  className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#0C0C0F] hover:bg-[#121214] text-zinc-200 border border-white/10 font-semibold text-sm transition-all shadow-sm"
                 >
                   <Car className="w-4 h-4 text-amber-400" />
                   <span>Car Decision Map (5-Yr TCO)</span>
@@ -107,7 +107,7 @@ export default function HomePage() {
           {/* Ticker Pills Strip */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-4 border-t border-white/[0.08] text-xs">
             {/* Gold */}
-            <div className="p-3 rounded-xl bg-[#FFFFFF] border border-black/[0.06] shadow-[0_1px_2px_rgba(16,24,40,0.05),0_12px_26px_-10px_rgba(16,24,40,0.2)] flex flex-col justify-between">
+            <div className="p-3 rounded-xl bg-[#0C0C0F] border border-white/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_12px_26px_-10px_rgba(0,0,0,0.2)] flex flex-col justify-between">
               <span className="text-zinc-500 text-[10px] uppercase">24K Sarafa Gold</span>
               <div className="font-mono font-bold text-white text-sm mt-0.5">
                 Rs {snap.rates.goldPerTolaPkr.toLocaleString('en-PK')}
@@ -116,7 +116,7 @@ export default function HomePage() {
             </div>
 
             {/* Silver */}
-            <div className="p-3 rounded-xl bg-[#FFFFFF] border border-black/[0.06] shadow-[0_1px_2px_rgba(16,24,40,0.05),0_12px_26px_-10px_rgba(16,24,40,0.2)] flex flex-col justify-between">
+            <div className="p-3 rounded-xl bg-[#0C0C0F] border border-white/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_12px_26px_-10px_rgba(0,0,0,0.2)] flex flex-col justify-between">
               <span className="text-zinc-500 text-[10px] uppercase">24K Silver (Tola)</span>
               <div className="font-mono font-bold text-white text-sm mt-0.5">
                 Rs {snap.silverPerTolaPkr.toLocaleString('en-PK')}
@@ -125,7 +125,7 @@ export default function HomePage() {
             </div>
 
             {/* USD / PKR */}
-            <div className="p-3 rounded-xl bg-[#FFFFFF] border border-black/[0.06] shadow-[0_1px_2px_rgba(16,24,40,0.05),0_12px_26px_-10px_rgba(16,24,40,0.2)] flex flex-col justify-between">
+            <div className="p-3 rounded-xl bg-[#0C0C0F] border border-white/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_12px_26px_-10px_rgba(0,0,0,0.2)] flex flex-col justify-between">
               <span className="text-zinc-500 text-[10px] uppercase">Interbank USD</span>
               <div className="font-mono font-bold text-emerald-400 text-sm mt-0.5">
                 Rs {snap.rates.usdToPkr}
@@ -134,7 +134,7 @@ export default function HomePage() {
             </div>
 
             {/* KSE-100 */}
-            <div className="p-3 rounded-xl bg-[#FFFFFF] border border-black/[0.06] shadow-[0_1px_2px_rgba(16,24,40,0.05),0_12px_26px_-10px_rgba(16,24,40,0.2)] flex flex-col justify-between">
+            <div className="p-3 rounded-xl bg-[#0C0C0F] border border-white/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_12px_26px_-10px_rgba(0,0,0,0.2)] flex flex-col justify-between">
               <span className="text-zinc-500 text-[10px] uppercase">KSE-100 Index</span>
               <div className="font-mono font-bold text-white text-sm mt-0.5">
                 {snap.rates.kse100Index.toLocaleString('en-PK', { maximumFractionDigits: 0 })}
@@ -143,7 +143,7 @@ export default function HomePage() {
             </div>
 
             {/* Petrol */}
-            <div className="p-3 rounded-xl bg-[#FFFFFF] border border-black/[0.06] shadow-[0_1px_2px_rgba(16,24,40,0.05),0_12px_26px_-10px_rgba(16,24,40,0.2)] flex flex-col justify-between col-span-2 sm:col-span-1">
+            <div className="p-3 rounded-xl bg-[#0C0C0F] border border-white/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_12px_26px_-10px_rgba(0,0,0,0.2)] flex flex-col justify-between col-span-2 sm:col-span-1">
               <span className="text-zinc-500 text-[10px] uppercase">Petrol (Super)</span>
               <div className="font-mono font-bold text-amber-300 text-sm mt-0.5">
                 Rs {snap.rates.petrolPricePerLitre} / L
@@ -172,7 +172,7 @@ export default function HomePage() {
         </section>
 
         {/* 5. Car Decision Feature Spotlight Banner */}
-        <section className="rounded-2xl bg-gradient-to-r from-amber-500/10 via-[#F4F4F5] to-emerald-500/10 border border-white/[0.08] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
+        <section className="rounded-2xl bg-gradient-to-r from-amber-500/10 via-[#121214] to-emerald-500/10 border border-white/[0.08] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
           <div className="space-y-2 text-center md:text-left">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider">
               <Car className="w-3.5 h-3.5" />

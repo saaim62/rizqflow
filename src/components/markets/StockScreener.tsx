@@ -90,7 +90,7 @@ export function StockScreener({ stocks, initialTicker }: StockScreenerProps) {
   return (
     <div className="space-y-6">
       {/* Controls Bar */}
-      <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-4 sm:p-6 space-y-4 shadow-lg">
+      <div className="rounded-2xl bg-[#0C0C0F] border border-white/[0.08] p-4 sm:p-6 space-y-4 shadow-lg">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Search Box */}
           <div className="relative flex-1 max-w-md">
@@ -100,7 +100,7 @@ export function StockScreener({ stocks, initialTicker }: StockScreenerProps) {
               placeholder="Search ticker, company (e.g. FFC, Meezan, KAPCO)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl bg-[#FFFFFF] border border-white/10 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50 transition-colors"
+              className="w-full pl-10 pr-4 py-2 rounded-xl bg-[#0C0C0F] border border-white/10 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50 transition-colors"
             />
             {searchTerm && (
               <button
@@ -128,7 +128,7 @@ export function StockScreener({ stocks, initialTicker }: StockScreenerProps) {
             </button>
 
             {/* Grade Tabs */}
-            <div className="flex items-center bg-[#FFFFFF] p-0.5 rounded-lg border border-white/5">
+            <div className="flex items-center bg-[#0C0C0F] p-0.5 rounded-lg border border-white/5">
               <button
                 onClick={() => setGradeFilter('ALL')}
                 className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
@@ -190,11 +190,11 @@ export function StockScreener({ stocks, initialTicker }: StockScreenerProps) {
       </div>
 
       {/* Stocks Table (Desktop) & Cards (Mobile) */}
-      <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] overflow-hidden shadow-xl">
+      <div className="rounded-2xl bg-[#0C0C0F] border border-white/[0.08] overflow-hidden shadow-xl">
         <div className="hidden lg:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-white/[0.08] bg-[#FFFFFF] text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+              <tr className="border-b border-white/[0.08] bg-[#0C0C0F] text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
                 <th className="py-3 px-4">Company</th>
                 <th className="py-3 px-4">Grade & Shariah</th>
                 <th className="py-3 px-4 text-right">Price (PKR)</th>
@@ -308,7 +308,7 @@ export function StockScreener({ stocks, initialTicker }: StockScreenerProps) {
 
                     {/* Expandable Details Row */}
                     {isExpanded && (
-                      <tr className="bg-[#FFFFFF]">
+                      <tr className="bg-[#0C0C0F]">
                         <td colSpan={8} className="p-5 border-t border-b border-white/[0.06]">
                           <div className="space-y-4">
                             {/* Yield Trap Warning Alert if Grade B/C */}
@@ -363,7 +363,7 @@ export function StockScreener({ stocks, initialTicker }: StockScreenerProps) {
                                         className={`p-1.5 rounded text-[11px] font-mono transition-colors ${
                                           paysInThisMonth
                                             ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold'
-                                            : 'bg-[#FFFFFF] text-zinc-600 border border-transparent'
+                                            : 'bg-[#0C0C0F] text-zinc-600 border border-transparent'
                                         }`}
                                       >
                                         <div>{month}</div>
@@ -413,7 +413,7 @@ export function StockScreener({ stocks, initialTicker }: StockScreenerProps) {
             return (
               <div
                 key={stock.ticker}
-                className={`p-3 rounded-xl bg-[#FFFFFF] border border-white/5 space-y-3 ${
+                className={`p-3 rounded-xl bg-[#0C0C0F] border border-white/5 space-y-3 ${
                   isTrap ? 'border-l-4 border-l-rose-500' : ''
                 }`}
               >

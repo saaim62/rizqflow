@@ -37,10 +37,10 @@ export function GoldDataCard({ gold }: { gold: MetalAsset }) {
   const rs = (n: number) => `Rs ${Math.abs(n).toLocaleString('en-PK')}`;
 
   return (
-    <SpatialCard3D spotlightColor="rgba(217, 119, 6, 0.14)" className="rounded-3xl">
-      <div className="relative rounded-3xl bg-[#FFFFFF] border border-amber-500/25 p-5 sm:p-6 overflow-hidden card-3d-shadow">
+    <SpatialCard3D spotlightColor="rgba(217, 165, 33, 0.16)" className="rounded-3xl">
+      <div className="relative rounded-3xl bg-[#0C0C0F] border border-amber-500/25 p-5 sm:p-6 overflow-hidden card-3d-shadow">
         {/* aurora wash */}
-        <div className="pointer-events-none absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500" />
+        <div className="pointer-events-none absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#A87F16] via-[#E8C15A] to-[#A87F16]" />
 
         <div className="relative space-y-4">
           <div className="flex items-center justify-between gap-2">

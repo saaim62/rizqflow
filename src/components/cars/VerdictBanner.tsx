@@ -10,7 +10,7 @@ interface VerdictBannerProps {
 
 export function VerdictBanner({ decision }: VerdictBannerProps) {
   return (
-    <div className="rounded-2xl bg-gradient-to-r from-emerald-500/15 via-[#F4F4F5] to-amber-500/10 border border-emerald-500/30 p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+    <div className="rounded-2xl bg-gradient-to-r from-emerald-500/15 via-[#121214] to-amber-500/10 border border-emerald-500/30 p-6 sm:p-8 shadow-2xl relative overflow-hidden">
       <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -37,7 +37,7 @@ export function VerdictBanner({ decision }: VerdictBannerProps) {
         </div>
 
         {decision.crossoverKmPerDay !== null && (
-          <div className="shrink-0 p-4 rounded-xl bg-[#FFFFFF] border border-white/10 text-center space-y-1">
+          <div className="shrink-0 p-4 rounded-xl bg-[#0C0C0F] border border-white/10 text-center space-y-1">
             <span className="text-[11px] uppercase tracking-wider text-zinc-400 block font-semibold">
               Distance Crossover
             </span>

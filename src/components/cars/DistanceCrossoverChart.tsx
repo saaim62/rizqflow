@@ -21,7 +21,7 @@ interface DistanceCrossoverChartProps {
   currentDailyKm: number;
 }
 
-const LINE_COLORS = ['#D4AF37', '#D4AF37', '#3B82F6', '#EC4899', '#8B5CF6', '#C9A227'];
+const LINE_COLORS = ['#D9A521', '#D9A521', '#3B82F6', '#EC4899', '#8B5CF6', '#C9A227'];
 
 export function DistanceCrossoverChart({
   decision,
@@ -38,7 +38,7 @@ export function DistanceCrossoverChart({
   const data = decision.crossoverSeries;
 
   return (
-    <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
+    <div className="rounded-2xl bg-[#0C0C0F] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-white/[0.06]">
         <div>
           <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ export function DistanceCrossoverChart({
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#FFFFFF',
+                  backgroundColor: '#0C0C0F',
                   borderColor: 'rgba(255, 255, 255, 0.15)',
                   borderRadius: '0.75rem',
                   boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
@@ -107,12 +107,12 @@ export function DistanceCrossoverChart({
               {/* Vertical Reference Line for current daily commute */}
               <ReferenceLine
                 x={currentDailyKm}
-                stroke="#D4AF37"
+                stroke="#D9A521"
                 strokeDasharray="3 3"
                 strokeWidth={2}
                 label={{
                   value: `You (${currentDailyKm} km)`,
-                  fill: '#D4AF37',
+                  fill: '#D9A521',
                   fontSize: 10,
                   position: 'top',
                 }}
@@ -139,7 +139,7 @@ export function DistanceCrossoverChart({
         )}
       </div>
 
-      <div className="p-3 rounded-xl bg-[#FFFFFF] border border-white/5 text-xs text-zinc-400 flex items-start gap-2">
+      <div className="p-3 rounded-xl bg-[#0C0C0F] border border-white/5 text-xs text-zinc-400 flex items-start gap-2">
         <Sparkles className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
         <p className="leading-relaxed">
           <strong>Key Takeaway:</strong> Low-mileage drivers (under 15–20 km/day) often find keeping an older petrol car cheaper because EV depreciation & capital opportunity cost outweigh fuel savings. At higher commutes (&gt; 35 km/day), the EV line flattens out, providing monumental compound savings!
