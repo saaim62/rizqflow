@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { formatCompactPkr, formatPct, formatPkr, formatTolas, formatUsd, maskAmount } from '@/lib/format';
 import { computeStreakStats, simulateDipStrategy } from '@/lib/engine/streakEngine';
-import { METAL_ASSETS, PRESET_PROFILES, PSX_STOCKS } from '@/data/marketData';
+import { GOLD_YEAR_HISTORY, METAL_ASSETS, PRESET_PROFILES, PSX_STOCKS } from '@/data/marketData';
 import {
   applyCarSavingsToPlan,
   calculateExecutionSheet,
@@ -93,7 +93,7 @@ describe('Streak Calculation Engine (src/lib/engine/streakEngine.ts)', () => {
 });
 
 describe('Market Data Layer (src/data/marketData.ts)', () => {
-  it('Gold 24k: 5-day red streak, Nov 20 close Rs 379,836, down 15,400 today, drawdown ~12.8% from peak Rs 435,636', () => {
+  it('Gold 24k (30-day daily series): 5-day red streak, Nov 20 close Rs 379,836, down 15,400 today, drawdown ~12.8% from the 30-day-window high Rs 435,636', () => {
     const gold = METAL_ASSETS.find((m) => m.id === 'gold-24k');
     expect(gold).toBeDefined();
     if (!gold) return;
@@ -111,7 +111,8 @@ describe('Market Data Layer (src/data/marketData.ts)', () => {
     // Dropped Rs 15,400 on the final day
     expect(gold.streak.changeToday).toBe(-15400);
 
-    // Peak on Nov 5 at Rs 435,636
+    // High of the 30-day window on Nov 5 at Rs 435,636 (NOT the all-time
+    // peak — that is Rs 572,862 on 29 Jan 2026, see the year-history test)
     const peakPoint = gold.history.find((p) => p.date === '2026-11-05');
     expect(peakPoint?.price).toBe(435636);
 
@@ -119,8 +120,35 @@ describe('Market Data Layer (src/data/marketData.ts)', () => {
     expect(gold.streak.currentStreak).toBe(-5);
     expect(gold.streak.isSipDipZone).toBe(true);
 
-    // Drawdown from peak ~12.8%
+    // Drawdown from the 30-day-window high ~12.8%
     expect(gold.streak.drawdownFromPeakPct).toBeCloseTo(-12.8, 1);
+  });
+
+  it('Gold year history: spans a full year and carries the real all-time peak (Rs 572,862, 29 Jan 2026)', () => {
+    expect(GOLD_YEAR_HISTORY.length).toBe(14);
+
+    // Ascending dates, spanning at least 360 days (Nov 2025 → Nov 2026)
+    const first = GOLD_YEAR_HISTORY[0];
+    const last = GOLD_YEAR_HISTORY[GOLD_YEAR_HISTORY.length - 1];
+    const spanDays =
+      (new Date(last.date + 'T00:00:00').getTime() - new Date(first.date + 'T00:00:00').getTime()) / 86400000;
+    expect(spanDays).toBeGreaterThanOrEqual(360);
+    for (let i = 1; i < GOLD_YEAR_HISTORY.length; i++) {
+      expect(GOLD_YEAR_HISTORY[i].date > GOLD_YEAR_HISTORY[i - 1].date).toBe(true);
+    }
+
+    // The maximum is the APSGJA all-time peak — not the 30-day high
+    const peak = GOLD_YEAR_HISTORY.reduce((a, b) => (b.price > a.price ? b : a), GOLD_YEAR_HISTORY[0]);
+    expect(peak.price).toBe(572862);
+    expect(peak.date).toBe('2026-01-29');
+
+    // Final point agrees with the daily series' latest close
+    expect(last.date).toBe('2026-11-20');
+    expect(last.price).toBe(379836);
+
+    // True drawdown from the all-time peak: about −33.7%
+    const drawdown = ((last.price - peak.price) / peak.price) * 100;
+    expect(drawdown).toBeCloseTo(-33.7, 1);
   });
 
   it('Silver 24k: Nov 20 close at Rs 4,708 with an active 3-day down streak', () => {

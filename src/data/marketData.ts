@@ -171,7 +171,7 @@ export const METAL_ASSETS: MetalAsset[] = [
 export const DATA_AS_OF = 'Fri 20 Nov 2026 (PSX close) · Gold & silver: Sat 21 Nov 2026';
 export const DATA_AS_OF_SHORT = '20 Nov 2026';
 export const DATA_SOURCES =
-  'PSX data portal (dps.psx.com.pk), danioPSX, smartmoney.pk dividend records, SBP interbank closing rate, OGRA petrol notification (20 Nov 2026), All Pakistan Sarafa Gems & Jewellers Association';
+  'PSX data portal (dps.psx.com.pk), danioPSX, smartmoney.pk dividend records, SBP interbank closing rate, OGRA petrol notification (20 Nov 2026), All Pakistan Sarafa Gems & Jewellers Association · Gold year history: APSGJA via ARY News / Express Tribune / ProPakistani (29 Jan 2026 peak, FY26 closes) and the goldrateshub monthly archive (World Bank mid-month method), retrieved 21 Nov 2026';
 
 export const MARKET_SNAPSHOT = {
   kse100Index: 177382.57,
@@ -182,6 +182,36 @@ export const MARKET_SNAPSHOT = {
   goldPerTolaPkr: 379836,
   silverPerTolaPkr: 4708,
 };
+
+// ---------------------------------------------------------------------------
+// GOLD — FULL-YEAR HISTORY, 24K per tola (Nov 2025 → Nov 2026)
+// ---------------------------------------------------------------------------
+// Why this exists (owner catch, 21 Nov 2026 — NOTES #22): the 30-day daily
+// series was silently being read as an all-time window — the gold card
+// labelled its 30-day maximum (Rs 435,636, 5 Nov 2026) the "All-Time
+// Peak". The real peak is Rs 572,862 on 29 Jan 2026, reported by ARY News,
+// Express Tribune and ProPakistani (APSGJA rates) as the highest gold rate
+// in Pakistan's history; it crashed Rs 35,500 the very next day.
+// Monthly points are monthly AVERAGE rates (goldrateshub archive, World
+// Bank mid-month method); the 29 Jan 2026 point and the final point are
+// actual APSGJA / Sarafa daily closes. The final point matches the daily
+// series so the two windows agree where they overlap.
+export const GOLD_YEAR_HISTORY: PricePoint[] = [
+  { date: '2025-11-15', price: 431655 }, // Nov 2025 monthly average
+  { date: '2025-12-15', price: 452254 }, // Dec 2025 monthly average
+  { date: '2026-01-15', price: 499192 }, // Jan 2026 monthly average
+  { date: '2026-01-29', price: 572862 }, // ALL-TIME PEAK — APSGJA daily close
+  { date: '2026-02-15', price: 526080 }, // Feb 2026 monthly average
+  { date: '2026-03-15', price: 508724 }, // Mar 2026 monthly average
+  { date: '2026-04-15', price: 494053 }, // Apr 2026 monthly average
+  { date: '2026-05-15', price: 481291 }, // May 2026 monthly average
+  { date: '2026-06-15', price: 441195 }, // Jun 2026 monthly average
+  { date: '2026-07-15', price: 423483 }, // Jul 2026 monthly average
+  { date: '2026-08-15', price: 459225 }, // Aug 2026 monthly average
+  { date: '2026-09-15', price: 449235 }, // Sep 2026 monthly average
+  { date: '2026-10-15', price: 426436 }, // Oct 2026 monthly average
+  { date: '2026-11-20', price: 379836 }, // Latest Sarafa close (= daily series)
+];
 
 interface StockRawConfig {
   ticker: string;

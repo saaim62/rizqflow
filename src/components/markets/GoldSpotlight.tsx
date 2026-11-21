@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { MetalAsset } from '@/types';
-import { DATA_AS_OF_SHORT } from '@/data/marketData';
+import { DATA_AS_OF_SHORT, GOLD_YEAR_HISTORY } from '@/data/marketData';
 import { StreakBadge } from '@/components/ui/StreakBadge';
 import { Sparkline } from '@/components/markets/Sparkline';
 import { 
@@ -29,6 +29,20 @@ export function GoldSpotlight({ gold, silver }: GoldSpotlightProps) {
   }, []);
 
   const goldHistory = gold.history;
+
+  // Peak math comes from the FULL-YEAR series, never the 30-day window
+  // (the hardcoded copy here once called the 30-day high of Rs 435,636 an
+  // "all-time peak" — the real peak is Rs 572,862, 29 Jan 2026; NOTES #22).
+  const yearPeak = GOLD_YEAR_HISTORY.reduce((a, b) => (b.price > a.price ? b : a), GOLD_YEAR_HISTORY[0]);
+  const peakDropPct = yearPeak.price > 0 ? ((gold.currentPrice - yearPeak.price) / yearPeak.price) * 100 : 0;
+  const prevClose = goldHistory.length > 1 ? goldHistory[goldHistory.length - 2].price : gold.currentPrice;
+  const todayDrop = gold.currentPrice - prevClose;
+  const downStreak = Math.abs(Math.min(0, gold.streak.currentStreak));
+  const peakDateLabel = new Date(yearPeak.date + 'T00:00:00').toLocaleDateString('en-PK', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
   const filteredHistory =
     timeRange === '7d'
       ? goldHistory.slice(-7)
@@ -117,7 +131,7 @@ export function GoldSpotlight({ gold, silver }: GoldSpotlightProps) {
               </span>
 
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-xs font-mono font-medium text-amber-300 tabular-nums">
-                {gold.streak.drawdownFromPeakPct.toFixed(1)}% off Nov 5 Peak (Rs 435,636)
+                {Math.abs(peakDropPct).toFixed(1)}% off all-time peak (Rs {yearPeak.price.toLocaleString('en-PK')}, {peakDateLabel})
               </span>
             </div>
           </div>
@@ -217,10 +231,12 @@ export function GoldSpotlight({ gold, silver }: GoldSpotlightProps) {
               Sarafa Dip Analysis
             </div>
             <p className="text-xs text-zinc-300 leading-relaxed">
-              Gold touched an all-time peak of <strong>Rs 435,636</strong> on Nov 5, 2026. 
-              The current <strong>5-day consecutive drop (-Rs 15.4k today)</strong> represents a 
-              <strong> 12.8% discount</strong> off peak highs. For physical gold savers and wedding budgets, 
-              5 consecutive red days have historically offered attractive staggered entry zones before seasonal jewelry surges.
+              Gold touched its all-time peak of <strong>Rs {yearPeak.price.toLocaleString('en-PK')}</strong> on {peakDateLabel}.
+              At the latest close it sits <strong>{Math.abs(peakDropPct).toFixed(1)}% below that peak</strong> — a far deeper
+              correction than the recent 30-day window suggests. The current <strong>{downStreak}-day consecutive drop
+              ({todayDrop <= 0 ? '−' : '+'}Rs {Math.abs(todayDrop).toLocaleString('en-PK')} today)</strong> continues that slide.
+              For physical gold savers and wedding budgets, staggered entries during deep corrections have historically
+              beaten chasing record highs.
             </p>
           </div>
         </div>

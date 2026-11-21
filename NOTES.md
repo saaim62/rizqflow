@@ -327,3 +327,22 @@ Gate that should have caught 1–3: Gate 5 (modelling honesty) — the
 yield escalation and bucket-blindness were inherited from the original
 swarm build and never re-derived against the stamped data until the
 owner ordered this audit.
+
+#22 — The "all-time peak" was a 30-day high (owner catch, 21 Nov 2026)
+The gold card computed its peak as the maximum of the 30-day daily
+series and labelled it "All-Time Peak": Rs 435,636 (5 Nov 2026), with a
+"−12.8% off peak" story repeated in GoldSpotlight's hardcoded copy and
+badge. The owner caught it from memory — his own gold had touched
+~Rs 31 lac earlier in the year. The real all-time peak is Rs 572,862
+per tola on 29 Jan 2026 (APSGJA rates, reported by ARY News, Express
+Tribune and ProPakistani as the highest in Pakistan's history; it fell
+Rs 35,500 the next day). The true drawdown at the 20 Nov close is
+−33.7%, and today's price sits BELOW the 10–15% dip-zone band, not in
+it. Fix: GOLD_YEAR_HISTORY (full year — monthly averages from the
+goldrateshub/World Bank archive + the APSGJA peak and latest closes,
+sources named in DATA_SOURCES) now drives the peak, off-peak drop and
+dip-zone math in GoldDataCard and GoldSpotlight; the HoloChart chip is
+labelled "30-day peak"; the dip-zone chip gained a truthful
+below-the-zone state. Gate that should have caught it: Gate 5
+(modelling honesty) — a window-relative statistic was labelled with an
+absolute claim, the same failure class as #21's yield escalation.

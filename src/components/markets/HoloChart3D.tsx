@@ -113,7 +113,7 @@ export function HoloChart3D({ data }: { data: PricePoint[] }) {
         {/* floating readouts (stay level while the plane tilts) */}
         <div className="absolute left-1 sm:left-6 top-1 z-20 animate-float-slow">
           <div className="rounded-xl bg-black/55 backdrop-blur-md border border-[#D9A521]/30 px-3 py-2 shadow-[0_16px_40px_-12px_rgba(0,0,0,0.9)]">
-            <div className="text-[9px] uppercase tracking-[0.16em] text-zinc-400 font-semibold">Peak · {fmtDate(data[peakIdx].date)}</div>
+            <div className="text-[9px] uppercase tracking-[0.16em] text-zinc-400 font-semibold">30-day peak · {fmtDate(data[peakIdx].date)}</div>
             <div className="font-mono font-bold text-[#F7E08C] text-sm">{rs(max)}</div>
           </div>
         </div>
