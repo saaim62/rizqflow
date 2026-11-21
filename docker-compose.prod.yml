@@ -1,11 +1,25 @@
 # RizqFlow production service — runs beside DropRoute on the same host.
-# Joins DropRoute's network so its Caddy can reverse-proxy rizqflow:3000.
+# Joins DropRoute's network so its Caddy can reverse-proxy rizqflow-web:3000.
+#
+# HOST NOTE (2 GB EC2): a full in-Docker `next build` OOM-killed dockerd
+# on this box (21 Nov 2026, NOTES #19). The supported flow here is:
+#   1. Prebuild in a memory-capped throwaway container:
+#      docker run --rm --memory=1150m --memory-swap=2300m \
+#        -v ~/rizqflow:/app -w /app node:22-alpine \
+#        sh -c "npm ci --no-audit --no-fund && NODE_OPTIONS=--max-old-space-size=896 npm run build"
+#   2. docker compose -f docker-compose.prod.yml up -d   (this file)
+# The repo Dockerfile remains the canonical image build for larger hosts.
 services:
   rizqflow:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: node:22-alpine
     container_name: rizqflow-web
+    working_dir: /app
+    command: npm run start
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+    volumes:
+      - ./:/app
     networks:
       - droproute_default
     mem_limit: 512m

@@ -238,3 +238,11 @@ New entries are added in the same change that fixes the error.
   real closes with the as-of date (Gate 2 holds).
 - Next 16 prerender rule: Date.now() must not run in a client
   component's state initializer — set it inside useEffect.
+
+### 19. Deploy OOM: in-Docker next build killed dockerd on the 2 GB host (21 Nov 2026)
+- `docker compose up --build` on the t4g.small (1.8 GB RAM + DropRoute's
+  ~1.3 GB) ran the host into global OOM during `next build`; the kernel
+  killed dockerd itself (anon-rss 1.37 GB). systemd restarted Docker and
+  DropRoute was unharmed (verified HTTPS 200), but the pattern is banned
+  here: prebuild in a memory-capped throwaway container, run via the
+  compose volume pattern (see docker-compose.prod.yml header).
