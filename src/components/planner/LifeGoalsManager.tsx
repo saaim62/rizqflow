@@ -69,7 +69,7 @@ export function LifeGoalsManager({
       {isAdding && (
         <form
           onSubmit={handleAddGoal}
-          className="p-3.5 rounded-xl bg-black/60 border border-emerald-500/30 space-y-3 text-xs"
+          className="p-3.5 rounded-xl bg-black/[0.05] border border-emerald-500/30 space-y-3 text-xs"
         >
           <div>
             <label className="text-[10px] text-zinc-400 block mb-1">Goal Milestone Name</label>
@@ -123,7 +123,7 @@ export function LifeGoalsManager({
         {lifeGoals.map((g) => (
           <div
             key={g.id}
-            className="p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between gap-3 text-xs"
+            className="p-3 rounded-xl bg-[#FDFBF6] border border-white/5 flex items-center justify-between gap-3 text-xs"
           >
             <div>
               <div className="font-bold text-white text-xs">{g.name}</div>
@@ -142,7 +142,7 @@ export function LifeGoalsManager({
           </div>
         ))}
         {lifeGoals.length === 0 && !isAdding && (
-          <div className="p-3 rounded-xl bg-black/20 border border-dashed border-white/10 text-center text-[11px] text-zinc-500">
+          <div className="p-3 rounded-xl bg-black/[0.04] border border-dashed border-white/10 text-center text-[11px] text-zinc-500">
             No life goals configured yet. Add your wedding, house, or pilgrimage milestones.
           </div>
         )}

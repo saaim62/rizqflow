@@ -137,3 +137,18 @@ New entries are added in the same change that fixes the error.
   (blue -> champagne, purple -> bronze, zinc -> warm marble neutrals) and
   sweeping hardcoded panel/chart hexes. Rose/red untouched: they encode
   losses and danger in market data.
+
+### 12. Theme pivot: black marble -> light ivory marble + gold (owner, 21 Nov 2026)
+- **Direction:** the black-marble skin (589f4a3) read as "way too dark" to
+  the owner. The theme is now LIGHT: ivory marble base (#F6F1E7), white
+  cards, gold hairlines, warm near-black text. Same DropRoute/TITAN gold
+  identity, opposite polarity.
+- **How:** in `globals.css` `@theme`, `--color-white` resolves to warm
+  near-black (#221E16) so the app's text-white / border-white/10 /
+  bg-white/5 utilities flip coherently; gold text shades deepened one step
+  (300/400) for contrast on ivory; panel hexes swept to white/paper;
+  bg-black/40-70 field surfaces swept to paper tints; CarPodium3D's stage
+  restaged from charcoal-silver to ivory-gold. Rose/red still carry losses.
+- **Note:** the dark/light toggle in the navbar is currently vestigial —
+  no component consumes the theme state since the swarm overhaul. The app
+  ships the light theme only until a true dual theme is built.

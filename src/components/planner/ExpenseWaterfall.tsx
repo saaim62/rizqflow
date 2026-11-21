@@ -22,7 +22,7 @@ export function ExpenseWaterfall({ waterfall }: ExpenseWaterfallProps) {
   const allFullyCovered = waterfall.every((step) => step.isFullyCovered || step.monthlyCostPkr === 0);
 
   return (
-    <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-5">
+    <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-white/[0.06]">
         <div>
           <div className="flex items-center gap-2">
@@ -60,7 +60,7 @@ export function ExpenseWaterfall({ waterfall }: ExpenseWaterfallProps) {
                   ? 'bg-emerald-500/[0.03] border-emerald-500/25'
                   : step.coveredPkr > 0
                   ? 'bg-amber-500/[0.02] border-amber-500/20'
-                  : 'bg-black/30 border-white/5 opacity-80'
+                  : 'bg-[#FDFBF6] border-white/5 opacity-80'
               }`}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
@@ -99,7 +99,7 @@ export function ExpenseWaterfall({ waterfall }: ExpenseWaterfallProps) {
               </div>
 
               {/* Step Progress Bar */}
-              <div className="h-2 w-full bg-black/60 rounded-full overflow-hidden border border-white/5">
+              <div className="h-2 w-full bg-black/[0.05] rounded-full overflow-hidden border border-white/5">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
                     isCovered

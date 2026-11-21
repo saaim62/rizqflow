@@ -45,7 +45,7 @@ export function CompoundingChart({
   }));
 
   return (
-    <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
+    <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-white/[0.06]">
         <div>
           <div className="flex items-center gap-2">
@@ -101,7 +101,7 @@ export function CompoundingChart({
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#0D0B08',
+                  backgroundColor: '#FFFFFF',
                   borderColor: 'rgba(255, 255, 255, 0.15)',
                   borderRadius: '0.75rem',
                   boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',

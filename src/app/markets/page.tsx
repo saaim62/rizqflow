@@ -98,7 +98,7 @@ function MarketsTerminal() {
           </div>
 
           {/* Toggle between Gold and Silver */}
-          <div className="flex items-center bg-black/40 p-1 rounded-xl border border-white/10">
+          <div className="flex items-center bg-[#FDFBF6] p-1 rounded-xl border border-white/10">
             <button
               onClick={() => setActiveMetalId('gold-24k')}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
@@ -124,7 +124,7 @@ function MarketsTerminal() {
         </div>
 
         {/* Metal Detail Box */}
-        <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-5 sm:p-7 shadow-xl">
+        <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-5 sm:p-7 shadow-xl">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left 4 cols: Key Stats */}
             <div className="lg:col-span-4 space-y-5 flex flex-col justify-between">
@@ -147,28 +147,28 @@ function MarketsTerminal() {
 
               {/* 30-Day Streak Metrics Bento */}
               <div className="grid grid-cols-2 gap-3 font-mono text-xs">
-                <div className="p-3 rounded-xl bg-black/40 border border-white/5">
+                <div className="p-3 rounded-xl bg-[#FDFBF6] border border-white/5">
                   <span className="text-zinc-500 block text-[10px] uppercase">Drawdown from Peak</span>
                   <span className="text-amber-400 font-bold text-sm">
                     {activeMetal.streak.drawdownFromPeakPct.toFixed(1)}%
                   </span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-black/40 border border-white/5">
+                <div className="p-3 rounded-xl bg-[#FDFBF6] border border-white/5">
                   <span className="text-zinc-500 block text-[10px] uppercase">Today's Price Delta</span>
                   <span className="text-rose-400 font-bold text-sm">
                     {formatPkr(activeMetal.streak.changeToday)}
                   </span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-black/40 border border-white/5">
+                <div className="p-3 rounded-xl bg-[#FDFBF6] border border-white/5">
                   <span className="text-zinc-500 block text-[10px] uppercase">Longest Up Streak</span>
                   <span className="text-emerald-400 font-bold text-sm">
                     +{activeMetal.streak.longestUpStreak} Days
                   </span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-black/40 border border-white/5">
+                <div className="p-3 rounded-xl bg-[#FDFBF6] border border-white/5">
                   <span className="text-zinc-500 block text-[10px] uppercase">Longest Down Streak</span>
                   <span className="text-rose-400 font-bold text-sm">
                     -{activeMetal.streak.longestDownStreak} Days
@@ -218,7 +218,7 @@ function MarketsTerminal() {
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: '#0D0B08',
+                        backgroundColor: '#FFFFFF',
                         borderColor:
                           activeMetalId === 'gold-24k'
                             ? 'rgba(212, 175, 55, 0.4)'

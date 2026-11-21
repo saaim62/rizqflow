@@ -35,7 +35,7 @@ export function QuickSimulator() {
   const taxPenalty = Math.round((nonFilerTax - filerTax) / 12);
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-[#0D0B08] via-[#0D0B08] to-[#0D1017] border border-white/[0.08] p-6 sm:p-8 shadow-xl">
+    <div className="rounded-2xl bg-gradient-to-br from-[#FFFFFF] via-[#FFFFFF] to-[#0D1017] border border-white/[0.08] p-6 sm:p-8 shadow-xl">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-white/[0.08]">
         <div>
           <div className="flex items-center gap-2">
@@ -107,7 +107,7 @@ export function QuickSimulator() {
               step={250000}
               value={lumpSum}
               onChange={(e) => setLumpSum(Number(e.target.value))}
-              className="w-full h-2.5 bg-black/60 rounded-lg appearance-none cursor-pointer accent-emerald-400 border border-white/10"
+              className="w-full h-2.5 bg-black/[0.05] rounded-lg appearance-none cursor-pointer accent-emerald-400 border border-white/10"
             />
 
             <div className="flex justify-between text-[11px] font-mono text-zinc-400 mt-2">
@@ -142,7 +142,7 @@ export function QuickSimulator() {
           </div>
 
           {/* Real world context message */}
-          <div className="p-4 rounded-xl bg-black/30 border border-white/[0.06] text-xs text-zinc-300 space-y-2">
+          <div className="p-4 rounded-xl bg-[#FDFBF6] border border-white/[0.06] text-xs text-zinc-300 space-y-2">
             <div className="flex items-center gap-2 text-emerald-400 font-semibold">
               <CheckCircle2 className="w-4 h-4" />
               What this covers in Pakistan today:
@@ -156,7 +156,7 @@ export function QuickSimulator() {
         </div>
 
         {/* Right 5 cols: Result Bento Box */}
-        <div className="lg:col-span-5 flex flex-col justify-between rounded-xl bg-black/40 border border-white/[0.08] p-5 sm:p-6 space-y-5">
+        <div className="lg:col-span-5 flex flex-col justify-between rounded-xl bg-[#FDFBF6] border border-white/[0.08] p-5 sm:p-6 space-y-5">
           <div className="space-y-4">
             <div>
               <span className="text-xs uppercase font-medium tracking-wider text-zinc-400">

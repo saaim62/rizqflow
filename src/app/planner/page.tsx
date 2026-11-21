@@ -151,7 +151,7 @@ function PlannerContent() {
                 </h3>
               </div>
 
-              <div className="flex items-center bg-black/40 p-1 rounded-xl border border-white/10">
+              <div className="flex items-center bg-[#FDFBF6] p-1 rounded-xl border border-white/10">
                 <button
                   onClick={() => setActiveVisualTab('compounding')}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${

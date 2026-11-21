@@ -16,7 +16,7 @@ export function CarControls({ profile, onChange }: CarControlsProps) {
   const petrolPrice = profile.petrolPricePerLitre || 322;
 
   return (
-    <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-6">
+    <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-white/[0.06]">
         <div>
           <h3 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
@@ -39,7 +39,7 @@ export function CarControls({ profile, onChange }: CarControlsProps) {
             </span>
           </label>
 
-          <div className="grid grid-cols-1 gap-1.5 bg-black/40 p-1 rounded-xl border border-white/5 text-xs">
+          <div className="grid grid-cols-1 gap-1.5 bg-[#FDFBF6] p-1 rounded-xl border border-white/5 text-xs">
             <button
               onClick={() => onChange({ solarTariffMode: 'net-metering-legacy' })}
               className={`p-2 rounded-lg text-left transition-all ${
@@ -113,7 +113,7 @@ export function CarControls({ profile, onChange }: CarControlsProps) {
               step={5}
               value={dailyKm}
               onChange={(e) => onChange({ dailyCommuteKm: Number(e.target.value) })}
-              className="w-full h-2 bg-black/60 rounded-lg appearance-none cursor-pointer accent-emerald-400 border border-white/10"
+              className="w-full h-2 bg-black/[0.05] rounded-lg appearance-none cursor-pointer accent-emerald-400 border border-white/10"
             />
 
             <div className="flex justify-between text-[10px] font-mono text-zinc-500 mt-1">
@@ -124,7 +124,7 @@ export function CarControls({ profile, onChange }: CarControlsProps) {
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1 text-xs">
+          <div className="p-3 rounded-xl bg-[#FDFBF6] border border-white/5 space-y-1 text-xs">
             <span className="text-zinc-400 block text-[11px]">5-Year Total Distance:</span>
             <div className="font-mono font-bold text-white text-sm">
               {(dailyKm * 365 * 5).toLocaleString('en-PK')} km
@@ -155,7 +155,7 @@ export function CarControls({ profile, onChange }: CarControlsProps) {
               step={1}
               value={oppCost}
               onChange={(e) => onChange({ opportunityCostReturnPct: Number(e.target.value) })}
-              className="w-full h-2 bg-black/60 rounded-lg appearance-none cursor-pointer accent-emerald-400 border border-white/10"
+              className="w-full h-2 bg-black/[0.05] rounded-lg appearance-none cursor-pointer accent-emerald-400 border border-white/10"
             />
             <span className="text-[10px] text-zinc-400 block mt-1">
               Alternative return if cash was kept in PSX Grade-A dividends or money market funds.
@@ -179,7 +179,7 @@ export function CarControls({ profile, onChange }: CarControlsProps) {
               step={5}
               value={petrolPrice}
               onChange={(e) => onChange({ petrolPricePerLitre: Number(e.target.value) })}
-              className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 font-mono text-white text-xs"
+              className="w-full px-3 py-1.5 rounded-lg bg-[#FDFBF6] border border-white/10 font-mono text-white text-xs"
             />
           </div>
         </div>

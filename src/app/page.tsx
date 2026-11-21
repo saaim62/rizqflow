@@ -34,7 +34,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen space-y-10 pb-16">
       {/* 1. Executive Hero Header */}
-      <section className="relative overflow-hidden border-b border-white/[0.06] bg-gradient-to-b from-[#0A0806] via-[#070605] to-[#070605] pt-10 pb-12 sm:pt-16 sm:pb-16">
+      <section className="relative overflow-hidden border-b border-white/[0.06] bg-gradient-to-b from-[#FBF8F0] via-[#F1EBDD] to-[#F1EBDD] pt-10 pb-12 sm:pt-16 sm:pb-16">
         {/* Glow ambient background effects */}
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute top-10 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -169,7 +169,7 @@ export default function HomePage() {
         </section>
 
         {/* 5. Car Decision Feature Spotlight Banner */}
-        <section className="rounded-2xl bg-gradient-to-r from-amber-500/10 via-[#0D0B08] to-emerald-500/10 border border-white/[0.08] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
+        <section className="rounded-2xl bg-gradient-to-r from-amber-500/10 via-[#FFFFFF] to-emerald-500/10 border border-white/[0.08] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
           <div className="space-y-2 text-center md:text-left">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider">
               <Car className="w-3.5 h-3.5" />

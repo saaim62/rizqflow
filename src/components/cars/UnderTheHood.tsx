@@ -5,7 +5,7 @@ import { ShieldCheck, Sun, Coins, Landmark, AlertCircle } from 'lucide-react';
 
 export function UnderTheHood() {
   return (
-    <div className="rounded-2xl bg-black/40 border border-white/[0.08] p-5 sm:p-6 space-y-4 text-xs text-zinc-400">
+    <div className="rounded-2xl bg-[#FDFBF6] border border-white/[0.08] p-5 sm:p-6 space-y-4 text-xs text-zinc-400">
       <div className="flex items-center gap-2 text-white font-bold text-sm">
         <ShieldCheck className="w-4 h-4 text-emerald-400" />
         <span>Under the Hood: Institutional Pakistani Vehicle TCO Assumptions</span>

@@ -23,7 +23,7 @@ export function VehicleSwapOptimizer({ decision, profile }: VehicleSwapOptimizer
   const hasSolar = profile.solarKw > 0;
 
   return (
-    <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-5">
+    <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.06]">
         <div>
           <div className="flex items-center gap-2">
@@ -55,7 +55,7 @@ export function VehicleSwapOptimizer({ decision, profile }: VehicleSwapOptimizer
         {decision.results.slice(0, 3).map((res) => (
           <div
             key={res.vehicleId}
-            className="p-3.5 rounded-xl bg-black/40 border border-white/5 space-y-1.5"
+            className="p-3.5 rounded-xl bg-[#FDFBF6] border border-white/5 space-y-1.5"
           >
             <div className="flex justify-between items-center text-xs">
               <span className="font-bold text-white">{res.name}</span>

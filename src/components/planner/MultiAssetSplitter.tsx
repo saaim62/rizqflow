@@ -96,7 +96,7 @@ export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitte
           return (
             <div
               key={bucket.id}
-              className="p-2.5 rounded-xl bg-black/40 border border-white/5 space-y-1.5"
+              className="p-2.5 rounded-xl bg-[#FDFBF6] border border-white/5 space-y-1.5"
             >
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
@@ -120,7 +120,7 @@ export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitte
                 step={5}
                 value={bucket.monthlySplitPct}
                 onChange={(e) => updateSplit(bucket.id, Number(e.target.value))}
-                className="w-full h-1.5 bg-black/60 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+                className="w-full h-1.5 bg-black/[0.05] rounded-lg appearance-none cursor-pointer accent-emerald-400"
               />
             </div>
           );

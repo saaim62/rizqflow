@@ -83,7 +83,7 @@ export function PlannerIntakeForm({
   return (
     <div className="space-y-5">
       {/* 1. Presets Selector Bar */}
-      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-4 shadow-lg space-y-3">
+      <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-4 shadow-lg space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
@@ -115,7 +115,7 @@ export function PlannerIntakeForm({
               className={`p-3 rounded-xl text-left transition-all border ${
                 activePreset === preset.id
                   ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 shadow-sm'
-                  : 'bg-black/30 border-white/5 text-zinc-400 hover:bg-white/5 hover:text-zinc-200'
+                  : 'bg-[#FDFBF6] border-white/5 text-zinc-400 hover:bg-white/5 hover:text-zinc-200'
               }`}
             >
               <div className="font-bold text-xs text-white">{preset.label}</div>
@@ -126,14 +126,14 @@ export function PlannerIntakeForm({
       </div>
 
       {/* 2. Global Modifiers Bar */}
-      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] p-4 shadow-lg flex flex-wrap items-center gap-2">
+      <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] p-4 shadow-lg flex flex-wrap items-center gap-2">
         {/* Shariah Only */}
         <button
           onClick={() => updateProfileField('shariahOnly', !profile.shariahOnly)}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
             profile.shariahOnly
               ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-              : 'bg-black/40 text-zinc-400 border-white/5 hover:text-white'
+              : 'bg-[#FDFBF6] text-zinc-400 border-white/5 hover:text-white'
           }`}
         >
           <Moon className="w-3.5 h-3.5" />
@@ -164,7 +164,7 @@ export function PlannerIntakeForm({
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
             profile.includeZakat
               ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-              : 'bg-black/40 text-zinc-400 border-white/5 hover:text-white'
+              : 'bg-[#FDFBF6] text-zinc-400 border-white/5 hover:text-white'
           }`}
         >
           <Percent className="w-3.5 h-3.5" />
@@ -177,7 +177,7 @@ export function PlannerIntakeForm({
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
             profile.inflationAdjusted
               ? 'bg-blue-500/15 text-blue-300 border-blue-500/30'
-              : 'bg-black/40 text-zinc-400 border-white/5 hover:text-white'
+              : 'bg-[#FDFBF6] text-zinc-400 border-white/5 hover:text-white'
           }`}
         >
           <TrendingUp className="w-3.5 h-3.5" />
@@ -186,10 +186,10 @@ export function PlannerIntakeForm({
       </div>
 
       {/* 3. Income, Raises & Monthly SIP */}
-      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] overflow-hidden shadow-lg">
+      <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] overflow-hidden shadow-lg">
         <button
           onClick={() => toggleSection('income')}
-          className="w-full flex items-center justify-between p-4 bg-black/30 hover:bg-black/40 transition-colors text-left"
+          className="w-full flex items-center justify-between p-4 bg-[#FDFBF6] hover:bg-[#FDFBF6] transition-colors text-left"
         >
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
@@ -217,7 +217,7 @@ export function PlannerIntakeForm({
                   step={10000}
                   value={profile.monthlyIncomePkr}
                   onChange={(e) => updateProfileField('monthlyIncomePkr', Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-black/50 border border-white/10 font-mono text-white text-sm focus:outline-none focus:border-emerald-500/50"
+                  className="w-full px-3 py-2 rounded-lg bg-[#FDFBF6] border border-white/10 font-mono text-white text-sm focus:outline-none focus:border-emerald-500/50"
                 />
               </div>
 
@@ -232,7 +232,7 @@ export function PlannerIntakeForm({
                   max={40}
                   value={profile.annualSalaryRaisePct || 0}
                   onChange={(e) => updateProfileField('annualSalaryRaisePct', Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-black/50 border border-white/10 font-mono text-white text-sm focus:outline-none focus:border-emerald-500/50"
+                  className="w-full px-3 py-2 rounded-lg bg-[#FDFBF6] border border-white/10 font-mono text-white text-sm focus:outline-none focus:border-emerald-500/50"
                 />
               </div>
 
@@ -245,7 +245,7 @@ export function PlannerIntakeForm({
                   step={5000}
                   value={profile.monthlyInvestPkr}
                   onChange={(e) => updateProfileField('monthlyInvestPkr', Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-black/50 border border-white/10 font-mono text-white text-sm focus:outline-none focus:border-emerald-500/50"
+                  className="w-full px-3 py-2 rounded-lg bg-[#FDFBF6] border border-white/10 font-mono text-white text-sm focus:outline-none focus:border-emerald-500/50"
                 />
               </div>
 
@@ -258,7 +258,7 @@ export function PlannerIntakeForm({
                   step={50000}
                   value={profile.lumpSumPkr}
                   onChange={(e) => updateProfileField('lumpSumPkr', Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-black/50 border border-white/10 font-mono text-white text-sm focus:outline-none focus:border-emerald-500/50"
+                  className="w-full px-3 py-2 rounded-lg bg-[#FDFBF6] border border-white/10 font-mono text-white text-sm focus:outline-none focus:border-emerald-500/50"
                 />
               </div>
 
@@ -271,7 +271,7 @@ export function PlannerIntakeForm({
                   step={50000}
                   value={profile.currentCashReservePkr}
                   onChange={(e) => updateProfileField('currentCashReservePkr', Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-black/50 border border-white/10 font-mono text-white text-sm focus:outline-none focus:border-emerald-500/50"
+                  className="w-full px-3 py-2 rounded-lg bg-[#FDFBF6] border border-white/10 font-mono text-white text-sm focus:outline-none focus:border-emerald-500/50"
                 />
               </div>
             </div>
@@ -280,10 +280,10 @@ export function PlannerIntakeForm({
       </div>
 
       {/* 4. Multi-Asset Monthly Split */}
-      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] overflow-hidden shadow-lg">
+      <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] overflow-hidden shadow-lg">
         <button
           onClick={() => toggleSection('assets')}
-          className="w-full flex items-center justify-between p-4 bg-black/30 hover:bg-black/40 transition-colors text-left"
+          className="w-full flex items-center justify-between p-4 bg-[#FDFBF6] hover:bg-[#FDFBF6] transition-colors text-left"
         >
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
@@ -310,10 +310,10 @@ export function PlannerIntakeForm({
       </div>
 
       {/* 5. Dated Life Goals CRUD */}
-      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] overflow-hidden shadow-lg">
+      <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] overflow-hidden shadow-lg">
         <button
           onClick={() => toggleSection('goals')}
-          className="w-full flex items-center justify-between p-4 bg-black/30 hover:bg-black/40 transition-colors text-left"
+          className="w-full flex items-center justify-between p-4 bg-[#FDFBF6] hover:bg-[#FDFBF6] transition-colors text-left"
         >
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
@@ -342,10 +342,10 @@ export function PlannerIntakeForm({
       </div>
 
       {/* 6. Monthly Living Expenses */}
-      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] overflow-hidden shadow-lg">
+      <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] overflow-hidden shadow-lg">
         <button
           onClick={() => toggleSection('expenses')}
-          className="w-full flex items-center justify-between p-4 bg-black/30 hover:bg-black/40 transition-colors text-left"
+          className="w-full flex items-center justify-between p-4 bg-[#FDFBF6] hover:bg-[#FDFBF6] transition-colors text-left"
         >
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center">
@@ -371,7 +371,7 @@ export function PlannerIntakeForm({
                   step={2000}
                   value={profile.expenses.fuelAndCommute}
                   onChange={(e) => updateExpenseField('fuelAndCommute', Number(e.target.value))}
-                  className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 font-mono text-white text-xs"
+                  className="w-full px-3 py-1.5 rounded-lg bg-[#FDFBF6] border border-white/10 font-mono text-white text-xs"
                 />
               </div>
 
@@ -382,7 +382,7 @@ export function PlannerIntakeForm({
                   step={2000}
                   value={profile.expenses.utilitiesAndInternet}
                   onChange={(e) => updateExpenseField('utilitiesAndInternet', Number(e.target.value))}
-                  className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 font-mono text-white text-xs"
+                  className="w-full px-3 py-1.5 rounded-lg bg-[#FDFBF6] border border-white/10 font-mono text-white text-xs"
                 />
               </div>
 
@@ -393,7 +393,7 @@ export function PlannerIntakeForm({
                   step={3000}
                   value={profile.expenses.groceriesAndFood}
                   onChange={(e) => updateExpenseField('groceriesAndFood', Number(e.target.value))}
-                  className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 font-mono text-white text-xs"
+                  className="w-full px-3 py-1.5 rounded-lg bg-[#FDFBF6] border border-white/10 font-mono text-white text-xs"
                 />
               </div>
 
@@ -404,7 +404,7 @@ export function PlannerIntakeForm({
                   step={5000}
                   value={profile.expenses.rentOrHousing}
                   onChange={(e) => updateExpenseField('rentOrHousing', Number(e.target.value))}
-                  className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 font-mono text-white text-xs"
+                  className="w-full px-3 py-1.5 rounded-lg bg-[#FDFBF6] border border-white/10 font-mono text-white text-xs"
                 />
               </div>
 
@@ -415,7 +415,7 @@ export function PlannerIntakeForm({
                   step={3000}
                   value={profile.expenses.familyAndOther}
                   onChange={(e) => updateExpenseField('familyAndOther', Number(e.target.value))}
-                  className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 font-mono text-white text-xs"
+                  className="w-full px-3 py-1.5 rounded-lg bg-[#FDFBF6] border border-white/10 font-mono text-white text-xs"
                 />
               </div>
             </div>
@@ -424,10 +424,10 @@ export function PlannerIntakeForm({
       </div>
 
       {/* 7. Age & Household Profile */}
-      <div className="rounded-2xl bg-[#0D0B08] border border-white/[0.08] overflow-hidden shadow-lg">
+      <div className="rounded-2xl bg-[#FFFFFF] border border-white/[0.08] overflow-hidden shadow-lg">
         <button
           onClick={() => toggleSection('profile')}
-          className="w-full flex items-center justify-between p-4 bg-black/30 hover:bg-black/40 transition-colors text-left"
+          className="w-full flex items-center justify-between p-4 bg-[#FDFBF6] hover:bg-[#FDFBF6] transition-colors text-left"
         >
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-zinc-700 text-zinc-300 flex items-center justify-center">
@@ -452,7 +452,7 @@ export function PlannerIntakeForm({
                   type="number"
                   value={profile.age}
                   onChange={(e) => updateProfileField('age', Number(e.target.value))}
-                  className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 font-mono text-white text-xs"
+                  className="w-full px-3 py-1.5 rounded-lg bg-[#FDFBF6] border border-white/10 font-mono text-white text-xs"
                 />
               </div>
 
@@ -462,7 +462,7 @@ export function PlannerIntakeForm({
                   type="number"
                   value={profile.retirementAge || 60}
                   onChange={(e) => updateProfileField('retirementAge', Number(e.target.value))}
-                  className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 font-mono text-white text-xs"
+                  className="w-full px-3 py-1.5 rounded-lg bg-[#FDFBF6] border border-white/10 font-mono text-white text-xs"
                 />
               </div>
 
@@ -471,7 +471,7 @@ export function PlannerIntakeForm({
                 <select
                   value={profile.role}
                   onChange={(e) => updateProfileField('role', e.target.value as UserRole)}
-                  className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 text-white text-xs"
+                  className="w-full px-3 py-1.5 rounded-lg bg-[#FDFBF6] border border-white/10 text-white text-xs"
                 >
                   <option value="salaried">Salaried Employee</option>
                   <option value="freelancer">Freelancer / IT Exporter</option>
@@ -487,7 +487,7 @@ export function PlannerIntakeForm({
                   onChange={(e) =>
                     updateProfileField('maritalStatus', e.target.value as 'unmarried' | 'married')
                   }
-                  className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 text-white text-xs"
+                  className="w-full px-3 py-1.5 rounded-lg bg-[#FDFBF6] border border-white/10 text-white text-xs"
                 >
                   <option value="unmarried">Single / Unmarried</option>
                   <option value="married">Married</option>
@@ -499,7 +499,7 @@ export function PlannerIntakeForm({
                 <select
                   value={profile.gender}
                   onChange={(e) => updateProfileField('gender', e.target.value as 'male' | 'female')}
-                  className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 text-white text-xs"
+                  className="w-full px-3 py-1.5 rounded-lg bg-[#FDFBF6] border border-white/10 text-white text-xs"
                 >
                   <option value="male">Male</option>
                   <option value="female">Female</option>
@@ -514,7 +514,7 @@ export function PlannerIntakeForm({
                   max={30}
                   value={profile.familyMembers}
                   onChange={(e) => updateProfileField('familyMembers', Number(e.target.value))}
-                  className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 font-mono text-white text-xs"
+                  className="w-full px-3 py-1.5 rounded-lg bg-[#FDFBF6] border border-white/10 font-mono text-white text-xs"
                 />
               </div>
 
@@ -523,7 +523,7 @@ export function PlannerIntakeForm({
                 <select
                   value={profile.isBreadwinner ? 'yes' : 'no'}
                   onChange={(e) => updateProfileField('isBreadwinner', e.target.value === 'yes')}
-                  className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 text-white text-xs"
+                  className="w-full px-3 py-1.5 rounded-lg bg-[#FDFBF6] border border-white/10 text-white text-xs"
                 >
                   <option value="yes">Yes — I am</option>
                   <option value="no">No — someone else is</option>
