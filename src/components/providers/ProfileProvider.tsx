@@ -10,6 +10,20 @@ import {
   decodeProfileFromHash 
 } from '@/lib/stateUrl';
 import { formatPkr, formatCompactPkr, maskAmount, FormatPkrOptions } from '@/lib/format';
+import {
+  UserAccount,
+  PortfolioRecord,
+  getActiveSession,
+  getRegisteredUsers,
+  signIn,
+  signUp,
+  signOut,
+  createPortfolioForUser,
+  switchUserPortfolio,
+  saveProfileToActivePortfolio,
+} from '@/lib/auth';
+import { AuthModal } from '@/components/auth/AuthModal';
+import { OnboardingWizardModal } from '@/components/onboarding/OnboardingWizardModal';
 
 interface ProfileContextType {
   profile: UserProfile;
@@ -25,6 +39,18 @@ interface ProfileContextType {
   sharePlan: () => Promise<string>;
   formatPkrMasked: (n: number, options?: FormatPkrOptions) => string;
   formatCompactPkrMasked: (n: number) => string;
+
+  // Multi-user & Auth additions
+  currentUser: UserAccount | null;
+  userPortfolios: PortfolioRecord[];
+  activePortfolioId: string;
+  signInUser: (email: string, pass: string) => { success: boolean; user?: UserAccount; error?: string };
+  signUpUser: (name: string, email: string, pass: string, initialProfile?: UserProfile, portfolioName?: string) => { success: boolean; user?: UserAccount; error?: string };
+  signOutUser: () => void;
+  switchActivePortfolio: (portfolioId: string) => void;
+  createNewPortfolio: (name: string, baseProfile?: UserProfile) => { success: boolean; user?: UserAccount; portfolio?: PortfolioRecord };
+  openAuthModal: (mode?: 'signin' | 'signup' | 'portfolios') => void;
+  openOnboardingModal: () => void;
 }
 
 const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -46,6 +72,16 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [toast, setToast] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState<boolean>(false);
 
+  // Auth State
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
+  const [userPortfolios, setUserPortfolios] = useState<PortfolioRecord[]>([]);
+  const [activePortfolioId, setActivePortfolioId] = useState<string>('');
+
+  // Modals state
+  const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
+  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup' | 'portfolios'>('signin');
+  const [onboardingModalOpen, setOnboardingModalOpen] = useState<boolean>(false);
+
   // Show temporary toast message
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -54,17 +90,17 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     }, 3500);
   }, []);
 
-  // Hydrate from localStorage or URL hash
+  // Hydrate from localStorage or URL hash & load active session
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Check privacy setting from storage
+    // 1. Privacy setting
     const savedPrivacy = window.localStorage.getItem('rizqflow_hide_amounts');
     if (savedPrivacy === 'true') {
       setHideAmounts(true);
     }
 
-    // Check theme setting
+    // 2. Theme setting
     const savedTheme = window.localStorage.getItem('rizqflow_theme') as 'dark' | 'light' | null;
     if (savedTheme) {
       setTheme(savedTheme);
@@ -75,13 +111,31 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Check URL Hash first, then localStorage
+    // 3. User Session
+    const session = getActiveSession();
+    if (session) {
+      const users = getRegisteredUsers();
+      const user = users.find((u) => u.id === session.userId);
+      if (user) {
+        setCurrentUser(user);
+        setUserPortfolios(user.portfolios);
+        setActivePortfolioId(user.activePortfolioId);
+
+        // Find active portfolio profile
+        const activePort = user.portfolios.find((p) => p.id === user.activePortfolioId);
+        if (activePort) {
+          setProfileState(activePort.profile);
+        }
+      }
+    }
+
+    // 4. URL Hash check (overrides default if present)
     const hash = window.location.hash;
     const decodedFromHash = decodeProfileFromHash(hash, defaultProfile);
     if (decodedFromHash) {
       setProfileState(decodedFromHash);
       showToast('Loaded shared plan from URL!');
-    } else {
+    } else if (!session) {
       const stored = loadProfileFromStorage(defaultProfile);
       setProfileState(stored);
     }
@@ -89,12 +143,15 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     setHasLoaded(true);
   }, [defaultProfile, showToast]);
 
-  // Persist profile to localStorage whenever it changes after initial load
+  // Persist profile to localStorage & active user portfolio whenever it changes
   useEffect(() => {
     if (hasLoaded) {
       saveProfileToStorage(profile);
+      if (currentUser && activePortfolioId) {
+        saveProfileToActivePortfolio(currentUser.id, activePortfolioId, profile);
+      }
     }
-  }, [profile, hasLoaded]);
+  }, [profile, hasLoaded, currentUser, activePortfolioId]);
 
   // Update profile partially
   const updateProfile = useCallback((updated: Partial<UserProfile>) => {
@@ -190,6 +247,95 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     [hideAmounts]
   );
 
+  // Auth Actions
+  const signInUser = useCallback(
+    (email: string, pass: string) => {
+      const res = signIn(email, pass);
+      const user = res.user;
+      if (res.success && user) {
+        setCurrentUser(user);
+        setUserPortfolios(user.portfolios);
+        setActivePortfolioId(user.activePortfolioId);
+
+        const activePort = user.portfolios.find((p) => p.id === user.activePortfolioId);
+        if (activePort) {
+          setProfileState(activePort.profile);
+        }
+      }
+      return res;
+    },
+    []
+  );
+
+  const signUpUser = useCallback(
+    (name: string, email: string, pass: string, initialProfile?: UserProfile, portfolioName?: string) => {
+      const res = signUp(name, email, pass, initialProfile || profile, portfolioName);
+      const user = res.user;
+      if (res.success && user) {
+        setCurrentUser(user);
+        setUserPortfolios(user.portfolios);
+        setActivePortfolioId(user.activePortfolioId);
+
+        const activePort = user.portfolios.find((p) => p.id === user.activePortfolioId);
+        if (activePort) {
+          setProfileState(activePort.profile);
+        }
+      }
+      return res;
+    },
+    [profile]
+  );
+
+  const signOutUser = useCallback(() => {
+    signOut();
+    setCurrentUser(null);
+    setUserPortfolios([]);
+    setActivePortfolioId('');
+    showToast('Signed out successfully.');
+  }, [showToast]);
+
+  const switchActivePortfolio = useCallback(
+    (portfolioId: string) => {
+      if (!currentUser) return;
+      const targetProfile = switchUserPortfolio(currentUser.id, portfolioId);
+      if (targetProfile) {
+        setActivePortfolioId(portfolioId);
+        setProfileState(targetProfile);
+        // Refresh portfolios list
+        const users = getRegisteredUsers();
+        const user = users.find((u) => u.id === currentUser.id);
+        if (user) {
+          setUserPortfolios(user.portfolios);
+        }
+      }
+    },
+    [currentUser]
+  );
+
+  const createNewPortfolio = useCallback(
+    (name: string, baseProfile?: UserProfile) => {
+      if (!currentUser) return { success: false };
+      const res = createPortfolioForUser(currentUser.id, name, baseProfile || profile);
+      if (res.success && res.user && res.portfolio) {
+        setCurrentUser(res.user);
+        setUserPortfolios(res.user.portfolios);
+        setActivePortfolioId(res.portfolio.id);
+        setProfileState(res.portfolio.profile);
+      }
+      return res;
+    },
+    [currentUser, profile]
+  );
+
+  const openAuthModal = useCallback((mode: 'signin' | 'signup' | 'portfolios' = 'signin') => {
+    setAuthModalMode(mode);
+    setAuthModalOpen(true);
+  }, []);
+
+  const openOnboardingModal = useCallback(() => {
+    setOnboardingModalOpen(true);
+  }, []);
+
   return (
     <ProfileContext.Provider
       value={{
@@ -206,9 +352,33 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         sharePlan,
         formatPkrMasked,
         formatCompactPkrMasked,
+        currentUser,
+        userPortfolios,
+        activePortfolioId,
+        signInUser,
+        signUpUser,
+        signOutUser,
+        switchActivePortfolio,
+        createNewPortfolio,
+        openAuthModal,
+        openOnboardingModal,
       }}
     >
       {children}
+
+      {/* Global Auth Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        initialMode={authModalMode}
+        onOpenOnboarding={() => setOnboardingModalOpen(true)}
+      />
+
+      {/* Global Onboarding Setup Wizard Modal */}
+      <OnboardingWizardModal
+        isOpen={onboardingModalOpen}
+        onClose={() => setOnboardingModalOpen(false)}
+      />
 
       {/* Floating Toast notification */}
       {toast && (

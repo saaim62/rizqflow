@@ -17,7 +17,10 @@ import {
   Menu, 
   X, 
   Sparkles,
-  RotateCcw
+  User,
+  FolderKanban,
+  SlidersHorizontal,
+  ChevronDown
 } from 'lucide-react';
 import { useBeginnerGuide } from './BeginnerDrawer';
 import { useProfile } from '@/components/providers/ProfileProvider';
@@ -31,9 +34,15 @@ export function Navbar() {
     theme, 
     toggleTheme, 
     sharePlan,
-    resetToPreset 
+    currentUser,
+    userPortfolios,
+    activePortfolioId,
+    openAuthModal,
+    openOnboardingModal
   } = useProfile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const activePort = userPortfolios.find((p) => p.id === activePortfolioId);
 
   const navLinks = [
     { href: '/', label: 'Overview', icon: Compass },
@@ -104,6 +113,46 @@ export function Navbar() {
 
         {/* Right Action Controls */}
         <div className="flex items-center gap-2">
+          {/* Setup Wizard Button */}
+          <button
+            onClick={openOnboardingModal}
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/25 text-xs font-semibold transition-all shadow-sm"
+            title="Setup & Calibrate Your Personal Financial Flow"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Setup Flow</span>
+          </button>
+
+          {/* User Account / Portfolio Selector */}
+          {currentUser ? (
+            <button
+              onClick={() => openAuthModal('portfolios')}
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs transition-all group"
+              title="Manage Portfolios & Account"
+            >
+              <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400 text-black font-bold text-[11px] flex items-center justify-center">
+                {currentUser.name.substring(0, 2).toUpperCase()}
+              </div>
+              <div className="hidden sm:flex flex-col text-left">
+                <span className="font-semibold text-white leading-none text-[11px] group-hover:text-emerald-300 transition-colors">
+                  {currentUser.name}
+                </span>
+                <span className="text-[10px] text-zinc-400 font-normal leading-tight truncate max-w-[110px]">
+                  {activePort ? activePort.name : 'Personal'}
+                </span>
+              </div>
+              <ChevronDown className="w-3 h-3 text-zinc-500 group-hover:text-zinc-300 transition-colors hidden sm:inline" />
+            </button>
+          ) : (
+            <button
+              onClick={() => openAuthModal('signin')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs transition-all shadow-sm shadow-emerald-500/20"
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Sign In</span>
+            </button>
+          )}
+
           {/* Hide Amounts Privacy Toggle */}
           <button
             onClick={toggleHideAmounts}
@@ -141,9 +190,9 @@ export function Navbar() {
           {/* Beginner Guide Drawer CTA */}
           <button
             onClick={() => openGuide()}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/25 text-xs font-semibold transition-all"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 text-xs font-semibold transition-all"
           >
-            <BookOpen className="w-3.5 h-3.5" />
+            <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
             <span>Guide</span>
           </button>
 
@@ -187,26 +236,50 @@ export function Navbar() {
               </Link>
             );
           })}
-          <div className="pt-2 border-t border-white/5 flex gap-2">
+          <div className="pt-2 border-t border-white/5 flex flex-col gap-2">
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                openGuide();
+                openOnboardingModal();
               }}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-xs font-semibold"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-xs font-semibold"
             >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>Beginner Guide</span>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Setup Flow / Calibrate Portfolio</span>
             </button>
+
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                sharePlan();
+                openAuthModal(currentUser ? 'portfolios' : 'signin');
               }}
-              className="px-3 py-2 rounded-lg bg-white/5 text-zinc-300 border border-white/10 text-xs font-semibold"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 text-white border border-white/10 text-xs font-semibold"
             >
-              <Share2 className="w-3.5 h-3.5 text-emerald-400" />
+              <User className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{currentUser ? `Account: ${currentUser.name}` : 'Sign In / Sign Up'}</span>
             </button>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  openGuide();
+                }}
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 text-zinc-300 border border-white/10 text-xs font-semibold"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Beginner Guide</span>
+              </button>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  sharePlan();
+                }}
+                className="px-3 py-2 rounded-lg bg-white/5 text-zinc-300 border border-white/10 text-xs font-semibold"
+              >
+                <Share2 className="w-3.5 h-3.5 text-emerald-400" />
+              </button>
+            </div>
           </div>
         </div>
       )}
