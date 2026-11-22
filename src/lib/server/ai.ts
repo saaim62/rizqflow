@@ -17,6 +17,7 @@ import {
   PredictionResult,
   PredictionType,
   parsePrediction,
+  isGroundedPrediction,
 } from '@/lib/aiPredictions';
 import { ForeignMappingResult } from '@/types';
 import {
@@ -106,10 +107,14 @@ async function callGroq(
   cfg: AiConfig,
   model: string,
   type: PredictionType,
-  context: Record<string, unknown>
+  context: Record<string, unknown>,
+  opts?: { grounded?: boolean }
 ): Promise<(PredictionResult & { model: string }) | null> {
+  const grounded = opts?.grounded === true;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  // Browser search browses live pages server-side — it needs far
+  // longer than a plain completion (NOTES #38).
+  const timer = setTimeout(() => controller.abort(), grounded ? 60_000 : TIMEOUT_MS);
   try {
     const res = await fetch(GROQ_URL, {
       method: 'POST',
@@ -118,16 +123,34 @@ async function callGroq(
         Authorization: `Bearer ${cfg.apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: AI_SYSTEM_PROMPT },
-          { role: 'user', content: PREDICTIONS[type].buildPrompt(context) },
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.3,
-        max_tokens: 400,
-      }),
+      body: JSON.stringify(
+        grounded
+          ? {
+              // Groq built-in browser_search (gpt-oss models only).
+              // NOT compatible with response_format / structured
+              // outputs — the prompt demands the JSON as the final
+              // block and parsePrediction extracts the last object.
+              model,
+              messages: [
+                { role: 'system', content: AI_SYSTEM_PROMPT },
+                { role: 'user', content: PREDICTIONS[type].buildPrompt(context) },
+              ],
+              tools: [{ type: 'browser_search' }],
+              tool_choice: 'required',
+              reasoning_effort: 'low',
+              max_completion_tokens: 3000,
+            }
+          : {
+              model,
+              messages: [
+                { role: 'system', content: AI_SYSTEM_PROMPT },
+                { role: 'user', content: PREDICTIONS[type].buildPrompt(context) },
+              ],
+              response_format: { type: 'json_object' },
+              temperature: 0.3,
+              max_tokens: 400,
+            }
+      ),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as {
@@ -136,7 +159,7 @@ async function callGroq(
     const content = data.choices?.[0]?.message?.content;
     if (!content) return null;
     const parsed = parsePrediction(type, content);
-    return parsed ? { ...parsed, model } : null;
+    return parsed ? { ...parsed, model: grounded ? `${model} + browser_search` : model } : null;
   } catch {
     return null;
   } finally {
@@ -166,8 +189,14 @@ export async function predictWithAi(
 
   if (!underCap(ip)) return { ok: false, reason: 'rate_limited' };
 
-  const primary = await callGroq(cfg, cfg.model, type, context);
-  const result = primary ?? (await callGroq(cfg, cfg.fallbackModel, type, context));
+  // Grounded types (volatile market prices): browser-search call on
+  // the primary model first, then the plain primary, then fallback.
+  let result: (PredictionResult & { model: string }) | null = null;
+  if (isGroundedPrediction(type)) {
+    result = await callGroq(cfg, cfg.model, type, context, { grounded: true });
+  }
+  if (!result) result = await callGroq(cfg, cfg.model, type, context);
+  if (!result) result = await callGroq(cfg, cfg.fallbackModel, type, context);
   if (!result) return { ok: false, reason: 'unavailable' };
 
   setBoundedEntry(cache, key, { at: Date.now(), result });

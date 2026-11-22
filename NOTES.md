@@ -636,7 +636,17 @@ the server when the last portfolio is deleted — shipped as-is at
 the owner's decision to merge, recorded here so it is a known
 behaviour, not a surprise.
 
-#38 — Canvas PNG Export Contrast, Markets Terminal, Pulse Bar & A11y (23 Nov 2026)
+## #38 — AI price predictions grounded in live web search (Nov 23, 2026)
+- **Problem (owner-reported):** the AI Fill price for a Changan Alsvin came back **Rs 13.0 Lac** against a real market of ~Rs 38–42 Lac — the ungrounded model bled an INR figure (13 Lac INR ≈ the car's PKR price) and/or anchored on a down-payment listing. Ungrounded weights cannot know volatile PKR prices; no prompt wording alone fixes that.
+- **Fix — grounded types:** `car-price`, `car-maintenance` and `car-depreciation` are now *grounded* (`GROUNDED_PREDICTION_TYPES` in `aiPredictions.ts`). The server answers them first with Groq's built-in **`browser_search`** tool on the primary model (gpt-oss-120b; `tool_choice: required`, `reasoning_effort: low`, 60s timeout) — search executes on Groq's side, so no new provider, key or client call is introduced (still inside Gate 6 Amendment 3). Fallback chain: grounded → plain primary → fallback model, so a search outage degrades to today's behaviour, never to an error.
+- **Prompts:** car-price demands PakWheels/OLX listings, the MEDIAN full-cash price, explicit rejection of down-payment / installment / booking figures, and an explicit INR warning. Car-maintenance now receives the user's real `annualKm` (daily commute × 365, passed by `VehicleCardList`) and must scale service frequency to it. All three grounded prompts end with "reply with ONLY the JSON".
+- **Parser:** browser-search replies carry snippets/prose before the answer and are incompatible with `response_format`, so `parsePrediction` now also scans balanced `{...}` objects from last to first and accepts the first that parses with a numeric value; the legacy whole-span path runs first, so plain replies behave exactly as before.
+- **Not used:** Groq Compound (`groq/compound`, `groq/compound-mini`) — verified against Groq's changelog: deprecated Aug 2026 and **decommissioned 21 Sep 2026**; the model IDs now error. `browser_search` on gpt-oss is its documented replacement.
+- **Deliberately unchanged:** the remaining ten prediction types stay ungrounded (stable knowledge or deliberately anchored to in-app baselines); verified market data is still never a prediction target; clamps unchanged. New tests: `tests/ai-grounding.test.ts` (grounded set, prompt rules, search-reply parsing).
+
+*Renumbering note: entries #39–#42 below were filed as #38–#41 on the `swarm/fix-audit-round-2` branch and renumbered on merge — #38 above (AI grounding) landed on main first, the same day. Code comments from that round still cite the branch numbers.*
+
+#39 — Canvas PNG Export Contrast, Markets Terminal, Pulse Bar & A11y (23 Nov 2026)
 Audit Round 2 UI & accessibility remediations across global markets, snapshot export, and core modals:
 (1) Canvas PNG Export (FIX-1.5, ShareSnapshotModal.tsx):
     - Replaced the three dark text fills (`#0C0C0F` used for the "Rizq" wordmark, the freedom date, and the real purchasing power wealth figure) with cream ink `#F5F1E6`.
@@ -654,7 +664,7 @@ Audit Round 2 UI & accessibility remediations across global markets, snapshot ex
     - page.tsx: corrected "Beginner Guide" hero button hover styling from `text-zinc-500 hover:text-zinc-800` to `text-zinc-400 hover:text-white` so it remains clearly legible on obsidian background; bound gold and silver ticker pills to dynamic streak history.
     - Modals A11y: added `role="dialog"`, `aria-modal="true"`, and keyboard `Escape`-to-close handlers across `ShareSnapshotModal`, `AuthModal`, and `MarketPulseBar` benchmark editor.
 
-#39 — Core Engines, Types & State Sanitizer Hardening (Audit Round 2, 23 Nov 2026)
+#40 — Core Engines, Types & State Sanitizer Hardening (Audit Round 2, 23 Nov 2026)
 Audit Round 2 pure calculation engine math, type contract, and state sanitizer hardening:
 (1) WealthFlow Non-PSX Asset Compounding (FIX-1.2, wealthEngine.ts):
     - When `assetBuckets` contains no PSX bucket (e.g. 100% physical gold portfolio), `psxShare` is set to 0, PSX pot and dividend flows remain 0, and all user-declared buckets compound in `otherPots` at their declared expected returns and shares.
@@ -685,7 +695,7 @@ Audit Round 2 pure calculation engine math, type contract, and state sanitizer h
     - Added clarifying code comments documenting the inflation exponent convention (`Math.pow(1 + inf, year)` for goals/wealth vs `year - 1` for annual expenses) and calculated exact PKR deltas for FIX-REPORT-ROUND-2.md (home goal at yr 4 delta: PKR 1,511,654; debt goal at yr 1 delta: PKR 60,000).
     - Golden baseline verified bit-identical to the rupee.
 
-#40 — Sync, Auth/Session Hardening, AI Cache, Import/Export & Infra (Audit Round 2, 23 Nov 2026)
+#41 — Sync, Auth/Session Hardening, AI Cache, Import/Export & Infra (Audit Round 2, 23 Nov 2026)
 Audit Round 2 API sync, auth session hardening, AI cache, import/export, and infrastructure remediations:
 (1) ProfileProvider Debounce & Sync Ordering (FIX-2.1, ProfileProvider.tsx):
     - Stored pending debounced profile updates in a ref (`pendingSaveRef`).
@@ -722,7 +732,7 @@ Audit Round 2 API sync, auth session hardening, AI cache, import/export, and inf
     - Resolved signed-out hydration flash (BUG-AUTH-01) by synchronously hydrating from `localStorage` / URL hash on client mount, and exported `hasLoaded: boolean` in `ProfileContextType`.
     - `README.md`: Rewrote the persistence section to document PostgreSQL server-backed accounts, httpOnly session cookies, scrypt hashing, and multi-device synchronization under Gate 6 Amendment 2.
 
-#41 — Onboarding, Planner, Cars & Zero-Value Sweep (Audit Round 2, 23 Nov 2026)
+#42 — Onboarding, Planner, Cars & Zero-Value Sweep (Audit Round 2, 23 Nov 2026)
 Audit Round 2 UI, accessibility, and zero-value preservation across Onboarding, Planner, and Cars:
 (1) Zero-Value Sweep & Clearable Inputs (FIX-1.1):
     - Replaced every numeric `|| default` with `?? default` in `OnboardingWizardModal.tsx`, `PlannerIntakeForm.tsx`, `MultiAssetSplitter.tsx`, `WealthHeadlineCards.tsx`, `CompoundingChart.tsx`, `CarControls.tsx`, `VehicleCardList.tsx`, and `cars/page.tsx`, ensuring deliberate `0` entries (e.g. `lumpSumPkr: 0`, `rentOrHousing: 0`, `annualSalaryRaisePct: 0`, `dailyCommuteKm: 0`) are never overwritten by fallback values.

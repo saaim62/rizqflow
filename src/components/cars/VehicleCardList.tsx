@@ -164,6 +164,8 @@ function VehicleCardItem({
   toggleEmi: (id: string) => void;
   formatPkrMasked: (n: number) => string;
 }) {
+  const { profile: cardProfile } = useProfile();
+  const annualKm = Math.max(0, (cardProfile.dailyCommuteKm || 0) * 365);
   const isBike = v.fuelType === 'e-scooty';
   const isEv = v.fuelType === 'ev';
   const isEmiOpen = openEmiId === v.id;
@@ -360,7 +362,7 @@ function VehicleCardItem({
                 <label className="text-[10px] text-zinc-400 flex items-center gap-1">5-Yr Deprec. (%) <FieldInfo {...INFO.depreciation} /></label>
                 <AiButton
                   type="car-depreciation"
-                  context={{ name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }}
+                  context={{ name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr, annualKm }}
                   currentValue={v.fiveYearDepreciationPct}
                   onAccept={(val) => updateVehicle(v.id, { fiveYearDepreciationPct: val })}
                   formatValue={(x) => `${x}%`}
@@ -383,7 +385,7 @@ function VehicleCardItem({
                 <label className="text-[10px] text-zinc-400 flex items-center gap-1">Maintenance (PKR/yr) <FieldInfo {...INFO.maintenance} /></label>
                 <AiButton
                   type="car-maintenance"
-                  context={{ name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }}
+                  context={{ name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr, annualKm }}
                   currentValue={v.annualMaintenancePkr}
                   onAccept={(val) => updateVehicle(v.id, { annualMaintenancePkr: val })}
                   formatValue={(x) => formatCompactPkr(x)}
@@ -514,7 +516,8 @@ function VehicleCardItem({
 }
 
 export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
-  const { formatPkrMasked, showToast } = useProfile();
+  const { formatPkrMasked, showToast, profile } = useProfile();
+  const annualKm = Math.max(0, (profile.dailyCommuteKm || 0) * 365);
   const [openEmiId, setOpenEmiId] = useState<string | null>(null);
 
   const toggleEmi = (id: string) => {
@@ -559,7 +562,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
     try {
       const [dep, maint, eff] = await Promise.all([
         predict('car-depreciation', { name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }),
-        predict('car-maintenance', { name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }),
+        predict('car-maintenance', { name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr, annualKm }),
         predict('car-efficiency', { name: v.name, fuelType: v.fuelType }),
       ]);
       const updates: Partial<VehicleCandidate> = {};
@@ -738,7 +741,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                 <label className="text-[10px] text-zinc-400 flex items-center gap-1">5-Yr Deprec. (%) <FieldInfo {...INFO.depreciation} /></label>
                 <AiButton
                   type="car-depreciation"
-                  context={{ name: draft.name, fuelType: draft.fuelType, pricePkr: draft.pricePkr }}
+                  context={{ name: draft.name, fuelType: draft.fuelType, pricePkr: draft.pricePkr, annualKm }}
                   currentValue={draft.fiveYearDepreciationPct}
                   onAccept={(val) => setDraft({ ...draft, fiveYearDepreciationPct: val })}
                   formatValue={(x) => `${x}%`}
@@ -759,7 +762,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                 <label className="text-[10px] text-zinc-400 flex items-center gap-1">Maint / Year (PKR) <FieldInfo {...INFO.maintenance} /></label>
                 <AiButton
                   type="car-maintenance"
-                  context={{ name: draft.name, fuelType: draft.fuelType, pricePkr: draft.pricePkr }}
+                  context={{ name: draft.name, fuelType: draft.fuelType, pricePkr: draft.pricePkr, annualKm }}
                   currentValue={draft.annualMaintenancePkr}
                   onAccept={(val) => setDraft({ ...draft, annualMaintenancePkr: val })}
                   formatValue={(x) => formatCompactPkr(x)}

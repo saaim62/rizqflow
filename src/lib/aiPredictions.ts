@@ -48,6 +48,26 @@ export const AI_SYSTEM_PROMPT =
   'Give your best central estimate; when the item is obscure, still estimate and mark confidence "low". ' +
   'No text outside the JSON.';
 
+/**
+ * Prediction types whose answers are volatile market prices that a
+ * language model cannot know from its weights (Pakistan car prices
+ * above all — NOTES #38). The server answers these with Groq's
+ * browser_search tool enabled on the primary model so the estimate
+ * is grounded in live Pakistani listings; if the grounded call
+ * fails, the chain falls back to the plain model, then the fallback
+ * model. All other types stay ungrounded (stable knowledge, and the
+ * bucket/expense types are deliberately anchored to app baselines).
+ */
+export const GROUNDED_PREDICTION_TYPES: ReadonlySet<PredictionType> = new Set([
+  'car-price',
+  'car-maintenance',
+  'car-depreciation',
+]);
+
+export function isGroundedPrediction(type: PredictionType): boolean {
+  return GROUNDED_PREDICTION_TYPES.has(type);
+}
+
 /** Short, prompt-safe rendering of a context value. */
 function s(v: unknown, fallback = 'unknown'): string {
   if (typeof v === 'string' && v.trim()) return v.trim().slice(0, 80);
@@ -66,10 +86,11 @@ export const PREDICTIONS: Record<PredictionType, PredictionSpec> = {
     max: 90,
     decimals: 0,
     buildPrompt: (c) =>
-      `Predict the 5-year depreciation percentage for this vehicle in Pakistan's used-car market: ` +
-      `name "${s(c.name)}", type ${s(c.fuelType)}, current price Rs ${n(c.pricePkr)}. ` +
+      `Use web search first: compare current asking prices for this vehicle across model years on Pakistani listings (pakwheels.com, olx.com.pk) to judge how fast it loses value. ` +
+      `Vehicle: name "${s(c.name)}", type ${s(c.fuelType)}, current price Rs ${n(c.pricePkr)}. ` +
       `value = the % of today's price the car will LOSE over 5 years (50 means it will sell for half). ` +
-      `Consider brand resale strength in Pakistan (Toyota/Honda/Suzuki hold value; Chinese EVs and slow-selling models lose more).`,
+      `Consider brand resale strength in Pakistan (Toyota/Honda/Suzuki hold value; Chinese EVs and slow-selling models lose more). ` +
+      `End your reply with ONLY the JSON object — no text after it.`,
   },
   'car-maintenance': {
     label: 'Annual maintenance (PKR)',
@@ -79,8 +100,11 @@ export const PREDICTIONS: Record<PredictionType, PredictionSpec> = {
     buildPrompt: (c) =>
       `Predict realistic annual routine maintenance cost in PKR for this vehicle in Pakistan: ` +
       `name "${s(c.name)}", type ${s(c.fuelType)}, price Rs ${n(c.pricePkr)}. ` +
-      `Include oil, filters, brakes, tyres amortised and minor repairs at independent workshops (not dealership). ` +
-      `EVs and e-scooties cost far less to maintain than petrol cars.`,
+      (typeof c.annualKm === 'number' && c.annualKm > 0
+        ? `This vehicle is driven about ${n(c.annualKm)} km per year — SCALE the estimate to that usage: an oil + filter service every ~5,000 km, plus brake pads, fluids, tyres amortised and minor repairs at independent workshops (not dealership). A car driven 25,000+ km/yr needs several services a year; never return a low-mileage figure for a high-mileage car. `
+        : `Include oil, filters, brakes, tyres amortised and minor repairs at independent workshops (not dealership). `) +
+      `EVs and e-scooties cost far less to maintain than petrol cars. ` +
+      `End your reply with ONLY the JSON object — no text after it.`,
   },
   'car-efficiency': {
     label: 'Efficiency (km/L or kWh/100km)',
@@ -100,8 +124,12 @@ export const PREDICTIONS: Record<PredictionType, PredictionSpec> = {
     max: 50000000,
     decimals: 0,
     buildPrompt: (c) =>
-      `Predict the typical current asking price in PKR for this vehicle in Pakistan's market (PakWheels-style listings, good condition, common model year): ` +
-      `name "${s(c.name)}", type ${s(c.fuelType)}.`,
+      `Use web search FIRST: look up current listings for this vehicle on Pakistani sites (pakwheels.com, olx.com.pk) before answering. ` +
+      `Vehicle: name "${s(c.name)}", type ${s(c.fuelType)}. ` +
+      `value = the typical FULL CASH asking price in Pakistani Rupees (PKR) for a good-condition example of a common recent model year — the MEDIAN of comparable listings (or the new ex-factory price if the model is mainly sold new). ` +
+      `IGNORE any figure that is a down payment, installment, lease, booking or advance amount — those are a fraction of the real price and are the most common source of absurdly low estimates. ` +
+      `NEVER use Indian prices: India quotes in INR, which look about 3x smaller than PKR for the same car; if a source figure looks like Indian rupees, discard it. Pakistani prices only. ` +
+      `End your reply with ONLY the JSON object — no text after it.`,
   },
   'bucket-return': {
     label: 'Expected annual return %',
@@ -208,13 +236,63 @@ export function clampPrediction(type: PredictionType, raw: number): number {
   return Math.round(clamped * f) / f;
 }
 
+/** All top-level balanced {...} substrings of a reply, in order. */
+function extractJsonObjects(text: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let start = -1;
+  let inStr = false;
+  let esc = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === '\\') esc = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') {
+      inStr = true;
+      continue;
+    }
+    if (ch === '{') {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (ch === '}') {
+      depth--;
+      if (depth === 0 && start >= 0) {
+        out.push(text.slice(start, i + 1));
+        start = -1;
+      }
+      if (depth < 0) depth = 0;
+    }
+  }
+  return out;
+}
+
 /** Parse + validate the model's JSON reply into a PredictionResult. */
 export function parsePrediction(type: PredictionType, text: string): PredictionResult | null {
+  // Candidates: the legacy whole-span slice first (plain JSON replies),
+  // then every balanced object from LAST to FIRST — grounded replies
+  // carry search snippets and prose before the final JSON answer.
+  const candidates: string[] = [];
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start >= 0 && end > start) candidates.push(text.slice(start, end + 1));
+  const objects = extractJsonObjects(text);
+  for (let i = objects.length - 1; i >= 0; i--) {
+    if (!candidates.includes(objects[i])) candidates.push(objects[i]);
+  }
+  for (const candidate of candidates) {
+    const parsed = tryParsePrediction(type, candidate);
+    if (parsed) return parsed;
+  }
+  return null;
+}
+
+function tryParsePrediction(type: PredictionType, text: string): PredictionResult | null {
   try {
-    const start = text.indexOf('{');
-    const end = text.lastIndexOf('}');
-    if (start < 0 || end <= start) return null;
-    const obj = JSON.parse(text.slice(start, end + 1)) as Record<string, unknown>;
+    const obj = JSON.parse(text) as Record<string, unknown>;
     const value = typeof obj.value === 'number' ? obj.value : Number(obj.value);
     if (!Number.isFinite(value)) return null;
     const result: PredictionResult = {
