@@ -583,3 +583,55 @@ GOLD_YEAR_HISTORY final point 21 Nov @ 376,336 (true drawdown from the
 profiles, wealth-engine gold fallback and the types comment follow the
 new default; DATA_SOURCES records the Saturday closes. Tests updated
 to the new closes plus a stale-heal assertion for 379,836.
+
+#36 — Portfolio Import & Export with AI field mapping (22 Nov 2026)
+Added native and foreign portfolio import/export capability:
+(1) Native Export: pure client-side JSON envelope generation (single:
+    `rizqflow-portfolio-<name>.json`, all: `rizqflow-all-portfolios.json`)
+    via `createNativeExportEnvelope` and `createAllPortfoliosExportEnvelope`
+    in `src/lib/portfolioTransfer.ts`. Zero server round-trip.
+(2) Native Import: automatically detects the envelope, cleanses raw
+    payload through `sanitizeDeep()` (stripping `__proto__`, `constructor`,
+    `prototype`), validates with `sanitizeProfile()`, shows a verified preview
+    (age, income, investment, buckets, goals, vehicles), and imports as a NEW
+    portfolio, resolving name collisions with ` (imported)`.
+(3) Foreign AI Mapping: `POST /api/ai/map-portfolio` accepts foreign JSON or
+    CSV (client parses CSV into records via `parseCsvRows`/`parseCsvToRecord`).
+    Groq `openai/gpt-oss-120b` (fallback `qwen/qwen3.8-27b`) maps foreign keys
+    to `UserProfile` fields using `PROFILE_SCHEMA_DESCRIPTOR`.
+    A strict 30 KB payload cap is enforced server-side.
+(4) Human-in-the-Loop Review: Client displays an editable mapping review table
+    (source -> target -> value -> confidence badge: high/medium/low), highlights
+    defaulted or low-confidence fields, and lists unmapped keys with their raw
+    values. User confirms or discards; nothing is saved automatically.
+(5) Heuristic Fallback: If AI is unavailable or rate-limited, client falls back
+    to `mapForeignPayloadHeuristic()` without hard-failing the import.
+(6) Dual Storage: Supported seamlessly in both signed-in mode (via
+    `createNewPortfolio` server API) and anonymous mode (`ProfileProvider`).
+Verified: 132/132 tests green (including round-trip, synthetic JSON/CSV,
+hostile 15 MB/pollution inputs); Next.js 16 build clean across 16 routes.
+
+#37 — Owner review corrections to the swarm branch (22 Nov 2026)
+The Antigravity swarm's import/export branch (NOTES #36) was
+independently reviewed before merge. The feature, the wizard fixes
+and the gates all verified — but three corrections were required:
+(1) QA-REPORT.md §2 originally presented the `solar-commuter`
+PRESET (Rs 1.5M lump, Rs 150k/mo SIP, 22 kW solar) as the owner's
+"Golden Fixture" and published its planner outputs (Rs 8.84 Cr
+real wealth, freedom age 50, Rs 580k emergency target) as the
+owner's baseline. Section 2 now carries the owner's REAL portfolio
+(exported verbatim from production) and its true audited outputs
+(real wealth Rs 11,464,756; home-goal shortfall Rs 14,664,188;
+starting net dividend Rs 0), and tests/qa-baseline.test.ts now
+loads the real fixture and asserts those numbers exactly instead
+of asserting "> 0" against a preset. (2) The /planner ?ticker=
+banner claimed it was "Simulating impact of PSX stock X in your
+wealth plan" while changing nothing in the plan — reworded to say
+what is actually true (the plan runs on the PSX bucket's expected
+return; adjust it under Allocation). (3) The Alsvin true cost is
+Rs 83,322/mo — the brief's hand-computed 83,325 was off by Rs 3;
+the engine was right. Behaviour note carried from the review: the
+swarm's BUG-AUTH-02 fix auto-creates a baseline "My Portfolio" on
+the server when the last portfolio is deleted — shipped as-is at
+the owner's decision to merge, recorded here so it is a known
+behaviour, not a surprise.

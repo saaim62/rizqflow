@@ -16,7 +16,15 @@ import {
   Pencil,
   Trash2,
   CloudUpload,
+  Download,
+  Upload,
 } from 'lucide-react';
+import {
+  createNativeExportEnvelope,
+  createAllPortfoliosExportEnvelope,
+} from '@/lib/portfolioTransfer';
+import { ImportPortfolioModal } from '@/components/portfolio/ImportPortfolioModal';
+import { UserProfile } from '@/types';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -59,6 +67,34 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
+
+  const downloadJson = (filename: string, data: unknown) => {
+    const jsonStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportSingle = (port: { name: string; profile: UserProfile }) => {
+    const envelope = createNativeExportEnvelope(port);
+    const slug = port.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'portfolio';
+    downloadJson(`rizqflow-portfolio-${slug}.json`, envelope);
+    showToast(`Exported "${port.name}" as JSON backup.`);
+  };
+
+  const handleExportAll = () => {
+    if (userPortfolios.length === 0) return;
+    const envelope = createAllPortfoliosExportEnvelope(userPortfolios);
+    downloadJson(`rizqflow-all-portfolios.json`, envelope);
+    showToast(`Exported all ${userPortfolios.length} portfolios as JSON backup.`);
+  };
 
   if (!isOpen) return null;
 
@@ -327,15 +363,38 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
 
               {/* Portfolios List */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <label className="text-xs font-semibold text-zinc-300">Your Portfolios ({userPortfolios.length})</label>
-                  <button
-                    onClick={() => setIsCreatingPortfolio(!isCreatingPortfolio)}
-                    className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>New Portfolio</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setImportModalOpen(true)}
+                      className="text-xs text-[#E8C15A] hover:text-amber-200 font-semibold flex items-center gap-1"
+                      title="Import portfolio from JSON or CSV"
+                    >
+                      <Upload className="w-3 h-3 text-[#E8C15A]" />
+                      <span>Import</span>
+                    </button>
+                    {userPortfolios.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleExportAll}
+                        className="text-xs text-zinc-400 hover:text-zinc-200 font-semibold flex items-center gap-1"
+                        title="Export all portfolios as a single JSON file"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span>Export All</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatingPortfolio(!isCreatingPortfolio)}
+                      className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>New</span>
+                    </button>
+                  </div>
                 </div>
 
                 {isCreatingPortfolio && (
@@ -368,8 +427,16 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
                 )}
 
                 {userPortfolios.length === 0 && (
-                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] text-zinc-400">
-                    No portfolios yet. Run the Setup Wizard below to create your first one with your own numbers.
+                  <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] text-zinc-400 space-y-2.5">
+                    <p>No portfolios yet. Run the Setup Wizard below or import an existing portfolio backup.</p>
+                    <button
+                      type="button"
+                      onClick={() => setImportModalOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 font-semibold hover:bg-emerald-500/20 transition-colors"
+                    >
+                      <Upload className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Import Portfolio (JSON/CSV)</span>
+                    </button>
                   </div>
                 )}
 
@@ -458,6 +525,13 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
                           >
                             <Pencil className="w-3 h-3" /> Rename
                           </button>
+                          <button
+                            onClick={() => handleExportSingle(port)}
+                            className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-[10px] font-semibold text-zinc-300"
+                            title="Export single portfolio JSON"
+                          >
+                            <Download className="w-3 h-3 text-[#E8C15A]" /> Export
+                          </button>
                           {confirmDeleteId === port.id ? (
                             <>
                               <span className="text-[10px] text-rose-300 ml-1">Delete permanently?</span>
@@ -522,8 +596,29 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
               </button>
             </div>
           )}
+
+          {/* Quick Import for Anonymous / Offline Investors */}
+          {!currentUser && (
+            <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs text-zinc-400">
+              <span>Have a portfolio backup or CSV?</span>
+              <button
+                type="button"
+                onClick={() => setImportModalOpen(true)}
+                className="text-[#E8C15A] hover:text-amber-200 font-semibold flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 transition-colors"
+              >
+                <Upload className="w-3.5 h-3.5 text-[#E8C15A]" />
+                <span>Import Portfolio</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Import Portfolio Modal (Native & AI-Mapped Foreign) */}
+      <ImportPortfolioModal
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+      />
     </div>
   );
 }

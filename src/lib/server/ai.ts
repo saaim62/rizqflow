@@ -18,6 +18,12 @@ import {
   PredictionType,
   parsePrediction,
 } from '@/lib/aiPredictions';
+import { ForeignMappingResult } from '@/types';
+import {
+  getDefaultFallbackProfile,
+  getProfileSchemaPromptString,
+} from '@/lib/portfolioTransfer';
+import { sanitizeProfile } from '@/lib/stateUrl';
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
@@ -131,3 +137,128 @@ export async function predictWithAi(
   cache.set(key, { at: Date.now(), result });
   return { ok: true, result, cached: false };
 }
+
+const mappingCache = new Map<string, { at: number; result: ForeignMappingResult & { model: string } }>();
+
+function mappingCacheKey(payload: string): string {
+  let hash = 0;
+  for (let i = 0; i < payload.length; i++) {
+    hash = (hash << 5) - hash + payload.charCodeAt(i);
+    hash |= 0;
+  }
+  return `map::${payload.length}::${hash}`;
+}
+
+async function callGroqForMapping(
+  cfg: AiConfig,
+  model: string,
+  foreignPayload: string
+): Promise<(ForeignMappingResult & { model: string }) | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const systemPrompt = `You are RizqFlow's AI Portfolio Field Mapping Assistant.
+RizqFlow is a Pakistani personal finance and wealth planning application.
+Your goal is to parse and map foreign financial data (from CSV, JSON, Wealthsimple, Mint, YNAB, bank statements, salary slips) into the RizqFlow UserProfile schema.
+
+RizqFlow UserProfile Schema:
+${getProfileSchemaPromptString()}
+
+Return a strict JSON object with this EXACT structure:
+{
+  "profile": { ...extracted UserProfile fields... },
+  "mapping": [
+    { "source": "foreign field name or path", "target": "UserProfile field name", "confidence": "high" | "medium" | "low", "note": "brief explanation" }
+  ],
+  "unmapped": ["foreign_field_1", "foreign_field_2", ...]
+}
+Rules:
+1. Normalize numbers (remove commas, currency symbols, handle Lac = 100,000, Crore = 10,000,000, k = 1,000).
+2. Clean all text, keep values realistic within the specified schema ranges.
+3. Every unmapped key in the foreign input must be listed in "unmapped".
+4. Output MUST be strictly valid JSON, no markdown formatting or extra text outside the JSON.`;
+
+    const userPrompt = `Here is the foreign financial payload to map:\n${foreignPayload}`;
+
+    const res = await fetch(GROQ_URL, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${cfg.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.2,
+        max_tokens: 1500,
+      }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      choices?: { message?: { content?: string } }[];
+    };
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) return null;
+
+    const parsed = JSON.parse(content);
+    if (!parsed || typeof parsed !== 'object') return null;
+
+    const fallback = getDefaultFallbackProfile();
+    const profile = sanitizeProfile(parsed.profile, fallback);
+    const mapping = Array.isArray(parsed.mapping)
+      ? parsed.mapping.map((m: any) => ({
+          source: String(m?.source || ''),
+          target: String(m?.target || ''),
+          confidence: ['high', 'medium', 'low'].includes(m?.confidence) ? m.confidence : 'medium',
+          note: String(m?.note || ''),
+        }))
+      : [];
+    const unmapped = Array.isArray(parsed.unmapped)
+      ? parsed.unmapped.map((u: any) => String(u))
+      : [];
+
+    return {
+      profile,
+      mapping,
+      unmapped,
+      model,
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export type MapPortfolioOutcome =
+  | { ok: true; result: ForeignMappingResult & { model: string }; cached: boolean }
+  | { ok: false; reason: 'not_configured' | 'rate_limited' | 'unavailable' };
+
+export async function mapPortfolioWithAi(
+  foreignPayload: string,
+  ip: string
+): Promise<MapPortfolioOutcome> {
+  const cfg = getAiConfig();
+  if (!cfg) return { ok: false, reason: 'not_configured' };
+
+  const key = mappingCacheKey(foreignPayload);
+  const hit = mappingCache.get(key);
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
+    return { ok: true, result: hit.result, cached: true };
+  }
+
+  if (!underCap(ip)) return { ok: false, reason: 'rate_limited' };
+
+  const primary = await callGroqForMapping(cfg, cfg.model, foreignPayload);
+  const result = primary ?? (await callGroqForMapping(cfg, cfg.fallbackModel, foreignPayload));
+  if (!result) return { ok: false, reason: 'unavailable' };
+
+  mappingCache.set(key, { at: Date.now(), result });
+  return { ok: true, result, cached: false };
+}
+
