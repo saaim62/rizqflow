@@ -1,8 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AssetBucket } from '@/types';
-import { Layers, PieChart, Coins, Home, Landmark, Wallet, Wand2 } from 'lucide-react';
+import { Layers, PieChart, Coins, Home, Landmark, Wallet, Wand2, Sparkles, Loader2 } from 'lucide-react';
+import { AiButton } from '@/components/ui/AiButton';
+import { useAiAssist } from '@/components/providers/AiAssistProvider';
 
 interface MultiAssetSplitterProps {
   assetBuckets: AssetBucket[];
@@ -24,8 +26,37 @@ const round1 = (n: number) => Math.round(n * 10) / 10;
 const fmtPct = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1));
 
 export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitterProps) {
+  const { aiOn, predict } = useAiAssist();
+  const [fillingReturns, setFillingReturns] = useState(false);
   const totalSplit = assetBuckets.reduce((acc, b) => acc + (b.monthlySplitPct || 0), 0);
   const totalRounded = round1(totalSplit);
+
+  const updateReturn = (id: string, newReturn: number) => {
+    onChange(
+      assetBuckets.map((b) =>
+        b.id === id
+          ? { ...b, expectedAnnualReturnPct: Math.max(0, Math.min(30, round1(newReturn))) }
+          : b
+      )
+    );
+  };
+
+  /** AI Fill: predict every bucket's expected return in parallel, apply at once. */
+  const aiFillReturns = async () => {
+    setFillingReturns(true);
+    const results = await Promise.all(
+      assetBuckets.map((b) =>
+        predict('bucket-return', { bucketId: b.id, bucketLabel: b.label })
+      )
+    );
+    onChange(
+      assetBuckets.map((b, i) => {
+        const r = results[i];
+        return r ? { ...b, expectedAnnualReturnPct: r.value } : b;
+      })
+    );
+    setFillingReturns(false);
+  };
 
   const updateSplit = (id: string, newSplit: number) => {
     const updated = assetBuckets.map((b) =>
@@ -75,6 +106,19 @@ export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitte
         </label>
 
         <div className="flex items-center gap-2">
+          {aiOn && (
+            <button
+              type="button"
+              onClick={aiFillReturns}
+              disabled={fillingReturns}
+              className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-[10px] font-bold transition-all disabled:opacity-60"
+              title="Predict every bucket's expected return with AI"
+            >
+              {fillingReturns ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Sparkles className="w-2.5 h-2.5" />}
+              <span>AI Fill Returns</span>
+            </button>
+          )}
+
           {totalRounded !== 100 && (
             <button
               type="button"
@@ -111,8 +155,26 @@ export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitte
                   <span className="text-zinc-200 font-medium">{bucket.label}</span>
                 </div>
                 <div className="flex items-center gap-2 font-mono">
-                  <span className="text-[10px] text-zinc-500">
-                    Exp: {bucket.expectedAnnualReturnPct}%
+                  <span className="flex items-center gap-0.5 text-[10px] text-zinc-500">
+                    Exp:
+                    <input
+                      type="number"
+                      min={0}
+                      max={30}
+                      step={0.1}
+                      value={bucket.expectedAnnualReturnPct}
+                      onChange={(e) => updateReturn(bucket.id, Number(e.target.value))}
+                      className="w-[36px] bg-transparent text-zinc-300 text-[10px] text-right focus:outline-none focus:border-b focus:border-amber-500"
+                      aria-label={`${bucket.label} expected annual return percent`}
+                    />
+                    %
+                    <AiButton
+                      type="bucket-return"
+                      context={{ bucketId: bucket.id, bucketLabel: bucket.label }}
+                      currentValue={bucket.expectedAnnualReturnPct}
+                      onAccept={(val) => updateReturn(bucket.id, val)}
+                      formatValue={(x) => `${x}%`}
+                    />
                   </span>
                   <span className="flex items-center gap-0.5">
                     <input

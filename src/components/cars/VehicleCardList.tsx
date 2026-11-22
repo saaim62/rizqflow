@@ -6,6 +6,7 @@ import { useProfile } from '@/components/providers/ProfileProvider';
 import { AmountWords } from '@/components/ui/AmountWords';
 import { AiButton } from '@/components/ui/AiButton';
 import { formatCompactPkr } from '@/lib/format';
+import { useAiAssist } from '@/components/providers/AiAssistProvider';
 import { 
   Car, 
   Bike, 
@@ -17,7 +18,9 @@ import {
   ChevronUp, 
   Landmark, 
   AlertTriangle,
-  RotateCcw
+  RotateCcw,
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 
 interface VehicleCardListProps {
@@ -60,6 +63,28 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
 
   const removeVehicle = (id: string) => {
     onChange(vehicles.filter((v) => v.id !== id));
+  };
+
+  // ---- AI Fill (one tap: depreciation + maintenance + efficiency) ----
+  const { aiOn, predict } = useAiAssist();
+  const [fillingId, setFillingId] = useState<string | null>(null);
+
+  const aiFillVehicle = async (v: VehicleCandidate) => {
+    setFillingId(v.id);
+    const [dep, maint, eff] = await Promise.all([
+      predict('car-depreciation', { name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }),
+      predict('car-maintenance', { name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }),
+      predict('car-efficiency', { name: v.name, fuelType: v.fuelType }),
+    ]);
+    const updates: Partial<VehicleCandidate> = {};
+    if (dep) updates.fiveYearDepreciationPct = dep.value;
+    if (maint) updates.annualMaintenancePkr = maint.value;
+    if (eff) {
+      if (v.fuelType === 'petrol') updates.kmPerLitre = eff.value;
+      else updates.kwhPer100Km = eff.value;
+    }
+    if (Object.keys(updates).length > 0) updateVehicle(v.id, updates);
+    setFillingId(null);
   };
 
   // ---- Add vehicle (NOTES #24) ----
@@ -325,13 +350,30 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => removeVehicle(v.id)}
-                    className="p-1 rounded text-zinc-500 hover:text-rose-400 transition-colors"
-                    title="Remove vehicle"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    {aiOn && (
+                      <button
+                        onClick={() => aiFillVehicle(v)}
+                        disabled={fillingId === v.id}
+                        className="flex items-center gap-1 px-1.5 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/25 text-[9px] font-bold transition-all disabled:opacity-60"
+                        title="AI Fill: predict depreciation, maintenance and efficiency for this vehicle"
+                      >
+                        {fillingId === v.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-3 h-3" />
+                        )}
+                        <span>AI Fill</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => removeVehicle(v.id)}
+                      className="p-1 rounded text-zinc-500 hover:text-rose-400 transition-colors"
+                      title="Remove vehicle"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Price and Efficiency Inputs */}

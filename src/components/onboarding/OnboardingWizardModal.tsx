@@ -5,6 +5,8 @@ import { UserProfile, UserRole, TaxStatus, SolarTariffMode } from '@/types';
 import { AmountWords } from '@/components/ui/AmountWords';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import { formatPkr } from '@/lib/format';
+import { formatCompactPkr } from '@/lib/format';
+import { AiButton } from '@/components/ui/AiButton';
 import { 
   Sparkles, 
   ArrowRight, 
@@ -532,7 +534,16 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-300">1. Fuel & Commute (PKR/mo)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-zinc-300">1. Fuel & Commute (PKR/mo)</label>
+                    <AiButton
+                      type="expense"
+                      context={{ categoryLabel: 'Fuel & Commute', familyMembers, monthlyIncomePkr }}
+                      currentValue={fuelAndCommute}
+                      onAccept={(val) => setFuelAndCommute(val)}
+                      formatValue={(x) => formatCompactPkr(x)}
+                    />
+                  </div>
                   <input
                     type="number"
                     value={fuelAndCommute}
@@ -544,7 +555,16 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-300">2. Utilities & Internet (PKR/mo)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-zinc-300">2. Utilities & Internet (PKR/mo)</label>
+                    <AiButton
+                      type="expense"
+                      context={{ categoryLabel: 'Utilities & Internet', familyMembers, monthlyIncomePkr }}
+                      currentValue={utilitiesAndInternet}
+                      onAccept={(val) => setUtilitiesAndInternet(val)}
+                      formatValue={(x) => formatCompactPkr(x)}
+                    />
+                  </div>
                   <input
                     type="number"
                     value={utilitiesAndInternet}
@@ -556,7 +576,16 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-300">3. Groceries & Food (PKR/mo)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-zinc-300">3. Groceries & Food (PKR/mo)</label>
+                    <AiButton
+                      type="expense"
+                      context={{ categoryLabel: 'Groceries & Food', familyMembers, monthlyIncomePkr }}
+                      currentValue={groceriesAndFood}
+                      onAccept={(val) => setGroceriesAndFood(val)}
+                      formatValue={(x) => formatCompactPkr(x)}
+                    />
+                  </div>
                   <input
                     type="number"
                     value={groceriesAndFood}
@@ -568,7 +597,16 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-300">4. Rent / Housing (PKR/mo)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-zinc-300">4. Rent / Housing (PKR/mo)</label>
+                    <AiButton
+                      type="expense"
+                      context={{ categoryLabel: 'Rent & Housing', familyMembers, monthlyIncomePkr }}
+                      currentValue={rentOrHousing}
+                      onAccept={(val) => setRentOrHousing(val)}
+                      formatValue={(x) => formatCompactPkr(x)}
+                    />
+                  </div>
                   <input
                     type="number"
                     value={rentOrHousing}
@@ -580,7 +618,16 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                 </div>
 
                 <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-xs font-semibold text-zinc-300">5. Family & Healthcare (PKR/mo)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-zinc-300">5. Family & Healthcare (PKR/mo)</label>
+                    <AiButton
+                      type="expense"
+                      context={{ categoryLabel: 'Family & Healthcare', familyMembers, monthlyIncomePkr }}
+                      currentValue={familyAndOther}
+                      onAccept={(val) => setFamilyAndOther(val)}
+                      formatValue={(x) => formatCompactPkr(x)}
+                    />
+                  </div>
                   <input
                     type="number"
                     value={familyAndOther}
@@ -646,7 +693,24 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
 
                 {currentVehicleType !== 'none' && (
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-300">Current Vehicle Resale Value (PKR)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-zinc-300">Current Vehicle Resale Value (PKR)</label>
+                    <AiButton
+                      type="car-price"
+                      context={{
+                        name:
+                          currentVehicleType === 'ev-car'
+                            ? 'Electric Car'
+                            : currentVehicleType === 'petrol-bike'
+                            ? 'Motorbike'
+                            : 'Petrol Car',
+                        fuelType: currentVehicleType === 'ev-car' ? 'ev' : 'petrol',
+                      }}
+                      currentValue={currentVehicleResalePkr}
+                      onAccept={(val) => setCurrentVehicleResalePkr(val)}
+                      formatValue={(x) => formatCompactPkr(x)}
+                    />
+                  </div>
                   <input type="number" value={currentVehicleResalePkr} onChange={(e) => setCurrentVehicleResalePkr(Number(e.target.value))} step={50000} className="w-full px-3.5 py-2 rounded-xl bg-[#0C0C0F] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none" />
                   <AmountWords value={currentVehicleResalePkr} />
                   <span className="text-[11px] text-zinc-400">What you could sell it for today — drives the EV-swap math ({formatPkr(currentVehicleResalePkr)})</span>

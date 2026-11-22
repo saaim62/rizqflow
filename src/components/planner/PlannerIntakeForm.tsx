@@ -5,6 +5,10 @@ import { UserProfile, UserRole, TaxStatus, AssetBucket, LifeGoal } from '@/types
 import { MultiAssetSplitter } from '@/components/planner/MultiAssetSplitter';
 import { AmountWords } from '@/components/ui/AmountWords';
 import { LifeGoalsManager } from '@/components/planner/LifeGoalsManager';
+import { AiButton } from '@/components/ui/AiButton';
+import { useAiAssist } from '@/components/providers/AiAssistProvider';
+import { formatCompactPkr } from '@/lib/format';
+import { Loader2 } from 'lucide-react';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import { 
   User, 
@@ -64,6 +68,37 @@ export function PlannerIntakeForm({
         [field]: Math.max(0, value),
       },
     });
+  };
+
+  const { aiOn, predict } = useAiAssist();
+  const [fillingExpenses, setFillingExpenses] = useState(false);
+
+  const EXPENSE_CATEGORIES: { key: keyof UserProfile['expenses']; label: string }[] = [
+    { key: 'fuelAndCommute', label: 'Fuel & Commute' },
+    { key: 'utilitiesAndInternet', label: 'Utilities & Internet' },
+    { key: 'groceriesAndFood', label: 'Groceries & Food' },
+    { key: 'rentOrHousing', label: 'Rent & Housing' },
+    { key: 'familyAndOther', label: 'Family Support & Other' },
+  ];
+
+  /** AI Fill: predict all five expense categories in parallel, apply in ONE profile update. */
+  const aiFillExpenses = async () => {
+    setFillingExpenses(true);
+    const results = await Promise.all(
+      EXPENSE_CATEGORIES.map((c) =>
+        predict('expense', {
+          categoryLabel: c.label,
+          familyMembers: profile.familyMembers,
+          monthlyIncomePkr: profile.monthlyIncomePkr,
+        })
+      )
+    );
+    const nextExpenses = { ...profile.expenses };
+    results.forEach((r, i) => {
+      if (r) nextExpenses[EXPENSE_CATEGORIES[i].key] = Math.max(0, Math.round(r.value));
+    });
+    onChange({ ...profile, expenses: nextExpenses });
+    setFillingExpenses(false);
   };
 
   const totalExpenses = Object.values(profile.expenses).reduce((a, b) => a + b, 0);
@@ -224,9 +259,18 @@ export function PlannerIntakeForm({
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-zinc-400 block mb-1">
-                  Annual Salary Raise (% p.a.)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-semibold text-zinc-400">
+                    Annual Salary Raise (% p.a.)
+                  </label>
+                  <AiButton
+                    type="salary-raise"
+                    context={{ roleLabel: profile.role }}
+                    currentValue={profile.annualSalaryRaisePct || 0}
+                    onAccept={(val) => updateProfileField('annualSalaryRaisePct', val)}
+                    formatValue={(x) => `${x}%`}
+                  />
+                </div>
                 <input
                   type="number"
                   step={1}
@@ -368,9 +412,32 @@ export function PlannerIntakeForm({
 
         {openSections.expenses && (
           <div className="p-4 space-y-3 border-t border-white/[0.06] text-xs">
+            {aiOn && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={aiFillExpenses}
+                  disabled={fillingExpenses}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-[11px] font-bold transition-all disabled:opacity-60"
+                  title="Predict all five expense categories with AI, based on your income and household size"
+                >
+                  {fillingExpenses ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                  <span>AI Fill Expenses</span>
+                </button>
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-[11px] text-zinc-400 block mb-1">1. Fuel & Commute (PKR)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] text-zinc-400">1. Fuel & Commute (PKR)</label>
+                  <AiButton
+                    type="expense"
+                    context={{ categoryLabel: 'Fuel & Commute', familyMembers: profile.familyMembers, monthlyIncomePkr: profile.monthlyIncomePkr }}
+                    currentValue={profile.expenses.fuelAndCommute}
+                    onAccept={(val) => updateExpenseField('fuelAndCommute', val)}
+                    formatValue={(x) => formatCompactPkr(x)}
+                  />
+                </div>
                 <input
                   type="number"
                   step={2000}
@@ -382,7 +449,16 @@ export function PlannerIntakeForm({
               </div>
 
               <div>
-                <label className="text-[11px] text-zinc-400 block mb-1">2. Utilities & Internet (PKR)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] text-zinc-400">2. Utilities & Internet (PKR)</label>
+                  <AiButton
+                    type="expense"
+                    context={{ categoryLabel: 'Utilities & Internet', familyMembers: profile.familyMembers, monthlyIncomePkr: profile.monthlyIncomePkr }}
+                    currentValue={profile.expenses.utilitiesAndInternet}
+                    onAccept={(val) => updateExpenseField('utilitiesAndInternet', val)}
+                    formatValue={(x) => formatCompactPkr(x)}
+                  />
+                </div>
                 <input
                   type="number"
                   step={2000}
@@ -394,7 +470,16 @@ export function PlannerIntakeForm({
               </div>
 
               <div>
-                <label className="text-[11px] text-zinc-400 block mb-1">3. Groceries & Food (PKR)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] text-zinc-400">3. Groceries & Food (PKR)</label>
+                  <AiButton
+                    type="expense"
+                    context={{ categoryLabel: 'Groceries & Food', familyMembers: profile.familyMembers, monthlyIncomePkr: profile.monthlyIncomePkr }}
+                    currentValue={profile.expenses.groceriesAndFood}
+                    onAccept={(val) => updateExpenseField('groceriesAndFood', val)}
+                    formatValue={(x) => formatCompactPkr(x)}
+                  />
+                </div>
                 <input
                   type="number"
                   step={3000}
@@ -406,7 +491,16 @@ export function PlannerIntakeForm({
               </div>
 
               <div>
-                <label className="text-[11px] text-zinc-400 block mb-1">4. Rent & Housing (PKR)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] text-zinc-400">4. Rent & Housing (PKR)</label>
+                  <AiButton
+                    type="expense"
+                    context={{ categoryLabel: 'Rent & Housing', familyMembers: profile.familyMembers, monthlyIncomePkr: profile.monthlyIncomePkr }}
+                    currentValue={profile.expenses.rentOrHousing}
+                    onAccept={(val) => updateExpenseField('rentOrHousing', val)}
+                    formatValue={(x) => formatCompactPkr(x)}
+                  />
+                </div>
                 <input
                   type="number"
                   step={5000}
@@ -418,7 +512,16 @@ export function PlannerIntakeForm({
               </div>
 
               <div className="sm:col-span-2">
-                <label className="text-[11px] text-zinc-400 block mb-1">5. Family Support & Other (PKR)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] text-zinc-400">5. Family Support & Other (PKR)</label>
+                  <AiButton
+                    type="expense"
+                    context={{ categoryLabel: 'Family Support & Other', familyMembers: profile.familyMembers, monthlyIncomePkr: profile.monthlyIncomePkr }}
+                    currentValue={profile.expenses.familyAndOther}
+                    onAccept={(val) => updateExpenseField('familyAndOther', val)}
+                    formatValue={(x) => formatCompactPkr(x)}
+                  />
+                </div>
                 <input
                   type="number"
                   step={3000}

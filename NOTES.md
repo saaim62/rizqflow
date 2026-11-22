@@ -430,3 +430,16 @@ price, depreciation, maintenance and efficiency predictions on every
 vehicle card and in the add-vehicle form. Recorded as Gate 6
 Amendment 3: AI fills inputs only, never touches stamped market data,
 and the app works unchanged with AI off.
+
+#28 — AI Assist Phase 2: Planner, goals, wizard, fill actions (22 Nov 2026)
+Phase 2 of #27. Bucket expected returns were previously display-only
+preset constants; they are now editable per bucket with a per-bucket AI
+prediction plus an "AI Fill Returns" action that predicts all five in
+parallel. Planner expenses gained per-category AI buttons (context:
+category, household size, income) and an "AI Fill Expenses" action that
+applies all five predictions in a single profile update (the intake's
+field updaters close over the current profile, so five sequential
+updates would have overwritten each other). Salary raise and new-goal
+"Today's Cost" gained AI buttons; the wizard mirrors the expense and
+vehicle-resale predictions; each vehicle card gained an "AI Fill" that
+predicts depreciation, maintenance and efficiency in one tap.

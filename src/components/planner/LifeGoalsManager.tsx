@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { LifeGoal } from '@/types';
 import { AmountWords } from '@/components/ui/AmountWords';
+import { AiButton } from '@/components/ui/AiButton';
+import { formatCompactPkr } from '@/lib/format';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import { Calendar, Plus, Trash2, Sparkles } from 'lucide-react';
 
@@ -98,7 +100,16 @@ export function LifeGoalsManager({
               />
             </div>
             <div>
-              <label className="text-[10px] text-zinc-400 block mb-1">Today's Cost (PKR)</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[10px] text-zinc-400">Today's Cost (PKR)</label>
+                <AiButton
+                  type="goal-cost"
+                  context={{ goalName: newGoalName }}
+                  currentValue={newGoalCost}
+                  onAccept={(val) => setNewGoalCost(val)}
+                  formatValue={(x) => formatCompactPkr(x)}
+                />
+              </div>
               <input
                 type="number"
                 step={100000}
