@@ -43,6 +43,14 @@ export interface PredictionResult {
   ratedRangeKm?: number;
   /** Where the specs came from, as reported by the model. */
   specSource?: string;
+  /**
+   * Web-search provenance (NOTES #47): the actual pages a
+   * search-backed result was derived from, shown as links under the
+   * value in the UI. Present only for search-backed results.
+   */
+  sources?: { title: string; url: string }[];
+  /** Which search provider produced the hits (NOTES #47). */
+  searchProvider?: 'tavily' | 'serper';
 }
 
 export interface PredictionSpec {
@@ -438,9 +446,16 @@ function tryParsePrediction(
         if (typeof obj.specSource === 'string' && obj.specSource.trim()) {
           result.specSource = obj.specSource.trim().slice(0, 80);
         }
+        // NOTES #47 labelling fix (the Alektra incident): in the
+        // MODEL path the specs themselves are model-reported, so the
+        // note must not present the derivation as sourced fact —
+        // "Derived in code" provenance is reserved for inputs that
+        // were extracted from real pages (search pipeline / ground
+        // truth). The arithmetic is still done in code; the inputs
+        // are labelled unverified.
         const note =
-          ` Derived in code: ${kwh} kWh ÷ ${range} km × 100 = ${result.value} kWh/100km` +
-          ` (rated specs${result.specSource ? `, ${result.specSource}` : ''}).`;
+          ` Derived in code from model-reported specs: ${kwh} kWh ÷ ${range} km × 100 = ${result.value} kWh/100km` +
+          ` (rated specs${result.specSource ? `, ${result.specSource}` : ''}; not independently verified).`;
         result.reasoning = (result.reasoning.slice(0, Math.max(0, 220 - note.length)) + note).slice(0, 220);
       }
     }
@@ -467,4 +482,444 @@ function tryParsePrediction(
   } catch {
     return null;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Search-backed derivation (NOTES #47 — AI Assist v3).                */
+/*                                                                     */
+/* The web-search pipeline (src/lib/webSearch.ts +                     */
+/* src/lib/specExtraction.ts) hands this module an extraction: the     */
+/* numbers a model READ OFF real search-result pages, each tied to     */
+/* the URLs it came from. Everything below is pure code — variant      */
+/* picking, EV arithmetic, price medians, cross-year depreciation —    */
+/* so a search-backed number is derived from cited pages, never from   */
+/* model memory. "Derived in code" wording is used ONLY here and in    */
+/* the ground-truth table, where the inputs are genuinely sourced.     */
+/* ------------------------------------------------------------------ */
+
+/** Prediction types the web-search pipeline can resolve (NOTES #47). */
+export const SEARCH_BACKED_PREDICTION_TYPES: ReadonlySet<PredictionType> = new Set([
+  'car-price',
+  'car-efficiency',
+  'car-depreciation',
+]);
+
+export function isSearchBackedPrediction(type: PredictionType): boolean {
+  return SEARCH_BACKED_PREDICTION_TYPES.has(type);
+}
+
+/** One vehicle variant as extracted from search hits. */
+export interface ExtractedVariant {
+  variantNote: string | null;
+  pricePkr: number | null;
+  priceType: 'full-cash' | 'installment' | 'booking' | null;
+  batteryKwh: number | null;
+  rangeKm: number | null;
+  /** Directly-stated consumption: kWh/100km for EV, km/L for petrol. */
+  fuelConsumption: number | null;
+  sourceUrls: string[];
+}
+
+/** One year-tagged asking price, for cross-year depreciation. */
+export interface ExtractedPricePoint {
+  modelYear: number | null;
+  pricePkr: number | null;
+  priceType: 'full-cash' | 'installment' | 'booking' | null;
+  sourceUrl: string | null;
+}
+
+export interface SpecExtractionResult {
+  variants: ExtractedVariant[];
+  pricePoints: ExtractedPricePoint[];
+  extractor: 'gemini' | 'groq';
+}
+
+/** Minimal search-hit shape the derivation needs (webSearch.SearchHit). */
+export interface DerivationHit {
+  title: string;
+  url: string;
+  content: string;
+}
+
+/** Hostname of a URL, lowercased, without a leading "www.". */
+export function domainOfUrl(url: string): string {
+  try {
+    return new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Domains whose spec/price pages count as authoritative for the
+ * sourced-confidence rule: the official Pakistan brand sites plus
+ * PakWheels and EV Decisions (structured spec databases). Listing
+ * marketplaces and aggregators are corroborating, not authoritative.
+ */
+export const AUTHORITATIVE_DOMAINS: ReadonlySet<string> = new Set([
+  'pakwheels.com',
+  'evdecisions.com',
+  'alektragroup.com',
+  'changan.com.pk',
+  'toyota-indus.com',
+  'honda.com.pk',
+  'suzuki.com.pk',
+  'kia.com.pk',
+  'hyundai-nishat.com',
+  'yadea.com.pk',
+]);
+
+const NON_CASH_TOKEN = /down[ -]?payment|installment|instalment|booking|advance|easy monthly/i;
+
+/**
+ * A price is tainted when its own source page presents a figure of
+ * the same size as a down-payment / installment / booking amount —
+ * the NOTES #38 failure mode, guarded in code even if the extractor
+ * mis-tags the priceType. Checks a ±90-char window around each
+ * non-cash token for the price's digits.
+ */
+export function contextTaintsPrice(content: string, pricePkr: number): boolean {
+  if (!content || !Number.isFinite(pricePkr) || pricePkr <= 0) return false;
+  const digits = String(Math.round(pricePkr));
+  const withCommas = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const re = new RegExp(NON_CASH_TOKEN.source, 'gi');
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(content)) !== null) {
+    const from = Math.max(0, m.index - 90);
+    const to = Math.min(content.length, m.index + m[0].length + 90);
+    const window = content.slice(from, to).replace(/,/g, '');
+    if (window.includes(digits) || window.includes(withCommas.replace(/,/g, ''))) return true;
+  }
+  return false;
+}
+
+function hitByUrl(hits: DerivationHit[], url: string): DerivationHit | undefined {
+  return hits.find((h) => h.url === url);
+}
+
+/** A variant/point price survives only as a clean full-cash figure. */
+function priceIsClean(
+  pricePkr: number | null,
+  priceType: string | null,
+  sourceUrls: string[],
+  hits: DerivationHit[]
+): pricePkr is number {
+  if (pricePkr === null || !Number.isFinite(pricePkr) || pricePkr <= 0) return false;
+  if (priceType === 'installment' || priceType === 'booking') return false;
+  for (const url of sourceUrls) {
+    const hit = hitByUrl(hits, url);
+    if (hit && contextTaintsPrice(hit.content, pricePkr)) return false;
+  }
+  return true;
+}
+
+function sourcesFor(urls: string[], hits: DerivationHit[]): { title: string; url: string }[] {
+  const out: { title: string; url: string }[] = [];
+  const seen = new Set<string>();
+  for (const url of urls) {
+    if (seen.has(url)) continue;
+    seen.add(url);
+    const hit = hitByUrl(hits, url);
+    out.push({ title: hit?.title || domainOfUrl(url), url });
+  }
+  return out.slice(0, 3);
+}
+
+function domainsOf(urls: string[]): string[] {
+  return [...new Set(urls.map(domainOfUrl).filter(Boolean))];
+}
+
+/**
+ * Sourced-confidence rule (NOTES #47): HIGH when an authoritative
+ * domain supplied the inputs, or when two independent domains agree
+ * within 10%; a single non-authoritative source is MEDIUM.
+ */
+function sourcedConfidence(domains: string[], agreesAcrossDomains: boolean): 'high' | 'medium' {
+  if (domains.some((d) => AUTHORITATIVE_DOMAINS.has(d)) || agreesAcrossDomains) return 'high';
+  return 'medium';
+}
+
+export interface PickedVariant {
+  variant: ExtractedVariant;
+  index: number;
+  matchedByPrice: boolean;
+}
+
+/**
+ * Variant picking (NOTES #47): (a) the variant whose clean full-cash
+ * price matches the vehicle's known card price within ±5%, else
+ * (b) the base variant — smallest battery tier, else cheapest clean
+ * price, else the first variant with any data.
+ */
+export function pickVariant(
+  variants: ExtractedVariant[],
+  knownPricePkr: unknown,
+  hits: DerivationHit[]
+): PickedVariant | null {
+  const usable = variants
+    .map((variant, index) => ({ variant, index }))
+    .filter(
+      ({ variant }) =>
+        variant.pricePkr !== null ||
+        variant.batteryKwh !== null ||
+        variant.rangeKm !== null ||
+        variant.fuelConsumption !== null
+    );
+  if (usable.length === 0) return null;
+
+  const known = typeof knownPricePkr === 'number' && knownPricePkr > 0 ? knownPricePkr : null;
+  if (known !== null) {
+    // Closest clean price within ±5% wins (bands of neighbouring
+    // variants can overlap; first-match would pick arbitrarily).
+    let best: { variant: ExtractedVariant; index: number } | null = null;
+    let bestDiff = Infinity;
+    for (const u of usable) {
+      if (!priceIsClean(u.variant.pricePkr, u.variant.priceType, u.variant.sourceUrls, hits)) {
+        continue;
+      }
+      const diff = Math.abs((u.variant.pricePkr as number) - known) / known;
+      if (diff <= 0.05 && diff < bestDiff) {
+        best = u;
+        bestDiff = diff;
+      }
+    }
+    if (best) return { variant: best.variant, index: best.index, matchedByPrice: true };
+  }
+
+  const withBattery = usable.filter((u) => u.variant.batteryKwh !== null);
+  if (withBattery.length > 0) {
+    const base = withBattery.reduce((a, b) =>
+      (b.variant.batteryKwh as number) < (a.variant.batteryKwh as number) ? b : a
+    );
+    return { variant: base.variant, index: base.index, matchedByPrice: false };
+  }
+  const withPrice = usable.filter((u) =>
+    priceIsClean(u.variant.pricePkr, u.variant.priceType, u.variant.sourceUrls, hits)
+  );
+  if (withPrice.length > 0) {
+    const base = withPrice.reduce((a, b) =>
+      (b.variant.pricePkr as number) < (a.variant.pricePkr as number) ? b : a
+    );
+    return { variant: base.variant, index: base.index, matchedByPrice: false };
+  }
+  return { variant: usable[0].variant, index: usable[0].index, matchedByPrice: false };
+}
+
+function applyBand(
+  type: PredictionType,
+  ctx: Record<string, unknown> | undefined,
+  result: PredictionResult
+): PredictionResult {
+  const band = validationBandFor(type, ctx);
+  if (band && (result.value < band.min || result.value > band.max)) {
+    result.confidence = 'low';
+    const flag =
+      ` Flagged: ${result.value} ${band.unit} is outside the expected ${band.min}–${band.max} ${band.unit} band for this vehicle type — treat with caution.`;
+    result.reasoning = (result.reasoning + flag).slice(0, 300);
+  }
+  return result;
+}
+
+function buildSearchEfficiency(
+  ctx: Record<string, unknown>,
+  extraction: SpecExtractionResult,
+  hits: DerivationHit[],
+  provider: 'tavily' | 'serper'
+): PredictionResult | null {
+  const fuel = typeof ctx.fuelType === 'string' ? ctx.fuelType : '';
+  const picked = pickVariant(extraction.variants, ctx.pricePkr, hits);
+  if (!picked) return null;
+  const v = picked.variant;
+  const name = typeof ctx.name === 'string' ? ctx.name : 'This vehicle';
+  const variantLabel = v.variantNote ? ` (${v.variantNote})` : '';
+  const domains = domainsOf(v.sourceUrls);
+  const sources = sourcesFor(v.sourceUrls, hits);
+
+  if (fuel === 'petrol') {
+    if (v.fuelConsumption === null || v.fuelConsumption <= 0) return null;
+    // Cross-domain agreement: another variant from a different
+    // domain stating a km/L within 10% of the picked figure.
+    const agrees = extraction.variants.some(
+      (o) =>
+        o !== v &&
+        o.fuelConsumption !== null &&
+        o.fuelConsumption > 0 &&
+        domainsOf(o.sourceUrls).some((d) => !domains.includes(d)) &&
+        Math.abs(o.fuelConsumption - (v.fuelConsumption as number)) / (v.fuelConsumption as number) <= 0.1
+    );
+    const result: PredictionResult = {
+      value: clampPrediction('car-efficiency', v.fuelConsumption),
+      reasoning:
+        `Sourced data (${domains.join(', ') || 'web search'}): ${name}${variantLabel} rated fuel average ` +
+        `${v.fuelConsumption} km/L from the cited Pakistani source.`,
+      confidence: sourcedConfidence(domains, agrees),
+      source: 'sourced',
+      sourceNote: domains[0] ?? 'Web search',
+      specSource: domains.join(', '),
+      sources,
+      searchProvider: provider,
+    };
+    return applyBand('car-efficiency', ctx, result);
+  }
+
+  // EV / e-scooty: derive from extracted rated specs when present.
+  const derived = deriveEvEfficiencyKwhPer100Km(v.batteryKwh, v.rangeKm);
+  if (derived !== null) {
+    const agrees = extraction.variants.some((o) => {
+      if (o === v) return false;
+      const od = deriveEvEfficiencyKwhPer100Km(o.batteryKwh, o.rangeKm);
+      if (od === null) return false;
+      return (
+        domainsOf(o.sourceUrls).some((d) => !domains.includes(d)) &&
+        Math.abs(od - derived) / derived <= 0.1
+      );
+    });
+    const value = clampPrediction('car-efficiency', derived);
+    const result: PredictionResult = {
+      value,
+      reasoning:
+        `Sourced data (${domains.join(', ') || 'web search'}): ${name}${variantLabel} rated specs ` +
+        `${v.batteryKwh} kWh / ${v.rangeKm} km. ` +
+        `Derived in code: ${v.batteryKwh} kWh ÷ ${v.rangeKm} km × 100 = ${value} kWh/100km.`,
+      confidence: sourcedConfidence(domains, agrees),
+      source: 'sourced',
+      sourceNote: domains[0] ?? 'Web search',
+      batteryKwh: v.batteryKwh as number,
+      ratedRangeKm: v.rangeKm as number,
+      specSource: domains.join(', '),
+      sources,
+      searchProvider: provider,
+    };
+    return applyBand('car-efficiency', ctx, result);
+  }
+  // No specs, but the source states consumption directly.
+  if (v.fuelConsumption !== null && v.fuelConsumption > 0) {
+    const result: PredictionResult = {
+      value: clampPrediction('car-efficiency', v.fuelConsumption),
+      reasoning:
+        `Sourced data (${domains.join(', ') || 'web search'}): ${name}${variantLabel} rated consumption ` +
+        `${v.fuelConsumption} kWh/100km from the cited source (no battery/range specs published to derive from).`,
+      confidence: sourcedConfidence(domains, false),
+      source: 'sourced',
+      sourceNote: domains[0] ?? 'Web search',
+      specSource: domains.join(', '),
+      sources,
+      searchProvider: provider,
+    };
+    return applyBand('car-efficiency', ctx, result);
+  }
+  return null;
+}
+
+function buildSearchPrice(
+  ctx: Record<string, unknown>,
+  extraction: SpecExtractionResult,
+  hits: DerivationHit[],
+  provider: 'tavily' | 'serper'
+): PredictionResult | null {
+  const candidates: { price: number; urls: string[] }[] = [];
+  for (const v of extraction.variants) {
+    if (priceIsClean(v.pricePkr, v.priceType, v.sourceUrls, hits)) {
+      candidates.push({ price: v.pricePkr, urls: v.sourceUrls });
+    }
+  }
+  for (const p of extraction.pricePoints) {
+    const urls = p.sourceUrl ? [p.sourceUrl] : [];
+    if (priceIsClean(p.pricePkr, p.priceType, urls, hits)) {
+      candidates.push({ price: p.pricePkr, urls });
+    }
+  }
+  if (candidates.length === 0) return null;
+
+  const prices = candidates.map((c) => c.price).sort((a, b) => a - b);
+  const mid = Math.floor(prices.length / 2);
+  const median = prices.length % 2 === 1 ? prices[mid] : (prices[mid - 1] + prices[mid]) / 2;
+  const value = clampPrediction('car-price', median);
+
+  const allUrls = [...new Set(candidates.flatMap((c) => c.urls))];
+  const domains = domainsOf(allUrls);
+  const nearMedian = candidates.filter((c) => Math.abs(c.price - median) / median <= 0.1);
+  const agrees =
+    new Set(nearMedian.flatMap((c) => domainsOf(c.urls))).size >= 2;
+  const name = typeof ctx.name === 'string' ? ctx.name : 'This vehicle';
+
+  const tiers = extraction.variants
+    .filter((v) => v.batteryKwh !== null)
+    .map((v) => v.batteryKwh as number)
+    .sort((a, b) => a - b);
+  const variantNote =
+    tiers.length >= 2
+      ? ` Across variants (${tiers[0]}–${tiers[tiers.length - 1]} kWh): Rs ${prices[0].toLocaleString('en-US')}–${prices[prices.length - 1].toLocaleString('en-US')}; median Rs ${Math.round(median).toLocaleString('en-US')}.`
+      : '';
+
+  return {
+    value,
+    reasoning:
+      `Sourced data (${domains.join(', ') || 'web search'}): median of ${candidates.length} full-cash ` +
+      `price${candidates.length === 1 ? '' : 's'} found for ${name}.${variantNote}`,
+    confidence: sourcedConfidence(domains, agrees),
+    source: 'sourced',
+    sourceNote: domains[0] ?? 'Web search',
+    sources: sourcesFor(allUrls, hits),
+    searchProvider: provider,
+  };
+}
+
+function buildSearchDepreciation(
+  ctx: Record<string, unknown>,
+  extraction: SpecExtractionResult,
+  hits: DerivationHit[],
+  provider: 'tavily' | 'serper'
+): PredictionResult | null {
+  const points = extraction.pricePoints.filter((p) => {
+    const urls = p.sourceUrl ? [p.sourceUrl] : [];
+    return p.modelYear !== null && priceIsClean(p.pricePkr, p.priceType, urls, hits);
+  });
+  if (points.length < 2) return null;
+  const byYear = [...points].sort((a, b) => (a.modelYear as number) - (b.modelYear as number));
+  const oldest = byYear[0];
+  const newest = byYear[byYear.length - 1];
+  const gap = (newest.modelYear as number) - (oldest.modelYear as number);
+  if (gap < 1) return null;
+  const newPrice = newest.pricePkr as number;
+  const oldPrice = oldest.pricePkr as number;
+  if (oldPrice >= newPrice) return null; // no defensible drop — model path decides
+  const dropPct = (1 - oldPrice / newPrice) * 100;
+  const fiveYearPct = dropPct * (5 / gap);
+  const value = clampPrediction('car-depreciation', fiveYearPct);
+  const allUrls = [...new Set(points.map((p) => p.sourceUrl).filter(Boolean) as string[])];
+  const domains = domainsOf(allUrls);
+  const name = typeof ctx.name === 'string' ? ctx.name : 'This vehicle';
+  return {
+    value,
+    reasoning:
+      `Sourced data (${domains.join(', ') || 'web search'}): ${name} asking prices fall from ` +
+      `Rs ${newPrice.toLocaleString('en-US')} (${newest.modelYear}) to Rs ${oldPrice.toLocaleString('en-US')} ` +
+      `(${oldest.modelYear}) — a ${dropPct.toFixed(1)}% drop over ${gap} year${gap === 1 ? '' : 's'}, ` +
+      `scaled to a 5-year figure in code.`,
+    confidence: sourcedConfidence(domains, false),
+    source: 'sourced',
+    sourceNote: domains[0] ?? 'Web search',
+    sources: sourcesFor(allUrls, hits),
+    searchProvider: provider,
+  };
+}
+
+/**
+ * Turn an extraction (numbers read off real pages) into a validated
+ * PredictionResult, or null when the extraction carries nothing
+ * usable for this type — the caller then falls back (page-text retry,
+ * the other provider, or the model path). Pure: no I/O, no clock.
+ */
+export function buildSearchBackedResult(
+  type: PredictionType,
+  ctx: Record<string, unknown>,
+  extraction: SpecExtractionResult,
+  hits: DerivationHit[],
+  provider: 'tavily' | 'serper'
+): PredictionResult | null {
+  if (type === 'car-efficiency') return buildSearchEfficiency(ctx, extraction, hits, provider);
+  if (type === 'car-price') return buildSearchPrice(ctx, extraction, hits, provider);
+  if (type === 'car-depreciation') return buildSearchDepreciation(ctx, extraction, hits, provider);
+  return null;
 }

@@ -9,6 +9,12 @@
  * one attempt. Results are cached in memory for 6 hours per unique
  * (type, context) and each caller IP is softly capped per day, so a
  * busy UI cannot burn the quota.
+ *
+ * NOTES #47: vehicle fields first resolve through the web-search
+ * pipeline (src/lib/webSearch.ts + src/lib/specExtraction.ts —
+ * Tavily/Serper search, Gemini/Groq extraction, code derivation,
+ * 14-day cache) before this model chain is consulted as the
+ * last-resort guess.
  */
 
 import {
@@ -18,8 +24,18 @@ import {
   PredictionType,
   parsePrediction,
   isGroundedPrediction,
+  buildSearchBackedResult,
+  isSearchBackedPrediction,
 } from '@/lib/aiPredictions';
 import { findGroundTruth } from '@/lib/vehicleGroundTruth';
+import {
+  buildVehicleSearchQuery,
+  enrichHitsWithPageText,
+  isWebSearchConfigured,
+  searchVehicleWebDetailed,
+  searchWithProvider,
+} from '@/lib/webSearch';
+import { extractVehicleSpecs, SpecField } from '@/lib/specExtraction';
 import { ForeignMappingResult } from '@/types';
 import {
   getDefaultFallbackProfile,
@@ -204,6 +220,102 @@ export type PredictOutcome =
   | { ok: true; result: PredictionResult & { model: string }; cached: boolean }
   | { ok: false; reason: 'not_configured' | 'rate_limited' | 'unavailable' };
 
+/* ------------------------------------------------------------------ */
+/* Web-search pipeline (NOTES #47 — AI Assist v3).                     */
+/*                                                                     */
+/* For vehicle fields the resolution order is: ground truth → this     */
+/* pipeline → the Groq guess. The pipeline searches the web (Tavily,   */
+/* Serper fallback), has an extractor model read the hits, and         */
+/* derives the value in code from the extracted, cited figures.        */
+/* Search-backed results are cached for 14 days per vehicle+field:     */
+/* a cache hit consumes zero provider quota.                           */
+/* ------------------------------------------------------------------ */
+
+const SEARCH_CACHE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+
+const searchCache = new Map<
+  string,
+  { at: number; result: PredictionResult & { model: string } }
+>();
+
+/** Cache-key normalisation: case/punctuation-insensitive vehicle name. */
+export function normalizeVehicleName(name: unknown): string {
+  if (typeof name !== 'string') return '';
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+export function searchCacheKey(
+  type: PredictionType,
+  context: Record<string, unknown>
+): string {
+  return `${type}::${normalizeVehicleName(context.name)}`;
+}
+
+const SEARCH_FIELD_FOR_TYPE: Partial<Record<PredictionType, SpecField>> = {
+  'car-price': 'price',
+  'car-efficiency': 'efficiency',
+  'car-depreciation': 'depreciation',
+};
+
+async function trySearchPipeline(
+  type: PredictionType,
+  context: Record<string, unknown>
+): Promise<(PredictionResult & { model: string }) | null> {
+  const field = SEARCH_FIELD_FOR_TYPE[type];
+  if (!field) return null;
+  const name = typeof context.name === 'string' ? context.name : '';
+  const query = buildVehicleSearchQuery(type, context);
+
+  let outcome = await searchVehicleWebDetailed(query);
+  let extraction =
+    outcome.hits.length > 0 ? await extractVehicleSpecs(name, field, outcome.hits) : null;
+  let built =
+    extraction && outcome.provider
+      ? buildSearchBackedResult(type, context, extraction, outcome.hits, outcome.provider)
+      : null;
+
+  // Extraction-level fallback: Tavily's hits yielded nothing usable
+  // → give Serper's Google index a shot at the same query.
+  if (!built && outcome.provider === 'tavily') {
+    const serperHits = await searchWithProvider('serper', query);
+    if (serperHits && serperHits.length > 0) {
+      const ex2 = await extractVehicleSpecs(name, field, serperHits);
+      const built2 = ex2
+        ? buildSearchBackedResult(type, context, ex2, serperHits, 'serper')
+        : null;
+      if (built2) {
+        built = built2;
+        extraction = ex2;
+        outcome = { hits: serperHits, provider: 'serper' };
+      }
+    }
+  }
+
+  // Serper snippets carried no usable numbers → fetch the top pages
+  // and extract from their full text once.
+  if (!built && outcome.provider === 'serper' && outcome.hits.length > 0) {
+    const enriched = await enrichHitsWithPageText(outcome.hits, 2);
+    const ex3 = await extractVehicleSpecs(name, field, enriched);
+    const built3 = ex3
+      ? buildSearchBackedResult(type, context, ex3, enriched, 'serper')
+      : null;
+    if (built3) {
+      built = built3;
+      extraction = ex3;
+    }
+  }
+
+  if (!built || !extraction || !outcome.provider) return null;
+  return {
+    ...built,
+    model: `Web search · ${outcome.provider} + ${extraction.extractor}`,
+  };
+}
+
 /**
  * Single-flight de-duplication (NOTES #46): identical in-flight
  * prediction requests share ONE upstream call chain, keyed by the
@@ -223,8 +335,23 @@ export async function predictWithAi(
   const sourced = findGroundTruth(type, context);
   if (sourced) return { ok: true, result: sourced, cached: false };
 
+  // Search cache (NOTES #47): a vehicle+field resolved from the web
+  // in the last 14 days returns instantly and consumes no quota —
+  // checked before any provider configuration, like ground truth.
+  const searchBacked = isSearchBackedPrediction(type);
+  const sKey = searchBacked ? searchCacheKey(type, context) : null;
+  if (sKey) {
+    const sHit = searchCache.get(sKey);
+    if (sHit && Date.now() - sHit.at < SEARCH_CACHE_TTL_MS) {
+      searchCache.delete(sKey);
+      searchCache.set(sKey, sHit);
+      return { ok: true, result: sHit.result, cached: true };
+    }
+  }
+
   const cfg = getAiConfig();
-  if (!cfg) return { ok: false, reason: 'not_configured' };
+  const searchReady = searchBacked && isWebSearchConfigured();
+  if (!cfg && !searchReady) return { ok: false, reason: 'not_configured' };
 
   const key = cacheKey(type, context);
   const hit = cache.get(key);
@@ -240,6 +367,19 @@ export async function predictWithAi(
   const promise = (async (): Promise<PredictOutcome> => {
     if (!underCap(ip)) return { ok: false, reason: 'rate_limited' };
 
+    // Web-search pipeline (NOTES #47): vehicle fields resolve from
+    // real pages before any model guess is attempted.
+    let searchAttempted = false;
+    if (searchReady && sKey) {
+      searchAttempted = true;
+      const resolved = await trySearchPipeline(type, context);
+      if (resolved) {
+        setBoundedEntry(searchCache, sKey, { at: Date.now(), result: resolved });
+        return { ok: true, result: resolved, cached: false };
+      }
+    }
+    if (!cfg) return { ok: false, reason: 'unavailable' };
+
     const provider = getAiProvider(cfg);
     // Grounded types (volatile market prices): browser-search call on
     // the primary model first, then the plain primary, then fallback.
@@ -250,6 +390,20 @@ export async function predictWithAi(
     if (!result) result = await provider.chat(cfg, cfg.model, type, context);
     if (!result) result = await provider.chat(cfg, cfg.fallbackModel, type, context);
     if (!result) return { ok: false, reason: 'unavailable' };
+
+    if (searchAttempted) {
+      // The search ran and found nothing usable: this model guess is
+      // a last resort and is labelled as such — unverified, low
+      // confidence, never "sourced", never "derived in code".
+      result = {
+        ...result,
+        confidence: 'low',
+        reasoning: (
+          result.reasoning +
+          ' Web search found no sourced data for this vehicle — treat this as an unverified model estimate.'
+        ).slice(0, 300),
+      };
+    }
 
     setBoundedEntry(cache, key, { at: Date.now(), result });
     return { ok: true, result, cached: false };
@@ -392,9 +546,14 @@ export async function mapPortfolioWithAi(
 export function _resetAiStateForTesting(): void {
   cache.clear();
   mappingCache.clear();
+  searchCache.clear();
   dailyCounts.clear();
   inFlight.clear();
   lastDayString = new Date().toISOString().slice(0, 10);
+}
+
+export function _getSearchCacheSizeForTesting(): number {
+  return searchCache.size;
 }
 
 export function _getInFlightSizeForTesting(): number {

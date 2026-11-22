@@ -150,6 +150,24 @@ export function AiButton({ type, context, currentValue, onAccept, formatValue }:
                     : fmt(result.value)}
                 </div>
                 <p className="text-[11px] text-zinc-400 leading-relaxed">{result.reasoning}</p>
+                {result.sources && result.sources.length > 0 && (
+                  <div className="space-y-0.5">
+                    <span className="text-[9px] font-bold tracking-widest text-zinc-500 uppercase">
+                      Sources
+                    </span>
+                    {result.sources.slice(0, 3).map((src) => (
+                      <a
+                        key={src.url}
+                        href={src.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block text-[11px] text-amber-300/90 hover:text-amber-200 underline truncate"
+                      >
+                        {src.title || src.url}
+                      </a>
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-center justify-between pt-1">
                   <span
                     className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide whitespace-nowrap ${
