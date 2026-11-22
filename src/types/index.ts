@@ -167,6 +167,33 @@ export interface UserProfile {
   assetBuckets: AssetBucket[];
   lifeGoals: LifeGoal[];
   vehicles: VehicleCandidate[];
+  // Item-level detail (additive-optional, NOTES #23): the buckets above say
+  // HOW money is split; these say WHAT is actually held / owed, item by
+  // item — gold weight & purity, fund units & NAV, plot details, individual
+  // bank balances, stock holdings, and debts (e.g. a Splitwise balance).
+  holdings?: HoldingItem[];
+  liabilities?: LiabilityItem[];
+}
+
+export type HoldingKind = 'gold' | 'fund' | 'real-estate' | 'bank' | 'stock' | 'other';
+
+export interface HoldingItem {
+  id: string;
+  kind: HoldingKind;
+  label: string; // e.g. "21K jewellery", "KMIF", "DHA plot", "Meezan account"
+  valuePkr: number;
+  quantity?: number; // tola (gold) / units (fund) / shares (stock)
+  unitLabel?: string; // 'tola' | 'units' | 'shares'
+  unitPricePkr?: number; // NAV per unit / price per share / rate per tola
+  purityKarat?: number; // gold only: 24 / 22 / 21 / 18
+  details?: string; // plot size & location, bank name, free notes
+}
+
+export interface LiabilityItem {
+  id: string;
+  label: string; // e.g. "Splitwise balance owed", "Credit card"
+  amountPkr: number;
+  details?: string;
 }
 
 export interface WealthTimelinePoint {

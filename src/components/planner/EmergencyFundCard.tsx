@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { PlanSummary, UserProfile } from '@/types';
+import { netLiquidReservePkr, totalLiabilitiesPkr } from '@/lib/engine/wealthEngine';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import { Shield, ShieldAlert, ShieldCheck, AlertCircle, ArrowRight } from 'lucide-react';
 import { useBeginnerGuide } from '@/components/ui/BeginnerDrawer';
@@ -18,9 +19,13 @@ export function EmergencyFundCard({ plan, profile }: EmergencyFundCardProps) {
   const totalMonthlyExpenses = Object.values(profile.expenses).reduce((a, b) => a + b, 0);
   const target = plan.emergencyFundTargetPkr;
   const currentReserve = profile.currentCashReservePkr;
+  // The gate is measured on the NET liquid position (reserve − declared
+  // liabilities, NOTES #23) — the same basis the engine's gap uses.
+  const liabilitiesTotal = totalLiabilitiesPkr(profile);
+  const netReserve = netLiquidReservePkr(profile);
   const gap = plan.emergencyFundGapPkr;
   const isFunded = gap <= 0;
-  const fundedPct = target > 0 ? Math.min(100, Math.round((currentReserve / target) * 100)) : 100;
+  const fundedPct = target > 0 ? Math.min(100, Math.max(0, Math.round((netReserve / target) * 100))) : 100;
 
   return (
     <div className={`rounded-2xl border p-5 sm:p-6 transition-all shadow-md ${
@@ -69,6 +74,12 @@ export function EmergencyFundCard({ plan, profile }: EmergencyFundCardProps) {
         <div className="flex justify-between text-xs font-mono">
           <span className="text-zinc-400">
             Current Cash Reserve: <strong className="text-white">{formatPkrMasked(currentReserve)}</strong>
+            {liabilitiesTotal > 0 && (
+              <>
+                {' '}· Liabilities: <strong className="text-rose-400">−{formatPkrMasked(liabilitiesTotal)}</strong>
+                {' '}· Net: <strong className="text-white">{formatPkrMasked(netReserve)}</strong>
+              </>
+            )}
           </span>
           <span className="text-zinc-400">
             Target (4x Expenses): <strong className="text-white">{formatPkrMasked(target)}</strong>

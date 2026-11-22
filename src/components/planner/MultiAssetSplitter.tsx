@@ -17,12 +17,19 @@ const BUCKET_ICONS: Record<string, React.ElementType> = {
   cash: Wallet,
 };
 
+/** Splits carry one decimal (NOTES #23) — real portfolios are split like
+ * 12.7 / 30.7 / 42.1 / 7.7 / 6.8, which the old 5%-step sliders and the
+ * integer-rounding auto-balance could not represent at all. */
+const round1 = (n: number) => Math.round(n * 10) / 10;
+const fmtPct = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1));
+
 export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitterProps) {
   const totalSplit = assetBuckets.reduce((acc, b) => acc + (b.monthlySplitPct || 0), 0);
+  const totalRounded = round1(totalSplit);
 
   const updateSplit = (id: string, newSplit: number) => {
     const updated = assetBuckets.map((b) =>
-      b.id === id ? { ...b, monthlySplitPct: Math.max(0, Math.min(100, newSplit)) } : b
+      b.id === id ? { ...b, monthlySplitPct: Math.max(0, Math.min(100, round1(newSplit))) } : b
     );
     onChange(updated);
   };
@@ -45,14 +52,14 @@ export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitte
       return;
     }
 
-    // Pro-rata normalization
+    // Pro-rata normalization at 0.1 precision (was integer rounding)
     let runningSum = 0;
     const normalized = assetBuckets.map((b, idx) => {
       if (idx === assetBuckets.length - 1) {
-        return { ...b, monthlySplitPct: Math.max(0, 100 - runningSum) };
+        return { ...b, monthlySplitPct: Math.max(0, round1(100 - runningSum)) };
       }
-      const p = Math.round((b.monthlySplitPct / totalSplit) * 100);
-      runningSum += p;
+      const p = round1((b.monthlySplitPct / totalSplit) * 100);
+      runningSum = round1(runningSum + p);
       return { ...b, monthlySplitPct: p };
     });
 
@@ -68,7 +75,7 @@ export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitte
         </label>
 
         <div className="flex items-center gap-2">
-          {totalSplit !== 100 && (
+          {totalRounded !== 100 && (
             <button
               type="button"
               onClick={handleAutoBalance}
@@ -81,10 +88,10 @@ export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitte
 
           <span
             className={`font-mono text-[11px] font-bold ${
-              totalSplit === 100 ? 'text-emerald-400' : 'text-amber-400'
+              totalRounded === 100 ? 'text-emerald-400' : 'text-amber-400'
             }`}
           >
-            Total: {totalSplit}%
+            Total: {fmtPct(totalRounded)}%
           </span>
         </div>
       </div>
@@ -107,8 +114,18 @@ export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitte
                   <span className="text-[10px] text-zinc-500">
                     Exp: {bucket.expectedAnnualReturnPct}%
                   </span>
-                  <span className="font-bold text-white text-xs min-w-[36px] text-right">
-                    {bucket.monthlySplitPct}%
+                  <span className="flex items-center gap-0.5">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.1}
+                      value={bucket.monthlySplitPct}
+                      onChange={(e) => updateSplit(bucket.id, Number(e.target.value))}
+                      className="w-[52px] bg-transparent font-bold text-white text-xs text-right focus:outline-none focus:border-b focus:border-emerald-500"
+                      aria-label={`${bucket.label} split percent`}
+                    />
+                    <span className="font-bold text-white text-xs">%</span>
                   </span>
                 </div>
               </div>
@@ -117,7 +134,7 @@ export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitte
                 type="range"
                 min={0}
                 max={100}
-                step={5}
+                step={0.1}
                 value={bucket.monthlySplitPct}
                 onChange={(e) => updateSplit(bucket.id, Number(e.target.value))}
                 className="w-full h-1.5 bg-black/[0.05] rounded-lg appearance-none cursor-pointer accent-emerald-400"

@@ -204,6 +204,27 @@ function getDefaultAssetBuckets(): AssetBucket[] {
   ];
 }
 
+/** Total declared liabilities (NOTES #23). Missing list = zero. */
+export function totalLiabilitiesPkr(profile: UserProfile): number {
+  return (profile.liabilities ?? []).reduce(
+    (sum, l) => sum + (typeof l.amountPkr === 'number' && l.amountPkr > 0 ? l.amountPkr : 0),
+    0
+  );
+}
+
+/** Net liquid position: cash reserve minus declared liabilities. */
+export function netLiquidReservePkr(profile: UserProfile): number {
+  return profile.currentCashReservePkr - totalLiabilitiesPkr(profile);
+}
+
+/** Total itemised holdings value (NOTES #23). Missing list = zero. */
+export function totalHoldingsPkr(profile: UserProfile): number {
+  return (profile.holdings ?? []).reduce(
+    (sum, h) => sum + (typeof h.valuePkr === 'number' && h.valuePkr > 0 ? h.valuePkr : 0),
+    0
+  );
+}
+
 /**
  * Master Life & Wealth Planner Engine.
  * Evaluates month-by-month multi-asset compounding, dated life goal withdrawals,
@@ -218,9 +239,13 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
     profile.expenses.rentOrHousing +
     profile.expenses.familyAndOther;
 
-  // 2. Emergency fund target (4 months of total living expenses)
+  // 2. Emergency fund target (4 months of total living expenses).
+  // The gap is measured against the NET liquid position: cash reserve
+  // minus declared liabilities (NOTES #23 — before liabilities existed,
+  // a debt could only be smuggled in as a negative cash reserve, which
+  // the local sanitize path clamps away).
   const emergencyFundTargetPkr = Math.round(totalMonthlyExpenses * 4);
-  const emergencyFundGapPkr = Math.max(0, emergencyFundTargetPkr - profile.currentCashReservePkr);
+  const emergencyFundGapPkr = Math.max(0, emergencyFundTargetPkr - netLiquidReservePkr(profile));
 
   // 3. PSX Stock portfolio selection & blended yield
   const stockAllocations = selectStockPortfolio(profile.shariahOnly);

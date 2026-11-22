@@ -7,6 +7,7 @@ import { PlannerIntakeForm } from '@/components/planner/PlannerIntakeForm';
 import { WealthHeadlineCards } from '@/components/planner/WealthHeadlineCards';
 import { GoalShortfallCard } from '@/components/planner/GoalShortfallCard';
 import { EmergencyFundCard } from '@/components/planner/EmergencyFundCard';
+import { HoldingsLiabilitiesCard } from '@/components/planner/HoldingsLiabilitiesCard';
 import { ExpenseWaterfall } from '@/components/planner/ExpenseWaterfall';
 import { CompoundingChart } from '@/components/planner/CompoundingChart';
 import { PayoutCalendarChart } from '@/components/planner/PayoutCalendarChart';
@@ -105,6 +106,8 @@ function PlannerContent() {
             onChange={setProfile}
             onSelectPreset={resetToPreset}
           />
+
+          <HoldingsLiabilitiesCard profile={profile} onChange={setProfile} />
 
           {/* Quick link to Car Decision Map */}
           <div className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-500/20 flex items-center justify-between">

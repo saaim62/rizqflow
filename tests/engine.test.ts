@@ -6,7 +6,10 @@ import {
   applyCarSavingsToPlan,
   calculateExecutionSheet,
   calculateLifePlan,
+  netLiquidReservePkr,
   normalizeAssetSplits,
+  totalHoldingsPkr,
+  totalLiabilitiesPkr,
 } from '@/lib/engine/plannerEngine';
 import { evaluateCarDecision } from '@/lib/engine/carTcoEngine';
 import { decodeProfileFromHash, encodeProfileToHash, sanitizeProfile } from '@/lib/stateUrl';
@@ -630,5 +633,116 @@ describe('Phase 3: Live & Custom Market Rates Layer', () => {
     expect(updatedProfile.petrolPricePerLitre).toBe(350);
     expect(updatedProfile.usdToPkr).toBe(285.0);
     expect(updatedProfile.goldPerTolaPkr).toBe(400000);
+  });
+});
+
+describe('NOTES #23: decimal splits, holdings, liabilities, EV car', () => {
+  it('liabilities widen the emergency-fund gap rupee-for-rupee (Splitwise example)', () => {
+    const base = PRESET_PROFILES['junior-engineer'].profile;
+    const basePlan = calculateLifePlan(base);
+    expect(totalLiabilitiesPkr(base)).toBe(0);
+    expect(netLiquidReservePkr(base)).toBe(base.currentCashReservePkr);
+
+    const withDebt: UserProfile = {
+      ...base,
+      liabilities: [{ id: 'l1', label: 'Splitwise balance owed', amountPkr: 3544611 }],
+    };
+    expect(totalLiabilitiesPkr(withDebt)).toBe(3544611);
+    expect(netLiquidReservePkr(withDebt)).toBe(base.currentCashReservePkr - 3544611);
+
+    const debtPlan = calculateLifePlan(withDebt);
+    expect(debtPlan.emergencyFundGapPkr).toBe(basePlan.emergencyFundGapPkr + 3544611);
+    // Nothing else in the plan moves: liabilities are a position, not an investment
+    expect(debtPlan.finalNominalWealthPkr).toBe(basePlan.finalNominalWealthPkr);
+  });
+
+  it('decimal bucket splits (12.7/30.7/42.1/7.7/6.8) drive the PSX sleeve exactly', () => {
+    const base = PRESET_PROFILES['junior-engineer'].profile;
+    const mkBuckets = (psxPct: number): AssetBucket[] => [
+      { id: 'psx-dividends', label: 'PSX Dividend Equities', currentValuePkr: 0, monthlySplitPct: psxPct, expectedAnnualReturnPct: 14 },
+      { id: 'gold', label: '24K Physical Gold', currentValuePkr: 0, monthlySplitPct: 30.7, expectedAnnualReturnPct: 12 },
+      { id: 'real-estate', label: 'Real Estate / Land', currentValuePkr: 0, monthlySplitPct: 42.1, expectedAnnualReturnPct: 13 },
+      { id: 'money-market', label: 'Shariah / Money Market', currentValuePkr: 0, monthlySplitPct: 7.7, expectedAnnualReturnPct: 11 },
+      { id: 'cash', label: 'Cash Reserve / Bank Balance', currentValuePkr: 0, monthlySplitPct: 6.8, expectedAnnualReturnPct: 8 },
+    ];
+
+    const decimalPlan = calculateLifePlan({ ...base, lumpSumPkr: 3000000, assetBuckets: mkBuckets(12.7) });
+    // Comparison profile: PSX at 50% with the other buckets scaled to keep
+    // the total at 100 (the engine normalizes non-100 sums, which would
+    // change the effective share and invalidate the ratio).
+    const fiftyBuckets: AssetBucket[] = [
+      { id: 'psx-dividends', label: 'PSX Dividend Equities', currentValuePkr: 0, monthlySplitPct: 50, expectedAnnualReturnPct: 14 },
+      { id: 'gold', label: '24K Physical Gold', currentValuePkr: 0, monthlySplitPct: 20, expectedAnnualReturnPct: 12 },
+      { id: 'real-estate', label: 'Real Estate / Land', currentValuePkr: 0, monthlySplitPct: 15, expectedAnnualReturnPct: 13 },
+      { id: 'money-market', label: 'Shariah / Money Market', currentValuePkr: 0, monthlySplitPct: 10, expectedAnnualReturnPct: 11 },
+      { id: 'cash', label: 'Cash Reserve / Bank Balance', currentValuePkr: 0, monthlySplitPct: 5, expectedAnnualReturnPct: 8 },
+    ];
+    const fiftyPlan = calculateLifePlan({ ...base, lumpSumPkr: 3000000, assetBuckets: fiftyBuckets });
+
+    // Dividends scale with the PSX sleeve share: 12.7 / 50 = 0.254
+    const ratio = decimalPlan.initialMonthlyGrossDividendPkr / fiftyPlan.initialMonthlyGrossDividendPkr;
+    expect(ratio).toBeCloseTo(0.254, 2);
+    expect(decimalPlan.timeline.length).toBeGreaterThan(0);
+    expect(decimalPlan.timeline.every((p) => Number.isFinite(p.nominalPortfolioPkr))).toBe(true);
+  });
+
+  it('sanitizeProfile preserves itemised holdings and liabilities, clamped', () => {
+    const fallback = PRESET_PROFILES['junior-engineer'].profile;
+    const cleaned = sanitizeProfile(
+      {
+        ...fallback,
+        holdings: [
+          { id: 'h1', kind: 'gold', label: '21K jewellery', valuePkr: 2400000, quantity: 7.2, unitLabel: 'tola', unitPricePkr: 333333, purityKarat: 21, details: 'Bridal set' },
+          { id: 'h2', kind: 'fund', label: 'KMIF', valuePkr: 850000, quantity: 10200, unitLabel: 'units', unitPricePkr: 83.3 },
+          { id: 'h3', kind: 'spaceship', label: 'Bad kind', valuePkr: -50 },
+        ],
+        liabilities: [
+          { id: 'l1', label: 'Splitwise balance owed', amountPkr: 3544611 },
+          { id: 'l2', label: 'Negative nonsense', amountPkr: -100 },
+        ],
+      },
+      fallback
+    );
+
+    expect(cleaned.holdings?.length).toBe(3);
+    expect(cleaned.holdings?.[0].purityKarat).toBe(21);
+    expect(cleaned.holdings?.[0].quantity).toBe(7.2);
+    expect(cleaned.holdings?.[1].unitPricePkr).toBe(83.3);
+    expect(cleaned.holdings?.[2].kind).toBe('other'); // unknown kind coerced
+    expect(cleaned.holdings?.[2].valuePkr).toBe(0); // negative clamped
+    expect(totalHoldingsPkr(cleaned)).toBe(3250000);
+
+    expect(cleaned.liabilities?.length).toBe(2);
+    expect(cleaned.liabilities?.[0].amountPkr).toBe(3544611);
+    expect(cleaned.liabilities?.[1].amountPkr).toBe(0);
+  });
+
+  it('an EV car (Nissan Leaf class) gets real charging costs, not petrol math', () => {
+    const base = PRESET_PROFILES['solar-commuter'].profile;
+    const leafProfile: UserProfile = {
+      ...base,
+      dailyCommuteKm: 25,
+      solarKw: 0,
+      solarTariffMode: 'none',
+      gridRatePerKwh: 55,
+      vehicles: [
+        {
+          id: 'leaf',
+          name: 'Nissan Leaf',
+          fuelType: 'ev',
+          pricePkr: 6000000,
+          isCurrentVehicle: true,
+          kwhPer100Km: 16.5,
+          fiveYearDepreciationPct: 35,
+          annualMaintenancePkr: 35000,
+        },
+      ],
+    };
+    const decision = evaluateCarDecision(leafProfile);
+    const leaf = decision.results.find((r) => r.vehicleId === 'leaf');
+    expect(leaf).toBeDefined();
+    // 25 km/day × 1825 days = 45,625 km → 456.25 × 16.5 kWh × Rs 55 grid
+    expect(leaf!.fiveYearFuelOrChargePkr).toBeCloseTo(414047, -2);
+    expect(leaf!.totalFiveYearCostPkr).toBeGreaterThan(leaf!.fiveYearFuelOrChargePkr);
   });
 });

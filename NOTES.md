@@ -346,3 +346,29 @@ labelled "30-day peak"; the dip-zone chip gained a truthful
 below-the-zone state. Gate that should have caught it: Gate 5
 (modelling honesty) — a window-relative statistic was labelled with an
 absolute claim, the same failure class as #21's yield escalation.
+
+#23 — Four copy-fidelity gaps: decimal splits, item detail, liabilities, EV cars (owner report, 22 Nov 2026)
+Copying a real portfolio into RizqFlow failed in four places, all model
+limits rather than data errors: (1) the allocation splitter moved in 5%
+steps and its auto-balance rounded to integers, so a real split like
+12.7 / 30.7 / 42.1 / 7.7 / 6.8 could not be entered — the splitter now
+works at 0.1 precision (slider step, typed input, decimal auto-balance)
+and the engine already consumed splits as plain numbers. (2) There was
+no item level at all — buckets held only a total and a %. Profiles now
+carry additive-optional `holdings` (kind, label, value, quantity × unit
+price — tola × rate, fund units × NAV, shares × price — gold purity,
+free-text details for plots/banks) edited in the planner's new
+Holdings & Liabilities card and preserved by sanitizeProfile.
+(3) There was no liability field: the only way to show a debt (e.g. a
+Splitwise balance of Rs 3,544,611) was a negative cash reserve, which
+the local sanitize path clamps to ≥ 0. Profiles now carry
+`liabilities`; the emergency-fund gap and the card are computed on the
+net liquid position (reserve − liabilities) via netLiquidReservePkr.
+Existing profiles are untouched: no liabilities = zero, so Saim's
+verified plan outputs do not move. (4) The wizard's current-vehicle
+picker offered only Petrol Car / Motorbike / None, though the TCO
+engine has always supported fuelType 'ev' — it now offers Electric Car
+(Leaf-class defaults: 16.5 kWh/100km, Rs 35k/yr maintenance). Gate that
+should have caught these: Gate 5 (modelling honesty) — the model
+silently approximated or refused real user data instead of representing
+it.

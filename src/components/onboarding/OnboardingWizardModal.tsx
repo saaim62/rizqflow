@@ -69,7 +69,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
 
   // Step 5: Vehicle & Solar
   const [dailyCommuteKm, setDailyCommuteKm] = useState<number>(profile.dailyCommuteKm || 35);
-  const [currentVehicleType, setCurrentVehicleType] = useState<'none' | 'petrol-bike' | 'petrol-car'>('petrol-car');
+  const [currentVehicleType, setCurrentVehicleType] = useState<'none' | 'petrol-bike' | 'petrol-car' | 'ev-car'>('petrol-car');
   const [currentVehicleResalePkr, setCurrentVehicleResalePkr] = useState<number>(2800000);
   const [solarKw, setSolarKw] = useState<number>(profile.solarKw || 10);
   const [solarTariffMode, setSolarTariffMode] = useState<SolarTariffMode>(profile.solarTariffMode || 'net-metering-legacy');
@@ -138,13 +138,25 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
         : [
             {
               id: 'current-user-vehicle',
-              name: currentVehicleType === 'petrol-bike' ? 'Existing 70cc Bike' : 'Existing Petrol Car',
-              fuelType: currentVehicleType === 'petrol-bike' ? 'petrol' : 'petrol',
+              name:
+                currentVehicleType === 'petrol-bike'
+                  ? 'Existing 70cc Bike'
+                  : currentVehicleType === 'ev-car'
+                  ? 'Existing EV Car'
+                  : 'Existing Petrol Car',
+              fuelType: currentVehicleType === 'ev-car' ? 'ev' : 'petrol',
               pricePkr: currentVehicleResalePkr,
               isCurrentVehicle: true,
-              kmPerLitre: currentVehicleType === 'petrol-bike' ? 45 : 13,
+              // EV cars run on kWh/100km, not km/L (NOTES #23 — the wizard
+              // previously offered only Petrol Car / Motorbike / None, so
+              // an EV like a Nissan Leaf could not be labelled at all).
+              // 16.5 kWh/100km is a Leaf-class real-world figure.
+              ...(currentVehicleType === 'ev-car'
+                ? { kwhPer100Km: 16.5 }
+                : { kmPerLitre: currentVehicleType === 'petrol-bike' ? 45 : 13 }),
               fiveYearDepreciationPct: 35,
-              annualMaintenancePkr: currentVehicleType === 'petrol-bike' ? 25000 : 60000,
+              annualMaintenancePkr:
+                currentVehicleType === 'petrol-bike' ? 25000 : currentVehicleType === 'ev-car' ? 35000 : 60000,
             },
             {
               id: 'honri-ve2',
@@ -616,6 +628,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     className="w-full px-3.5 py-2 rounded-xl bg-[#0C0C0F] border border-white/10 text-white text-sm focus:border-emerald-500 focus:outline-none"
                   >
                     <option value="petrol-car" className="bg-zinc-900">Petrol Car (Sedan / Hatchback / SUV)</option>
+                    <option value="ev-car" className="bg-zinc-900">Electric Car (EV — e.g. Nissan Leaf)</option>
                     <option value="petrol-bike" className="bg-zinc-900">Petrol 70cc / 125cc Motorbike</option>
                     <option value="none" className="bg-zinc-900">No Vehicle / Careem / Metro</option>
                   </select>

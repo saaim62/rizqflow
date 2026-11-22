@@ -1,4 +1,4 @@
-import { UserProfile } from '@/types';
+import { HoldingItem, LiabilityItem, UserProfile } from '@/types';
 
 const STORAGE_KEY = 'rizqflow_user_profile_v2';
 
@@ -109,7 +109,47 @@ export function sanitizeProfile(raw: any, fallback: UserProfile): UserProfile {
     assetBuckets: Array.isArray(clean.assetBuckets) ? clean.assetBuckets : fallback.assetBuckets,
     lifeGoals: Array.isArray(clean.lifeGoals) ? clean.lifeGoals : fallback.lifeGoals,
     vehicles: Array.isArray(clean.vehicles) ? clean.vehicles : fallback.vehicles,
+    holdings: sanitizeHoldings(clean.holdings),
+    liabilities: sanitizeLiabilities(clean.liabilities),
   };
+}
+
+const HOLDING_KINDS = ['gold', 'fund', 'real-estate', 'bank', 'stock', 'other'];
+
+function cleanText(val: any, max: number): string {
+  return typeof val === 'string' ? val.slice(0, max) : '';
+}
+
+/** Item-level holdings (NOTES #23): validate shape, clamp amounts. */
+function sanitizeHoldings(raw: any): HoldingItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, 100).map((h: any, i: number) => ({
+    id: typeof h?.id === 'string' && h.id ? h.id.slice(0, 64) : `holding-${i}`,
+    kind: HOLDING_KINDS.includes(h?.kind) ? h.kind : 'other',
+    label: cleanText(h?.label, 120) || 'Item',
+    valuePkr: clamp(h?.valuePkr, 0, 1_000_000_000, 0),
+    quantity:
+      typeof h?.quantity === 'number' && h.quantity > 0 ? Math.min(h.quantity, 1_000_000_000) : undefined,
+    unitLabel: cleanText(h?.unitLabel, 16) || undefined,
+    unitPricePkr:
+      typeof h?.unitPricePkr === 'number' && h.unitPricePkr > 0
+        ? Math.min(h.unitPricePkr, 1_000_000_000)
+        : undefined,
+    purityKarat:
+      typeof h?.purityKarat === 'number' && h.purityKarat > 0 ? Math.min(h.purityKarat, 24) : undefined,
+    details: cleanText(h?.details, 300) || undefined,
+  }));
+}
+
+/** Declared liabilities (NOTES #23): validate shape, clamp amounts. */
+function sanitizeLiabilities(raw: any): LiabilityItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, 100).map((l: any, i: number) => ({
+    id: typeof l?.id === 'string' && l.id ? l.id.slice(0, 64) : `liability-${i}`,
+    label: cleanText(l?.label, 120) || 'Liability',
+    amountPkr: clamp(l?.amountPkr, 0, 1_000_000_000, 0),
+    details: cleanText(l?.details, 300) || undefined,
+  }));
 }
 
 /**
