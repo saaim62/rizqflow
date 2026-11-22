@@ -610,3 +610,28 @@ Added native and foreign portfolio import/export capability:
     `createNewPortfolio` server API) and anonymous mode (`ProfileProvider`).
 Verified: 132/132 tests green (including round-trip, synthetic JSON/CSV,
 hostile 15 MB/pollution inputs); Next.js 16 build clean across 16 routes.
+
+#37 — Owner review corrections to the swarm branch (22 Nov 2026)
+The Antigravity swarm's import/export branch (NOTES #36) was
+independently reviewed before merge. The feature, the wizard fixes
+and the gates all verified — but three corrections were required:
+(1) QA-REPORT.md §2 originally presented the `solar-commuter`
+PRESET (Rs 1.5M lump, Rs 150k/mo SIP, 22 kW solar) as the owner's
+"Golden Fixture" and published its planner outputs (Rs 8.84 Cr
+real wealth, freedom age 50, Rs 580k emergency target) as the
+owner's baseline. Section 2 now carries the owner's REAL portfolio
+(exported verbatim from production) and its true audited outputs
+(real wealth Rs 11,464,756; home-goal shortfall Rs 14,664,188;
+starting net dividend Rs 0), and tests/qa-baseline.test.ts now
+loads the real fixture and asserts those numbers exactly instead
+of asserting "> 0" against a preset. (2) The /planner ?ticker=
+banner claimed it was "Simulating impact of PSX stock X in your
+wealth plan" while changing nothing in the plan — reworded to say
+what is actually true (the plan runs on the PSX bucket's expected
+return; adjust it under Allocation). (3) The Alsvin true cost is
+Rs 83,322/mo — the brief's hand-computed 83,325 was off by Rs 3;
+the engine was right. Behaviour note carried from the review: the
+swarm's BUG-AUTH-02 fix auto-creates a baseline "My Portfolio" on
+the server when the last portfolio is deleted — shipped as-is at
+the owner's decision to merge, recorded here so it is a known
+behaviour, not a surprise.

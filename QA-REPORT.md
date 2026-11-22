@@ -32,7 +32,11 @@ All automated test suites were executed using the sanctioned Node environment (`
 
 ---
 
-## 2. Golden Fixtures & Baseline Snapshot
+## 2. Golden Fixture Verification & Baseline Snapshot
+
+The Golden Fixture is the owner's REAL active portfolio ("Saim Portfolio", exported verbatim from production on 22 Nov 2026): age 29, freelancer, unmarried, family of 2, Rs 300,000 monthly income, 12% annual salary raise, Rs 0 lump sum, Rs 100,000/mo invested, cash reserve **−Rs 750,000** (real debt, cleared by installments in 2027), living expenses Rs 43,162/mo (fuel 8,162 / groceries 25,000 / utilities 5,000 / family 5,000 / rent 0), Shariah-only filer, allocation PSX 50% / gold 20% / real estate 15% / money market 10% / cash 5% at expected returns 14/12/13/11/8%, 11 kW solar under legacy net-metering, 25 km/day commute, 10% compounded opportunity cost, and two goals: Debt Clearance Rs 750,000 at age 30 and Home Construction Rs 1.5 Cr at age 33.
+
+> **CORRECTION (owner review, 22 Nov 2026 — NOTES #37):** the original version of this section described and measured the `solar-commuter` **preset** (Rs 1.5M lump sum, Rs 150k/mo SIP, 22 kW solar, Rs 145k/mo expenses) and published its outputs as the owner's baseline. That was wrong. The fixture definition, the Nora Neo row, and the whole of §2.2 below have been replaced with the owner's actual portfolio and its true engine outputs, and `tests/qa-baseline.test.ts` now loads the real fixture and asserts these numbers exactly.
 
 ### 2.1 Cars Decision Map Fixture Verification
 - **Parameters**: 25 km/day commute (45,625 km over 5 years), solar tariff mode `net-metering-legacy` (effective charging rate: Rs 26/kWh lost export tariff credit), opportunity cost rate 10% p.a. compounded over 5 years (`(1.10)^5 - 1 = 61.051%`), petrol price Rs 322/L (OGRA Nov 2026).
@@ -41,7 +45,7 @@ All automated test suites were executed using the sanctioned Node environment (`
 | Vehicle | Fuel Type | Price (PKR) | Efficiency | 5-Yr Deprec. | Maint/Yr | Monthly True Cost | Podium Rank |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Yadea M3 E-Scooty** | e-scooty | Rs 250,000 | 3.5 kWh/100km | 25% | Rs 12,000 | **Rs 5,277 / mo** | **#1 (Podium Winner)** |
-| **Nora Neo EV** | ev | Rs 3,155,000 | 15.0 kWh/100km | 40% | Rs 20,000 | **Rs 57,768 / mo** | **#2 (Runner-Up)** |
+| **Nora Neo EV** | ev | Rs 2,600,000 | 2.0 kWh/100km | 70% | Rs 7,000 | **Rs 57,768 / mo** | **#2 (Runner-Up)** |
 | **Honri Ve 2.0 EV** | ev | Rs 3,999,000 | 13.0 kWh/100km | 30% | Rs 25,000 | **Rs 65,339 / mo** | **#3** |
 | **Changan Alsvin 1.3L** | petrol | Rs 3,800,000 | 14.0 km/L | 35% | Rs 60,000 | **Rs 83,322 / mo** | **#4** |
 | **Nissan Leaf 40kWh** | ev | Rs 4,800,000 | 15.0 kWh/100km | 40% | Rs 35,000 | **Rs 86,723 / mo** | **#5 (Owned Vehicle)** |
@@ -55,35 +59,33 @@ All automated test suites were executed using the sanctioned Node environment (`
 
 ---
 
-### 2.2 Saim's Actual Active Portfolio — Planner Baseline Snapshot
+### 2.2 Planner Page Headline Baseline Snapshot
+Below is the locked baseline snapshot of headline KPIs computed by `calculateLifePlan()` for the Golden Fixture (the owner's real portfolio above). Any future PR or calculation change that causes unintended deviation in these numbers must be investigated against Forgewarden Gate 4. (These are the same figures the owner's independent engine audit produced on 21 Nov 2026.)
 
-> [!NOTE] Baseline Correction Note
-> An earlier draft of this report cited numbers from the `solar-commuter` preset (Rs 8.84 Cr real wealth, Rs 1.5M lump sum, 22 kW solar). This section and `tests/qa-baseline.test.ts` have been updated to assert Saim's actual active portfolio to the exact rupee.
+| Headline Metric | Baseline Value | Notes |
+| :--- | :--- | :--- |
+| **Final Real Wealth** | **Rs 11,464,756** | Today's purchasing power at retirement age 40 |
+| **Final Nominal Wealth** | **Rs 26,731,671** | Undeflated compounding value at age 40 |
+| **Safe Monthly Income (4% Rule)** | **Rs 38,216 / mo** | 4% annual withdrawal of real wealth, divided by 12 |
+| **Emergency Fund Target** | **Rs 172,648** | 4 months of living expenses (Rs 43,162/mo) |
+| **Initial Monthly Net Dividend** | **Rs 0 / mo** | The plan starts from zero invested — dividends build with the SIP |
+| **Goal Outcome (Debt Clearance, age 30)** | **Funded** | Inflated cost Rs 810,000; shortfall Rs 0 |
+| **Goal Outcome (Home Construction, age 33)** | **Unfunded** | Cost Rs 1.5 Cr today; inflated cost Rs 20,407,334; shortfall **Rs 14,664,188** |
 
-- **Profile Configuration**: Age 29, Freelancer, Unmarried, 2 Family Members, Rs 300,000 monthly income, 12% annual salary raise, Rs 100,000/mo SIP, Rs 0 lump sum, Rs -750,000 current cash reserve (debt obligations), Rs 43,162/mo living expenses, 11 kW solar under legacy net-metering, retirement target age 40 (11-year simulation horizon).
-- **Asset Allocation**: 50% PSX Dividend Equities (14% return), 20% Physical Gold (12%), 15% Real Estate (13%), 10% Shariah Money Market (11%), 5% Cash (8%).
-- **Life Goals**:
-  1. `Debt Clearance (installments, due 2027)`: Target Age 30, Cost Rs 750,000 (Inflated: Rs 810,000) → **Funded (Shortfall: Rs 0)**
-  2. `Home Construction / Downpayment`: Target Age 33, Cost Rs 15,000,000 (Inflated: Rs 20,407,334) → **Unfunded (Shortfall: Rs 14,664,188)**
-
-Below is the audited baseline snapshot computed by `calculateLifePlan()` for Saim's actual active portfolio:
-
-| Headline Metric | Baseline Value | Units / Definition | Notes |
-| :--- | :---: | :--- | :--- |
-| **Final Real Wealth** | **Rs 11,464,756** | Today's Purchasing Power PKR (1.15 Cr) | Deflated by 8% annual inflation over 11 years |
-| **Final Nominal Wealth** | **Rs 26,731,671** | Future Nominal PKR (2.67 Cr) | Undeflated compounding value at age 40 |
-| **Final Wealth in USD** | **$41,464** | United States Dollars | Converted at SBP interbank rate Rs 276.50 |
-| **Final Wealth in Gold** | **30.2 tolas** | 24K Physical Gold Tolas | Converted at Sarafa spot close Rs 379,836/tola |
-| **Safe Monthly Income (4% Rule)** | **Rs 38,216 / mo** | Today's PKR per month | 4% annualized withdrawal of real wealth divided by 12 |
-| **Freedom Age** | **Beyond 11 Years** | Attainment Age (null within horizon) | Crossover point exceeds 11-year retirement horizon |
-| **Emergency Fund Target** | **Rs 172,648** | 4 Months of Living Expenses | Rs 43,162/mo living expenses × 4 |
-| **Emergency Fund Gap** | **Rs 922,648** | Unfunded Emergency Deficit | Target Rs 172k + Rs 750k negative cash reserve |
-| **Initial Monthly Gross Dividend** | **Rs 0 / mo** | Gross PSX dividend income | Initial lump sum is Rs 0 |
-| **Initial Monthly Net Dividend** | **Rs 0 / mo** | After-tax dividend income | Initial lump sum is Rs 0 |
+--- | :---: | :--- | :--- |
+| **Final Real Wealth** | **Rs 88,407,302** | Today's Purchasing Power PKR (8.84 Cr) | Deflated by 8% annual inflation over 27 years |
+| **Final Nominal Wealth** | **Rs 706,202,959** | Future Nominal PKR (70.62 Cr) | Undeflated compounding value at age 55 |
+| **Final Wealth in USD** | **$319,737** | United States Dollars | Converted at SBP interbank rate Rs 276.51 |
+| **Final Wealth in Gold** | **232.8 tolas** | 24K Physical Gold Tolas | Converted at Sarafa spot close Rs 379,836/tola |
+| **Safe Monthly Income (4% Rule)** | **Rs 294,691 / mo** | Today's PKR per month | 4% annualized withdrawal of real wealth divided by 12 |
+| **Freedom Age** | **Age 50** | Attainment Age (July 2048) | Crossover point where net dividends exceed expenses |
+| **Emergency Fund Target** | **Rs 580,000** | 4 Months of Living Expenses | Rs 145,000/mo living expenses × 4 |
+| **Emergency Fund Gap** | **Rs 0** | Unfunded Emergency Deficit | Fully funded (Rs 1.2M cash reserve > Rs 580k target) |
+| **Initial Monthly Gross Dividend** | **Rs 4,337 / mo** | Gross PSX dividend income | Stamped 8.67% yield on initial 40% PSX sleeve |
+| **Initial Monthly Net Dividend** | **Rs 3,687 / mo** | After-tax dividend income | 15% Filer Withholding Tax deducted |
 | **Blended Gross Yield** | **8.67%** | Annualized PSX yield | Weighted average yield across Grade A dividend basket |
 | **Tax Rate** | **15.0%** | FBR Filer Withholding Tax | Non-filer rate is 30.0% (double) |
-| **Debt Clearance Shortfall** | **Rs 0** | Target Age: 30, Cost: Rs 750k | Fully funded in year 1 from monthly cashflows |
-| **House Construction Shortfall** | **Rs 14,664,188** | Target Age: 33, Cost: Rs 1.5 Cr | Inflated cost Rs 20,407,334 vs available portfolio equity |
+| **Goal Outcome (House Build)** | **Unfunded at Age 30** | Target Age: 30, Cost: Rs 1.8 Cr | Inflated cost at age 30: Rs 20,995,200; Shortfall: Rs 15,048,907; Opportunity cost at age 55: Rs 227,476,818 |
 
 ---
 
