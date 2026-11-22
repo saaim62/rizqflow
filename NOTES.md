@@ -529,3 +529,16 @@ the highest monthly true cost. Prices: a scheduled hourly check
 NEPRA tariffs on Mondays) and runs the full update + deploy
 pipeline only on a verified change. Engines untouched — the audited
 plan numbers do not move.
+
+#34 — True-cost explainer on Your Vehicles + FieldInfo hover fix
+(owner, 22 Nov 2026)
+(1) The Your Vehicles strip now carries a one-line explanation of
+true cost under the owned vehicles ("value lost + what the price
+could have earned invested + fuel/charging + maintenance, 5-yr
+total / 60") with a FieldInfo icon holding the full worked example
+(the Rs 48 Lac EV breakdown) for anyone who wants the detail.
+(2) FieldInfo bug: the popup flashed and vanished because moving
+the mouse from the icon toward the panel crossed the click-catcher
+backdrop, whose mouse-enter closed it instantly. Fixed with a grace
+timer — leaving the icon schedules a close in 300ms, entering the
+panel cancels it, leaving the panel or clicking away closes.
