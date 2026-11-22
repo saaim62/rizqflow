@@ -5,6 +5,7 @@ import { VehicleCandidate, BankEmiQuote } from '@/types';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import { AmountWords } from '@/components/ui/AmountWords';
 import { AiButton } from '@/components/ui/AiButton';
+import { FieldInfo } from '@/components/ui/FieldInfo';
 import { formatCompactPkr } from '@/lib/format';
 import { useAiAssist } from '@/components/providers/AiAssistProvider';
 import { 
@@ -27,6 +28,60 @@ interface VehicleCardListProps {
   vehicles: VehicleCandidate[];
   onChange: (updatedVehicles: VehicleCandidate[]) => void;
 }
+
+
+/** Plain-language field explanations (NOTES #32) — shown by the small
+ * "i" beside each hard-to-understand field. */
+const INFO = {
+  price: {
+    title: 'Price / Resale — what it means',
+    text: `For a vehicle you own: what you could sell it for TODAY. For one you are comparing to buy: its purchase price today.
+
+Every vehicle is compared from this same starting point, so the 5-year costs are fair.`,
+  },
+  depreciation: {
+    title: '5-year depreciation — what it means',
+    text: `How much of today's price this vehicle will LOSE over the next 5 years.
+
+Example: a car worth Rs 30 Lac today with 50% depreciation loses Rs 15 Lac — you would sell it for about Rs 15 Lac after 5 years. That loss is a real cost of owning it, and it is counted in the 5-year total.
+
+Vehicles with strong resale in Pakistan (Toyota, Honda, Suzuki) lose less. Slow-selling models and most EVs lose more.`,
+  },
+  maintenance: {
+    title: 'Maintenance / year — what it means',
+    text: `What you expect to spend in a typical year on oil, filters, brakes, tyres and minor repairs — not fuel, not insurance.
+
+EVs and e-scooties need far less maintenance than petrol cars.`,
+  },
+  effPetrol: {
+    title: 'Mileage (km/L) — what it means',
+    text: `How many kilometres this vehicle runs on 1 litre of petrol. Higher is cheaper to run.
+
+Use your real city average, not the company claim — Lahore traffic usually gives 10-20% less than the brochure figure.`,
+  },
+  effEv: {
+    title: 'kWh / 100km — what it means',
+    text: `How much electricity this vehicle uses to drive 100 km. Lower is cheaper to run.
+
+Don't know yours? Work it out from the battery:
+Usable battery = battery size x battery health (SOH)
+Consumption = usable battery / range on a full charge x 100
+
+Example — a Nissan Leaf with a 40 kWh battery at 80% health has 32 kWh usable. If it runs 200 km on that, it uses 32 / 200 x 100 = 16 kWh/100km.`,
+  },
+  emiDown: {
+    title: 'Down payment — what it means',
+    text: `The amount you pay upfront when buying on a bank lease or loan. The rest is split into monthly installments.
+
+A bigger down payment means smaller monthly payments, but more of your cash locked in today.`,
+  },
+  emiInstallment: {
+    title: 'Monthly installment — what it means',
+    text: `What the bank charges you every month for this vehicle, including their markup.
+
+Take this figure from the bank's lease quote for the same vehicle and the same period.`,
+  },
+};
 
 export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
   const { formatPkrMasked } = useProfile();
@@ -203,7 +258,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
             </div>
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-[10px] text-zinc-400">Price / Resale (PKR)</label>
+                <label className="text-[10px] text-zinc-400 flex items-center gap-1">Price / Resale (PKR) <FieldInfo {...INFO.price} /></label>
                 <AiButton
                   type="car-price"
                   context={{ name: draft.name, fuelType: draft.fuelType }}
@@ -223,8 +278,9 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
             </div>
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-[10px] text-zinc-400">
+                <label className="text-[10px] text-zinc-400 flex items-center gap-1">
                   {draft.fuelType === 'petrol' ? 'Mileage (km/L)' : 'kWh / 100km'}
+                  <FieldInfo {...(draft.fuelType === 'petrol' ? INFO.effPetrol : INFO.effEv)} />
                 </label>
                 <AiButton
                   type="car-efficiency"
@@ -244,7 +300,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
             </div>
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-[10px] text-zinc-400">5-Yr Deprec. (%)</label>
+                <label className="text-[10px] text-zinc-400 flex items-center gap-1">5-Yr Deprec. (%) <FieldInfo {...INFO.depreciation} /></label>
                 <AiButton
                   type="car-depreciation"
                   context={{ name: draft.name, fuelType: draft.fuelType, pricePkr: draft.pricePkr }}
@@ -265,7 +321,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
             </div>
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-[10px] text-zinc-400">Maint / Year (PKR)</label>
+                <label className="text-[10px] text-zinc-400 flex items-center gap-1">Maint / Year (PKR) <FieldInfo {...INFO.maintenance} /></label>
                 <AiButton
                   type="car-maintenance"
                   context={{ name: draft.name, fuelType: draft.fuelType, pricePkr: draft.pricePkr }}
@@ -380,7 +436,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="text-[10px] text-zinc-400">Price / Resale (PKR)</label>
+                      <label className="text-[10px] text-zinc-400 flex items-center gap-1">Price / Resale (PKR) <FieldInfo {...INFO.price} /></label>
                       <AiButton
                         type="car-price"
                         context={{ name: v.name, fuelType: v.fuelType }}
@@ -401,8 +457,9 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
 
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="text-[10px] text-zinc-400">
+                      <label className="text-[10px] text-zinc-400 flex items-center gap-1">
                         {v.fuelType === 'petrol' ? 'Mileage (km/L)' : 'kWh / 100km'}
+                        <FieldInfo {...(v.fuelType === 'petrol' ? INFO.effPetrol : INFO.effEv)} />
                       </label>
                       <AiButton
                         type="car-efficiency"
@@ -444,7 +501,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
 
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="text-[10px] text-zinc-400">5-Yr Deprec. (%)</label>
+                      <label className="text-[10px] text-zinc-400 flex items-center gap-1">5-Yr Deprec. (%) <FieldInfo {...INFO.depreciation} /></label>
                       <AiButton
                         type="car-depreciation"
                         context={{ name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }}
@@ -468,7 +525,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
 
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="text-[10px] text-zinc-400">Maint / Year (PKR)</label>
+                      <label className="text-[10px] text-zinc-400 flex items-center gap-1">Maint / Year (PKR) <FieldInfo {...INFO.maintenance} /></label>
                       <AiButton
                         type="car-maintenance"
                         context={{ name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }}
@@ -530,8 +587,8 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                           )}
 
                           <div>
-                            <label className="text-[10px] text-zinc-400 block mb-0.5">
-                              Down Payment (PKR)
+                            <label className="text-[10px] text-zinc-400 flex items-center gap-1 mb-0.5">
+                              Down Payment (PKR) <FieldInfo {...INFO.emiDown} />
                             </label>
                             <input
                               type="number"
@@ -548,8 +605,8 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
 
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <label className="text-[10px] text-zinc-400 block mb-0.5">
-                                Monthly Installment
+                              <label className="text-[10px] text-zinc-400 flex items-center gap-1 mb-0.5">
+                                Monthly Installment <FieldInfo {...INFO.emiInstallment} />
                               </label>
                               <input
                                 type="number"

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { LifeGoal } from '@/types';
 import { AmountWords } from '@/components/ui/AmountWords';
 import { AiButton } from '@/components/ui/AiButton';
+import { FieldInfo } from '@/components/ui/FieldInfo';
 import { formatCompactPkr } from '@/lib/format';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import { Calendar, Plus, Trash2, Sparkles } from 'lucide-react';
@@ -102,6 +103,12 @@ export function LifeGoalsManager({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-[10px] text-zinc-400">Today's Cost (PKR)</label>
+                <FieldInfo
+                  title="Today's cost — what it means"
+                  text={`What this goal would cost if you paid for it TODAY.
+
+The app inflates the price year by year until your target age, so you save toward the future price, not today's.`}
+                />
                 <AiButton
                   type="goal-cost"
                   context={{ goalName: newGoalName }}

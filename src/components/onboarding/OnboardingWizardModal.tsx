@@ -7,6 +7,7 @@ import { useProfile } from '@/components/providers/ProfileProvider';
 import { formatPkr } from '@/lib/format';
 import { formatCompactPkr } from '@/lib/format';
 import { AiButton } from '@/components/ui/AiButton';
+import { FieldInfo } from '@/components/ui/FieldInfo';
 import { 
   Sparkles, 
   ArrowRight, 
@@ -695,6 +696,12 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-zinc-300">Current Vehicle Resale Value (PKR)</label>
+                    <FieldInfo
+                      title="Resale value — what it means"
+                      text={`What you could sell your current vehicle for TODAY.
+
+The plan compares keeping it versus switching, starting from this value.`}
+                    />
                     <AiButton
                       type="car-price"
                       context={{

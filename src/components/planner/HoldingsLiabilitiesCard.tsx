@@ -6,6 +6,7 @@ import { netLiquidReservePkr, totalHoldingsPkr, totalLiabilitiesPkr } from '@/li
 import { formatCompactPkr, formatPkr } from '@/lib/format';
 import { AmountWords } from '@/components/ui/AmountWords';
 import { AiButton } from '@/components/ui/AiButton';
+import { FieldInfo } from '@/components/ui/FieldInfo';
 import { DEFAULT_MARKET_RATES } from '@/lib/marketRates';
 import { Briefcase, Plus, Trash2 } from 'lucide-react';
 
@@ -162,6 +163,30 @@ export function HoldingsLiabilitiesCard({ profile, onChange }: Props) {
                         <span>
                           {h.kind === 'fund' ? 'NAV / unit' : h.kind === 'gold' ? 'Rate / tola' : 'Price / share'}
                         </span>
+                        <FieldInfo
+                          title={
+                            h.kind === 'gold'
+                              ? 'Rate / tola — what it means'
+                              : h.kind === 'fund'
+                              ? 'NAV / unit — what it means'
+                              : 'Price / share — what it means'
+                          }
+                          text={
+                            h.kind === 'gold'
+                              ? `The price of one tola (11.66 grams) of gold at YOUR purity.
+
+24K is the headline Sarafa rate. 21K is worth 21/24 of it, 22K is 22/24, and so on.
+
+Your holding's value = tola x this rate.`
+                              : h.kind === 'fund'
+                              ? `NAV is the price of ONE unit of the mutual fund today — funds publish it daily.
+
+Your holding's value = units x NAV.`
+                              : `The current market price of ONE share.
+
+Your holding's value = shares x this price.`
+                          }
+                        />
                         {h.kind === 'gold' ? (
                           <AiButton
                             type="gold-rate"

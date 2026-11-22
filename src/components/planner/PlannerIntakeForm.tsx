@@ -6,6 +6,7 @@ import { MultiAssetSplitter } from '@/components/planner/MultiAssetSplitter';
 import { AmountWords } from '@/components/ui/AmountWords';
 import { LifeGoalsManager } from '@/components/planner/LifeGoalsManager';
 import { AiButton } from '@/components/ui/AiButton';
+import { FieldInfo } from '@/components/ui/FieldInfo';
 import { useAiAssist } from '@/components/providers/AiAssistProvider';
 import { formatCompactPkr } from '@/lib/format';
 import { Loader2 } from 'lucide-react';
@@ -264,6 +265,12 @@ export function PlannerIntakeForm({
                   <label className="text-[11px] font-semibold text-zinc-400">
                     Annual Salary Raise (% p.a.)
                   </label>
+                  <FieldInfo
+                    title="Annual raise — what it means"
+                    text={`How much your salary grows each year on average.
+
+The plan raises both your income and your monthly investment by this rate every year. In Pakistan, 8-12% a year is typical for salaried roles.`}
+                  />
                   <AiButton
                     type="salary-raise"
                     context={{ roleLabel: profile.role }}
@@ -298,8 +305,14 @@ export function PlannerIntakeForm({
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-zinc-400 block mb-1">
+                <label className="text-[11px] font-semibold text-zinc-400 flex items-center gap-1.5 mb-1">
                   Initial Lump Sum Capital (PKR)
+                  <FieldInfo
+                    title="Lump sum — what it means"
+                    text={`Money you ALREADY have invested today, before your monthly investing starts.
+
+Starting from zero? Leave it 0 — your monthly amount does the work.`}
+                  />
                 </label>
                 <input
                   type="number"
@@ -312,8 +325,14 @@ export function PlannerIntakeForm({
               </div>
 
               <div className="sm:col-span-2">
-                <label className="text-[11px] font-semibold text-zinc-400 block mb-1">
+                <label className="text-[11px] font-semibold text-zinc-400 flex items-center gap-1.5 mb-1">
                   Current Liquid Cash Reserve (PKR)
+                  <FieldInfo
+                    title="Cash reserve — what it means"
+                    text={`Cash you could reach today — bank balance and savings.
+
+In debt? Enter it as a negative number: -750,000 means you owe Rs 7.5 Lac. The plan counts clearing it as part of your emergency gap.`}
+                  />
                 </label>
                 <input
                   type="number"

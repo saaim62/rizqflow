@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { AssetBucket } from '@/types';
 import { Layers, PieChart, Coins, Home, Landmark, Wallet, Wand2, Sparkles, Loader2 } from 'lucide-react';
 import { AiButton } from '@/components/ui/AiButton';
+import { FieldInfo } from '@/components/ui/FieldInfo';
 import { useAiAssist } from '@/components/providers/AiAssistProvider';
 
 interface MultiAssetSplitterProps {
@@ -168,6 +169,12 @@ export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitte
                       aria-label={`${bucket.label} expected annual return percent`}
                     />
                     %
+                    <FieldInfo
+                      title="Expected return — what it means"
+                      text={`The average yearly growth you expect from this bucket over the long run — including dividends for PSX stocks.
+
+It is a planning assumption, not a promise: the plan grows your savings at this rate. Small changes here make a big difference over 10+ years.`}
+                    />
                     <AiButton
                       type="bucket-return"
                       context={{ bucketId: bucket.id, bucketLabel: bucket.label, currentReturnPct: bucket.expectedAnnualReturnPct }}

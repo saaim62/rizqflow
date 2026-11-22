@@ -494,3 +494,17 @@ tighten below 2xl, and the bar wraps to a second row rather than
 overlapping if space truly runs out. The KSE-100 badge stays 2xl-only
 per #30 (it was the element crushing into a vertical pill over the
 logo in the owner's screenshot).
+
+#32 — Field explanation popups (owner request, 22 Nov 2026)
+The owner asked for the kind of worked explanation he had just been
+given for his Leaf's efficiency (40 kWh at 80% SOH over 200 km =
+16 kWh/100km) to live inside the app: a small "i" beside every field
+people find hard to understand, opening a plain-language popup on
+hover or tap. New FieldInfo component (fixed-position panel, closes
+on scroll/away, same pattern as AiButton). Wired into 17 places: car
+price/resale, depreciation (with the Rs 30 Lac -> Rs 15 Lac example),
+maintenance, mileage, kWh/100km (with the SOH worked example), EMI
+down payment and installment, bucket expected return, lump sum, cash
+reserve (negative = debt), salary raise, goal today's cost, holdings
+rate-per-tola / NAV / price-per-share, and the wizard's resale field.
+Pure UI — engines and data untouched.
