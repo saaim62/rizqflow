@@ -7,15 +7,18 @@ import { Info, X } from 'lucide-react';
  * FieldInfo — the small "i" beside a hard-to-understand field
  * (NOTES #32). Hover (desktop) or tap/click (touch) opens a small
  * popup explaining the field in plain language, with a worked
- * example where one helps. Fixed-position panel (same pattern as
- * AiButton) so it is never clipped by a card's overflow.
+ * example where one helps. Fixed-position panel so it is never
+ * clipped by a card's overflow.
  *
- * Hover behaviour (fixed in NOTES #34): the first version closed the
- * moment the mouse crossed the gap between the icon and the panel,
- * so the popup flashed and vanished. Now leaving the icon starts a
- * short grace timer instead of closing instantly; entering the
- * panel cancels it, leaving the panel closes, and clicking anywhere
- * else (or scrolling) closes too.
+ * Hover history (NOTES #34 -> #35): v1 closed instantly because the
+ * click-catcher backdrop's mouse-enter fired as the cursor crossed
+ * the gap to the panel. v2 removed that handler but the backdrop
+ * still COVERED the icon, so the icon immediately "lost" hover and
+ * the grace timer closed the popup after ~300ms. v3 removes the
+ * backdrop entirely: click-away is a document mousedown listener
+ * that ignores clicks inside the panel or on the icon, and hover
+ * uses a grace timer between icon and panel. Nothing invisible sits
+ * between the cursor and the icon anymore.
  */
 
 interface FieldInfoProps {
@@ -27,6 +30,7 @@ export function FieldInfo({ title, text }: FieldInfoProps) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<number | null>(null);
 
   const cancelClose = () => {
@@ -56,11 +60,18 @@ export function FieldInfo({ title, text }: FieldInfoProps) {
   useEffect(() => {
     if (!open) return;
     const close = () => setOpen(false);
+    const onMouseDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (panelRef.current?.contains(t) || btnRef.current?.contains(t)) return;
+      setOpen(false);
+    };
     window.addEventListener('resize', close);
     window.addEventListener('scroll', close, true);
+    document.addEventListener('mousedown', onMouseDown);
     return () => {
       window.removeEventListener('resize', close);
       window.removeEventListener('scroll', close, true);
+      document.removeEventListener('mousedown', onMouseDown);
     };
   }, [open ]);
 
@@ -72,7 +83,6 @@ export function FieldInfo({ title, text }: FieldInfoProps) {
         ref={btnRef}
         type="button"
         aria-label={`What is ${title}?`}
-        title={`What is ${title}?`}
         onMouseEnter={openPanel}
         onMouseLeave={scheduleClose}
         onClick={() => (open ? setOpen(false) : openPanel())}
@@ -82,28 +92,26 @@ export function FieldInfo({ title, text }: FieldInfoProps) {
       </button>
 
       {open && (
-        <>
-          <div className="fixed inset-0 z-[79]" onClick={() => setOpen(false)} />
-          <div
-            className="fixed z-[80] w-[256px] rounded-xl bg-[#17171A] border border-white/15 shadow-2xl shadow-black/60 p-3 space-y-1.5"
-            style={{ top: pos.top, left: pos.left }}
-            onMouseEnter={cancelClose}
-            onMouseLeave={() => setOpen(false)}
-          >
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-[11px] font-bold text-amber-300 leading-snug">{title}</span>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="text-zinc-500 hover:text-white shrink-0"
-                aria-label="Close explanation"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            <p className="text-[11px] text-zinc-300 leading-relaxed whitespace-pre-line">{text}</p>
+        <div
+          ref={panelRef}
+          className="fixed z-[80] w-[256px] rounded-xl bg-[#17171A] border border-white/15 shadow-2xl shadow-black/60 p-3 space-y-1.5"
+          style={{ top: pos.top, left: pos.left }}
+          onMouseEnter={cancelClose}
+          onMouseLeave={() => setOpen(false)}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-[11px] font-bold text-amber-300 leading-snug">{title}</span>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="text-zinc-500 hover:text-white shrink-0"
+              aria-label="Close explanation"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
-        </>
+          <p className="text-[11px] text-zinc-300 leading-relaxed whitespace-pre-line">{text}</p>
+        </div>
       )}
     </>
   );

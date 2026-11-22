@@ -542,3 +542,44 @@ the mouse from the icon toward the panel crossed the click-catcher
 backdrop, whose mouse-enter closed it instantly. Fixed with a grace
 timer — leaving the icon schedules a close in 300ms, entering the
 panel cancels it, leaving the panel or clicking away closes.
+
+#35 — FieldInfo v3, dead theme toggle removed, .env.example
+(owner, 22 Nov 2026)
+(1) The explanation popup STILL closed after ~a second: the v2
+click-catcher backdrop was gone as a handler but still sat ON TOP
+of the icon, so the icon lost hover the moment the popup opened
+and the grace timer closed it. v3 removes the backdrop entirely —
+click-away is now a document mousedown listener that ignores
+clicks inside the panel/icon; nothing invisible covers the icon.
+(2) The navbar sun/moon theme toggle did nothing visible: the
+app's obsidian/gold theme is a fixed identity (owner directive:
+the exact DropRoute/portfolio theme), so the toggle flipped state
+no surface used. Button removed; it will not be missed.
+(3) Added .env.example documenting every variable the code reads
+(DATABASE_URL, POSTGRES_*, GROQ_API_KEY / GROQ_MODEL /
+GROQ_MODEL_FALLBACK, NODE_ENV, PORT) with the optionality and
+defaults, for local setup.
+
+#35 — Gold & silver Sat 21 Nov 2026 closes (hourly fuel/power check, 22 Nov 2026)
+The 21:23 PKT run was the first at/after 16:30 PKT, so it ran the daily
+wider-market check (Sunday — PSX closed, so gold/silver/USD only, latest
+PSX close kept). Petrol verified UNCHANGED at Rs 322/L (OGRA notification
+issued Fri 20 Nov, effective 21–23 Nov; Dunya, Aaj, ARY, Business Recorder
+agree) and USD/PKR unchanged at 276.51 (SBP M2M close Fri 20 Nov).
+Gold and silver HAD moved: APSGJA Sat 21 Nov closes are gold Rs 376,336
+(down Rs 3,500 — The Nation, ProPakistani, MM News) and silver Rs 4,600
+(down Rs 108 — MM News, Karachi Post weekly summary). Two pages still
+showing silver Rs 4,708 were repeating Friday's rate, not Saturday's;
+MM News' own article gives 4,600, so 4,600 stands. No new APGJSA rate
+was issued Sunday, so Saturday's closes remain in force.
+Changes: DEFAULT_MARKET_RATES gold 379,836 -> 376,336, lastUpdated
+2026-11-22; superseded 379,836 appended to STALE_SEED_VALUES so saved
+profiles on the old default heal (deliberate custom values untouched);
+daily gold/silver series rolled forward one day (30 points kept, 21 Nov
+appended, 22 Oct dropped — streaks now gold −6, silver −4; gold insight
+also stops calling the 30-day high of Rs 435,636 the "all-time peak");
+GOLD_YEAR_HISTORY final point 21 Nov @ 376,336 (true drawdown from the
+29 Jan peak now −34.3%); MARKET_SNAPSHOT gold/silver updated; preset
+profiles, wealth-engine gold fallback and the types comment follow the
+new default; DATA_SOURCES records the Saturday closes. Tests updated
+to the new closes plus a stale-heal assertion for 379,836.
