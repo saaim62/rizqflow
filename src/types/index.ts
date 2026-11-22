@@ -289,3 +289,44 @@ export interface MarketRatesConfig {
   solarNetBilling2026Rate: number;
   lastUpdated: string;
 }
+
+// --- Phase 4 Additive Portfolio Transfer Types ---
+export interface PortfolioExportSingle {
+  app: 'RizqFlow';
+  kind: 'portfolio-export';
+  formatVersion: 1;
+  exportedAt: string;
+  name: string;
+  profile: UserProfile;
+}
+
+export interface PortfolioExportAllItem {
+  name: string;
+  profile: UserProfile;
+}
+
+export interface PortfolioExportAll {
+  app: 'RizqFlow';
+  kind: 'portfolio-export';
+  formatVersion: 1;
+  exportedAt: string;
+  portfolios: PortfolioExportAllItem[];
+}
+
+export type PortfolioExportEnvelope = PortfolioExportSingle | PortfolioExportAll;
+
+export type MappingConfidence = 'high' | 'medium' | 'low';
+
+export interface FieldMappingEntry {
+  source: string;
+  target: string;
+  confidence: MappingConfidence;
+  note: string;
+}
+
+export interface ForeignMappingResult {
+  profile: UserProfile;
+  mapping: FieldMappingEntry[];
+  unmapped: string[];
+}
+

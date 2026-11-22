@@ -583,3 +583,30 @@ GOLD_YEAR_HISTORY final point 21 Nov @ 376,336 (true drawdown from the
 profiles, wealth-engine gold fallback and the types comment follow the
 new default; DATA_SOURCES records the Saturday closes. Tests updated
 to the new closes plus a stale-heal assertion for 379,836.
+
+#36 — Portfolio Import & Export with AI field mapping (22 Nov 2026)
+Added native and foreign portfolio import/export capability:
+(1) Native Export: pure client-side JSON envelope generation (single:
+    `rizqflow-portfolio-<name>.json`, all: `rizqflow-all-portfolios.json`)
+    via `createNativeExportEnvelope` and `createAllPortfoliosExportEnvelope`
+    in `src/lib/portfolioTransfer.ts`. Zero server round-trip.
+(2) Native Import: automatically detects the envelope, cleanses raw
+    payload through `sanitizeDeep()` (stripping `__proto__`, `constructor`,
+    `prototype`), validates with `sanitizeProfile()`, shows a verified preview
+    (age, income, investment, buckets, goals, vehicles), and imports as a NEW
+    portfolio, resolving name collisions with ` (imported)`.
+(3) Foreign AI Mapping: `POST /api/ai/map-portfolio` accepts foreign JSON or
+    CSV (client parses CSV into records via `parseCsvRows`/`parseCsvToRecord`).
+    Groq `openai/gpt-oss-120b` (fallback `qwen/qwen3.8-27b`) maps foreign keys
+    to `UserProfile` fields using `PROFILE_SCHEMA_DESCRIPTOR`.
+    A strict 30 KB payload cap is enforced server-side.
+(4) Human-in-the-Loop Review: Client displays an editable mapping review table
+    (source -> target -> value -> confidence badge: high/medium/low), highlights
+    defaulted or low-confidence fields, and lists unmapped keys with their raw
+    values. User confirms or discards; nothing is saved automatically.
+(5) Heuristic Fallback: If AI is unavailable or rate-limited, client falls back
+    to `mapForeignPayloadHeuristic()` without hard-failing the import.
+(6) Dual Storage: Supported seamlessly in both signed-in mode (via
+    `createNewPortfolio` server API) and anonymous mode (`ProfileProvider`).
+Verified: 132/132 tests green (including round-trip, synthetic JSON/CSV,
+hostile 15 MB/pollution inputs); Next.js 16 build clean across 16 routes.
