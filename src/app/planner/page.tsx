@@ -105,7 +105,7 @@ function PlannerContent() {
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
             <span>
-              Simulating impact of PSX stock <strong className="text-white font-mono">{tickerParam}</strong> in your wealth plan.
+              Viewing dividend equities context for PSX stock <strong className="text-white font-mono">{tickerParam}</strong>. Adjust your PSX Dividend Equities bucket below to allocate.
             </span>
           </div>
           <Link

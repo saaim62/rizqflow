@@ -95,35 +95,99 @@ describe('Golden Fixture Baseline Verification', () => {
   });
 
   it('records and verifies Planner headline outputs for Golden Fixture', () => {
-    // Golden fixture profile: solar-commuter with Leaf owned, Rs 1.5M lump sum,
-    // Rs 150k/mo SIP, 10% raise, 22kW solar, Rs 1.8 Cr house goal at age 30
-    const goldenPlannerProfile: UserProfile = {
-      ...PRESET_PROFILES['solar-commuter'].profile,
-      solarKw: 22,
+    const saimActualProfile: UserProfile = {
+      age: 29,
+      role: 'freelancer',
+      gender: 'male',
+      solarKw: 11,
+      expenses: {
+        rentOrHousing: 0,
+        familyAndOther: 5000,
+        fuelAndCommute: 8162,
+        groceriesAndFood: 25000,
+        utilitiesAndInternet: 5000,
+      },
+      usdToPkr: 276.5,
+      vehicles: [
+        { id: 'alsvin-petrol', name: 'Changan Alsvin 1.3L Petrol', fuelType: 'petrol', pricePkr: 3800000, kmPerLitre: 14, annualMaintenancePkr: 60000, fiveYearDepreciationPct: 35 },
+        { id: 'honri-ve-2', name: 'Honri Ve 2.0 (200km EV)', fuelType: 'ev', pricePkr: 3999000, kwhPer100Km: 13, annualMaintenancePkr: 25000, fiveYearDepreciationPct: 30 },
+        { id: 'nissan-leaf', name: 'Nissan Leaf 40kWh EV', fuelType: 'ev', pricePkr: 4800000, kwhPer100Km: 15, isCurrentVehicle: true, annualMaintenancePkr: 35000, fiveYearDepreciationPct: 40 },
+        { id: 'yadea-m3', name: 'Yadea M3 E-Scooty', fuelType: 'e-scooty', pricePkr: 250000, kwhPer100Km: 3.5, annualMaintenancePkr: 12000, fiveYearDepreciationPct: 25 },
+        { id: 'veh-1795357128954-709371', name: 'Nora Neo', fuelType: 'ev', pricePkr: 2600000, kwhPer100Km: 2, annualMaintenancePkr: 7000, fiveYearDepreciationPct: 70 },
+      ],
+      lifeGoals: [
+        { id: 'goal-house-custom', name: 'Home Construction / Downpayment', targetAge: 33, costInTodaysPkr: 15000000 },
+        { id: 'goal-debt-2027', name: 'Debt Clearance (installments, due 2027)', targetAge: 30, costInTodaysPkr: 750000 },
+      ],
+      taxStatus: 'filer',
+      lumpSumPkr: 0,
+      shariahOnly: true,
+      assetBuckets: [
+        { id: 'psx-dividends', label: 'PSX Dividend Equities', currentValuePkr: 0, monthlySplitPct: 50, expectedAnnualReturnPct: 14 },
+        { id: 'gold', label: '24K Physical Gold', currentValuePkr: 0, monthlySplitPct: 20, expectedAnnualReturnPct: 12 },
+        { id: 'real-estate', label: 'Real Estate / Land', currentValuePkr: 0, monthlySplitPct: 15, expectedAnnualReturnPct: 13 },
+        { id: 'money-market', label: 'Shariah Money Market', currentValuePkr: 0, monthlySplitPct: 10, expectedAnnualReturnPct: 11 },
+        { id: 'cash', label: 'Emergency Cash', currentValuePkr: 200000, monthlySplitPct: 5, expectedAnnualReturnPct: 8 },
+      ],
+      includeZakat: false,
+      familyMembers: 2,
+      isBreadwinner: true,
+      maritalStatus: 'unmarried',
+      retirementAge: 40,
       dailyCommuteKm: 25,
-      vehicles: goldenCarsProfile.vehicles,
+      goldPerTolaPkr: 379836,
+      gridRatePerKwh: 55,
+      solarTariffMode: 'net-metering-legacy',
+      monthlyIncomePkr: 300000,
+      monthlyInvestPkr: 100000,
+      dividendGrowthPct: 10,
+      inflationAdjusted: false,
+      reinvestDividends: true,
+      annualInflationPct: 8,
+      currentVehicleType: 'petrol-bike',
+      petrolPricePerLitre: 322,
+      annualSalaryRaisePct: 12,
+      currentCashReservePkr: -750000,
+      currentVehicleResalePkr: 1000000,
+      opportunityCostReturnPct: 10,
     };
 
-    const plan = calculateLifePlan(goldenPlannerProfile);
+    const plan = calculateLifePlan(saimActualProfile);
 
-    console.log('--- GOLDEN FIXTURE PLANNER BASELINE ---');
-    console.log('Emergency Fund Target:', plan.emergencyFundTargetPkr);
-    console.log('Emergency Fund Gap:', plan.emergencyFundGapPkr);
-    console.log('Blended Gross Yield Pct:', plan.blendedGrossYieldPct);
-    console.log('Tax Rate Pct:', plan.taxRatePct);
-    console.log('Initial Monthly Gross Dividend:', plan.initialMonthlyGrossDividendPkr);
-    console.log('Initial Monthly Net Dividend:', plan.initialMonthlyNetDividendPkr);
-    console.log('Freedom Age:', plan.freedomAge);
-    console.log('Freedom Date Label:', plan.freedomDateLabel);
+    console.log('--- SAIM ACTUAL PORTFOLIO PLANNER BASELINE ---');
     console.log('Final Real Wealth (Today PKR):', plan.finalRealTodaysPkr);
     console.log('Final Nominal Wealth:', plan.finalNominalWealthPkr);
     console.log('Final Wealth USD:', plan.finalWealthUsd);
     console.log('Final Wealth Gold Tolas:', plan.finalWealthGoldTolas);
     console.log('Safe Monthly Income 4% (Today PKR):', plan.safeMonthlyIncome4PctTodaysPkr);
+    console.log('Emergency Fund Target:', plan.emergencyFundTargetPkr);
+    console.log('Emergency Fund Gap:', plan.emergencyFundGapPkr);
+    console.log('Freedom Age:', plan.freedomAge);
+    console.log('Freedom Date Label:', plan.freedomDateLabel);
+    console.log('Initial Monthly Gross Dividend:', plan.initialMonthlyGrossDividendPkr);
+    console.log('Initial Monthly Net Dividend:', plan.initialMonthlyNetDividendPkr);
+    console.log('Blended Gross Yield Pct:', plan.blendedGrossYieldPct);
+    console.log('Tax Rate Pct:', plan.taxRatePct);
     console.log('Goal Outcomes:', plan.goalOutcomes);
 
-    expect(plan.finalRealTodaysPkr).toBeGreaterThan(0);
-    expect(plan.finalWealthUsd).toBeGreaterThan(0);
-    expect(plan.finalWealthGoldTolas).toBeGreaterThan(0);
+    expect(plan.finalRealTodaysPkr).toBe(11464756);
+    expect(plan.finalNominalWealthPkr).toBe(26731671);
+    expect(plan.finalWealthUsd).toBe(41464);
+    expect(plan.finalWealthGoldTolas).toBe(30.2);
+    expect(plan.safeMonthlyIncome4PctTodaysPkr).toBe(38216);
+    expect(plan.emergencyFundTargetPkr).toBe(172648);
+    expect(plan.emergencyFundGapPkr).toBe(922648);
+    expect(plan.initialMonthlyGrossDividendPkr).toBe(0);
+    expect(plan.initialMonthlyNetDividendPkr).toBe(0);
+    expect(plan.freedomAge).toBeNull();
+    expect(plan.freedomDateLabel).toBe('Beyond 11 Years');
+
+    const debtGoal = plan.goalOutcomes.find((g) => g.goalId === 'goal-debt-2027');
+    expect(debtGoal?.funded).toBe(true);
+    expect(debtGoal?.shortfallPkr).toBe(0);
+
+    const houseGoal = plan.goalOutcomes.find((g) => g.goalId === 'goal-house-custom');
+    expect(houseGoal?.funded).toBe(false);
+    expect(houseGoal?.shortfallPkr).toBe(14664188);
   });
 });

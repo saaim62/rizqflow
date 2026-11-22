@@ -432,8 +432,8 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
             lastSyncedRef.current = JSON.stringify(next.profile);
             setProfileState(next.profile);
           } else {
-            // Last portfolio deleted: auto-create a clean baseline portfolio on server so sync remains active
-            createNewPortfolioRef.current('My Portfolio', defaultProfile);
+            lastSyncedRef.current = '';
+            setProfileState(defaultProfile);
           }
         }
         return { success: true };
