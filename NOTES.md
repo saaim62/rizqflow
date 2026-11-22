@@ -443,3 +443,20 @@ updates would have overwritten each other). Salary raise and new-goal
 "Today's Cost" gained AI buttons; the wizard mirrors the expense and
 vehicle-resale predictions; each vehicle card gained an "AI Fill" that
 predicts depreciation, maintenance and efficiency in one tap.
+
+#29 — AI Assist Phase 3: Holdings estimates + Markets outlook (22 Nov 2026)
+Phase 3 of #27, completing the owner's inventory. Holdings rows gained
+per-kind unit-price predictions: gold rate per tola (computed against
+the live 24K rate and the row's purity), mutual-fund NAV estimates and
+PSX share-price estimates — accepting one flows through the existing
+quantity x unit-price value derivation. The Markets screener's expanded
+stock view (desktop and mobile) gained an "AI 12-Month Outlook" panel:
+a forecast price range with reasoning and confidence, displayed beside
+the stamped close and explicitly labelled a forecast — the seeded
+market data is never edited by AI (Gates 2 + 6 Amendment 3).
+Correction inside #29: the first build failed type-check — the gold
+rate context assumed a `currentRates` field on ProfileProvider that
+does not exist; the 24K rate actually lives on the profile itself
+(`profile.goldPerTolaPkr`, falling back to DEFAULT_MARKET_RATES), which
+is what the shipped code uses. Gate 1's type check caught it before
+any push, as designed.

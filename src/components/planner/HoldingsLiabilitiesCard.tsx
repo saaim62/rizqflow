@@ -3,8 +3,10 @@
 import React from 'react';
 import { HoldingItem, HoldingKind, LiabilityItem, UserProfile } from '@/types';
 import { netLiquidReservePkr, totalHoldingsPkr, totalLiabilitiesPkr } from '@/lib/engine/wealthEngine';
-import { formatPkr } from '@/lib/format';
+import { formatCompactPkr, formatPkr } from '@/lib/format';
 import { AmountWords } from '@/components/ui/AmountWords';
+import { AiButton } from '@/components/ui/AiButton';
+import { DEFAULT_MARKET_RATES } from '@/lib/marketRates';
 import { Briefcase, Plus, Trash2 } from 'lucide-react';
 
 /**
@@ -156,8 +158,35 @@ export function HoldingsLiabilitiesCard({ profile, onChange }: Props) {
                       />
                     </label>
                     <label className="space-y-1 block">
-                      <span className="text-[10px] text-zinc-500">
-                        {h.kind === 'fund' ? 'NAV / unit' : h.kind === 'gold' ? 'Rate / tola' : 'Price / share'}
+                      <span className="flex items-center justify-between text-[10px] text-zinc-500">
+                        <span>
+                          {h.kind === 'fund' ? 'NAV / unit' : h.kind === 'gold' ? 'Rate / tola' : 'Price / share'}
+                        </span>
+                        {h.kind === 'gold' ? (
+                          <AiButton
+                            type="gold-rate"
+                            context={{ purityKarat: h.purityKarat ?? 24, rate24kPerTola: profile.goldPerTolaPkr || DEFAULT_MARKET_RATES.goldPerTolaPkr }}
+                            currentValue={h.unitPricePkr}
+                            onAccept={(val) => updateHolding(h.id, { unitPricePkr: val })}
+                            formatValue={(x) => formatCompactPkr(x)}
+                          />
+                        ) : h.kind === 'fund' ? (
+                          <AiButton
+                            type="fund-nav"
+                            context={{ fundName: h.label }}
+                            currentValue={h.unitPricePkr}
+                            onAccept={(val) => updateHolding(h.id, { unitPricePkr: val })}
+                            formatValue={(x) => `Rs ${x.toLocaleString('en-US')}`}
+                          />
+                        ) : (
+                          <AiButton
+                            type="stock-price"
+                            context={{ ticker: h.label, companyName: h.label }}
+                            currentValue={h.unitPricePkr}
+                            onAccept={(val) => updateHolding(h.id, { unitPricePkr: val })}
+                            formatValue={(x) => `Rs ${x.toLocaleString('en-US')}`}
+                          />
+                        )}
                       </span>
                       <input
                         type="number"

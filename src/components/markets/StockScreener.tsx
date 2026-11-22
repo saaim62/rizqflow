@@ -7,6 +7,7 @@ import { StreakBadge } from '@/components/ui/StreakBadge';
 import { GradeBadge, ShariahBadge } from '@/components/ui/GradeBadge';
 import { Sparkline } from '@/components/markets/Sparkline';
 import { useBeginnerGuide } from '@/components/ui/BeginnerDrawer';
+import { AiOutlook } from '@/components/markets/AiOutlook';
 import { 
   Search, 
   Filter, 
@@ -380,6 +381,9 @@ export function StockScreener({ stocks, initialTicker }: StockScreenerProps) {
                               </div>
                             </div>
 
+                            {/* AI 12-Month Outlook (forecast only — stamped data untouched) */}
+                            <AiOutlook ticker={stock.ticker} companyName={stock.name} currentPrice={stock.price} />
+
                             {/* Action CTA */}
                             <div className="flex items-center justify-between pt-2">
                               <span className="text-xs text-zinc-400">
@@ -471,6 +475,7 @@ export function StockScreener({ stocks, initialTicker }: StockScreenerProps) {
                     <div className="text-[11px] text-zinc-400">
                       Payout months: {stock.payoutMonths.map((m) => MONTH_NAMES[m - 1]).join(', ')}
                     </div>
+                    <AiOutlook ticker={stock.ticker} companyName={stock.name} currentPrice={stock.price} />
                   </div>
                 )}
               </div>
