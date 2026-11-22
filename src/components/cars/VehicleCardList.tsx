@@ -59,6 +59,67 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
     onChange(vehicles.filter((v) => v.id !== id));
   };
 
+  // ---- Add vehicle (NOTES #24) ----
+  // This card previously had NO add control at all — existing candidates
+  // could be edited or deleted, but a new one (e.g. another electric car)
+  // could never be created from the Cars page.
+  type FuelChoice = VehicleCandidate['fuelType'];
+  const FUEL_DEFAULTS: Record<
+    FuelChoice,
+    { name: string; pricePkr: number; efficiency: number; fiveYearDepreciationPct: number; annualMaintenancePkr: number }
+  > = {
+    petrol: { name: 'New Petrol Car', pricePkr: 3500000, efficiency: 14, fiveYearDepreciationPct: 35, annualMaintenancePkr: 60000 },
+    ev: { name: 'New Electric Car', pricePkr: 4800000, efficiency: 15, fiveYearDepreciationPct: 40, annualMaintenancePkr: 35000 },
+    'e-scooty': { name: 'New E-Scooty', pricePkr: 250000, efficiency: 3.5, fiveYearDepreciationPct: 25, annualMaintenancePkr: 12000 },
+  };
+  const [showAdd, setShowAdd] = useState(false);
+  const [draft, setDraft] = useState({
+    name: FUEL_DEFAULTS.ev.name,
+    fuelType: 'ev' as FuelChoice,
+    pricePkr: FUEL_DEFAULTS.ev.pricePkr,
+    efficiency: FUEL_DEFAULTS.ev.efficiency,
+    fiveYearDepreciationPct: FUEL_DEFAULTS.ev.fiveYearDepreciationPct,
+    annualMaintenancePkr: FUEL_DEFAULTS.ev.annualMaintenancePkr,
+  });
+
+  const pickFuel = (fuelType: FuelChoice) => {
+    const d = FUEL_DEFAULTS[fuelType];
+    setDraft({
+      name: d.name,
+      fuelType,
+      pricePkr: d.pricePkr,
+      efficiency: d.efficiency,
+      fiveYearDepreciationPct: d.fiveYearDepreciationPct,
+      annualMaintenancePkr: d.annualMaintenancePkr,
+    });
+  };
+
+  const addVehicle = () => {
+    const vehicle: VehicleCandidate = {
+      id: `veh-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`,
+      name: draft.name.trim() || FUEL_DEFAULTS[draft.fuelType].name,
+      fuelType: draft.fuelType,
+      pricePkr: draft.pricePkr,
+      fiveYearDepreciationPct: draft.fiveYearDepreciationPct,
+      annualMaintenancePkr: draft.annualMaintenancePkr,
+      ...(draft.fuelType === 'petrol'
+        ? { kmPerLitre: draft.efficiency }
+        : { kwhPer100Km: draft.efficiency }),
+    };
+    onChange([...vehicles, vehicle]);
+    setShowAdd(false);
+  };
+
+  const changeFuelType = (id: string, fuelType: FuelChoice) => {
+    const v = vehicles.find((x) => x.id === id);
+    if (!v) return;
+    const updates: Partial<VehicleCandidate> = { fuelType };
+    if (fuelType === 'petrol' && !v.kmPerLitre) updates.kmPerLitre = 14;
+    if (fuelType === 'ev' && !v.kwhPer100Km) updates.kwhPer100Km = 15;
+    if (fuelType === 'e-scooty' && !v.kwhPer100Km) updates.kwhPer100Km = 3.5;
+    updateVehicle(id, updates);
+  };
+
   return (
     <div className="rounded-2xl bg-[#0C0C0F] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.06]">
@@ -74,10 +135,105 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
           </p>
         </div>
 
-        <span className="text-xs font-mono text-zinc-400">
-          {vehicles.length} Candidates Active
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-mono text-zinc-400">
+            {vehicles.length} Candidates Active
+          </span>
+          <button
+            onClick={() => setShowAdd(!showAdd)}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-bold"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add Vehicle
+          </button>
+        </div>
       </div>
+
+      {showAdd && (
+        <div className="p-4 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/20 space-y-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+            <div>
+              <label className="text-[10px] text-zinc-400 block mb-1">Vehicle Type</label>
+              <select
+                value={draft.fuelType}
+                onChange={(e) => pickFuel(e.target.value as FuelChoice)}
+                className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 text-white text-xs focus:outline-none"
+              >
+                <option value="petrol" className="bg-zinc-900">Petrol Car</option>
+                <option value="ev" className="bg-zinc-900">Electric Car (EV)</option>
+                <option value="e-scooty" className="bg-zinc-900">E-Scooty / E-Bike</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] text-zinc-400 block mb-1">Name</label>
+              <input
+                type="text"
+                value={draft.name}
+                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                placeholder="e.g. Nissan Leaf 40kWh EV"
+                className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 text-white text-xs focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] text-zinc-400 block mb-1">Price / Resale (PKR)</label>
+              <input
+                type="number"
+                step={50000}
+                value={draft.pricePkr}
+                onChange={(e) => setDraft({ ...draft, pricePkr: Number(e.target.value) })}
+                className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] text-zinc-400 block mb-1">
+                {draft.fuelType === 'petrol' ? 'Mileage (km/L)' : 'kWh / 100km'}
+              </label>
+              <input
+                type="number"
+                step={0.5}
+                value={draft.efficiency}
+                onChange={(e) => setDraft({ ...draft, efficiency: Number(e.target.value) })}
+                className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] text-zinc-400 block mb-1">5-Yr Deprec. (%)</label>
+              <input
+                type="number"
+                step={5}
+                min={0}
+                max={100}
+                value={draft.fiveYearDepreciationPct}
+                onChange={(e) => setDraft({ ...draft, fiveYearDepreciationPct: Number(e.target.value) })}
+                className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] text-zinc-400 block mb-1">Maint / Year (PKR)</label>
+              <input
+                type="number"
+                step={5000}
+                value={draft.annualMaintenancePkr}
+                onChange={(e) => setDraft({ ...draft, annualMaintenancePkr: Number(e.target.value) })}
+                className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={() => setShowAdd(false)}
+              className="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 border border-white/10 text-xs font-bold"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={addVehicle}
+              className="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40 text-xs font-bold"
+            >
+              Add Vehicle
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {vehicles.map((v) => {
@@ -115,9 +271,16 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                     </div>
                     <div>
                       <h4 className="font-bold text-sm text-white">{v.name}</h4>
-                      <span className="text-[10px] text-zinc-400 font-mono uppercase">
-                        {v.fuelType}
-                      </span>
+                      <select
+                        value={v.fuelType}
+                        onChange={(e) => changeFuelType(v.id, e.target.value as FuelChoice)}
+                        className="bg-transparent text-[10px] text-zinc-400 font-mono uppercase focus:outline-none cursor-pointer"
+                        title="Change vehicle type"
+                      >
+                        <option value="petrol" className="bg-zinc-900">Petrol</option>
+                        <option value="ev" className="bg-zinc-900">Electric (EV)</option>
+                        <option value="e-scooty" className="bg-zinc-900">E-Scooty</option>
+                      </select>
                     </div>
                   </div>
 

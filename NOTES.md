@@ -372,3 +372,19 @@ engine has always supported fuelType 'ev' — it now offers Electric Car
 should have caught these: Gate 5 (modelling honesty) — the model
 silently approximated or refused real user data instead of representing
 it.
+
+#24 — Cars page had no way to ADD a vehicle at all (owner report, 22 Nov 2026)
+Follow-up to #23: the wizard gained an EV option for the CURRENT vehicle,
+but the Cars page's Vehicle Contenders card — where contenders are
+compared — had no add control whatsoever. Existing candidates could be
+edited or deleted, but a new one could never be created, so "add an
+electric car" was impossible there (the Leaf/Honri in the owner's
+screenshot were presets, not user-added). The card now has an Add
+Vehicle form (type first: Petrol Car / Electric Car (EV) / E-Scooty,
+with per-type defaults — EV starts at Leaf-class 15 kWh/100km,
+Rs 35k/yr maintenance) and each existing card's type label is now a
+select, so a mislabelled card can be converted petrol ↔ EV ↔ e-scooty
+in place (the efficiency field swaps km/L ↔ kWh/100km with it). Gate
+that should have caught this: Gate 5's spirit — a comparison tool whose
+comparison set cannot be extended by its user is modelling only the
+data it shipped with.
