@@ -98,7 +98,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#121214]/85 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 2xl:px-8 min-h-16 py-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
         {/* Brand / Logo */}
         <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center gap-2.5 group">
@@ -130,7 +130,7 @@ export function Navbar() {
         </div>
 
         {/* Desktop Nav Links */}
-        <nav className="hidden lg:flex items-center gap-2.5">
+        <nav className="hidden lg:flex items-center gap-1.5 2xl:gap-2.5">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
             const Icon = link.icon;
@@ -138,7 +138,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-all ${
+                className={`flex items-center gap-2 px-2.5 2xl:px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-all ${
                   isActive
                     ? 'bg-white/10 text-white border border-white/15 shadow-sm font-semibold'
                     : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
@@ -157,7 +157,7 @@ export function Navbar() {
         </nav>
 
         {/* Right Action Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 2xl:gap-3">
           {/* Setup Wizard Button */}
           <button
             onClick={() => openOnboardingModal()}
@@ -165,7 +165,7 @@ export function Navbar() {
             title="Setup & Calibrate Your Personal Financial Flow"
           >
             <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Setup Flow</span>
+            <span className="hidden xl:inline">Setup Flow</span>
           </button>
 
           {/* User Account / Portfolio Selector */}
@@ -178,7 +178,7 @@ export function Navbar() {
               <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400 text-black font-bold text-[11px] flex items-center justify-center">
                 {currentUser.name.substring(0, 2).toUpperCase()}
               </div>
-              <div className="hidden sm:flex flex-col text-left">
+              <div className="hidden xl:flex flex-col text-left">
                 <span className="font-semibold text-white leading-none text-[11px] group-hover:text-emerald-300 transition-colors">
                   {currentUser.name}
                 </span>
@@ -219,7 +219,7 @@ export function Navbar() {
             title="Copy Shareable URL Hash"
           >
             <Share2 className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">Share</span>
+            <span className="hidden 2xl:inline">Share</span>
           </button>
 
           {/* Theme Toggle */}
@@ -235,10 +235,10 @@ export function Navbar() {
           {/* Beginner Guide Drawer CTA */}
           <button
             onClick={() => openGuide()}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 text-xs font-semibold transition-all"
+            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 text-xs font-semibold whitespace-nowrap shrink-0 transition-all"
           >
             <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Guide</span>
+            <span className="hidden 2xl:inline">Guide</span>
           </button>
 
           {/* Global AI Assist switch — far right, behind a divider */}

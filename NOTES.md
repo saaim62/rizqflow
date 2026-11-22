@@ -483,3 +483,14 @@ wrapped to two lines — now whitespace-nowrap in both panels. Pre-
 existing issues the QA also flagged (auth flicker on direct
 navigation, narrow stat-card wrapping) are unrelated to AI Assist and
 were left for a separate round.
+
+#31 — Topbar still cramped at laptop widths (owner screenshot, 22 Nov 2026)
+The #30 nowrap fix stopped labels wrapping, but at the owner's actual
+window width the bar still overflowed: too many controls compete for
+one row. The header now degrades gracefully instead of crushing —
+labels go icon-only in stages (Setup Flow text from xl, Share and
+Guide text from 2xl, account name block from xl), gaps and padding
+tighten below 2xl, and the bar wraps to a second row rather than
+overlapping if space truly runs out. The KSE-100 badge stays 2xl-only
+per #30 (it was the element crushing into a vertical pill over the
+logo in the owner's screenshot).
