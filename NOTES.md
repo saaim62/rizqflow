@@ -460,3 +460,26 @@ does not exist; the 24K rate actually lives on the profile itself
 (`profile.goldPerTolaPkr`, falling back to DEFAULT_MARKET_RATES), which
 is what the shipped code uses. Gate 1's type check caught it before
 any push, as designed.
+
+#30 — AI Assist QA round: data restore + fixes (22 Nov 2026)
+The owner's Chrome QA pass (all functional checks passed) surfaced
+four defects, fixed here. (1) DATA: the QA session's authorised AI
+Fill actions persisted to the owner's live portfolio — bucket returns
+halved (14/12/13/11/8 -> 7/6.5/7/6.5/5), expenses tripled (43,162 ->
+144,000, including an invented Rs 55,000 rent where the user has 0),
+and the Leaf test values changed. All restored in the production DB
+to the exact pre-QA values and verified by re-read. Root cause of the
+worst swing: prediction prompts ignored the user's current values, so
+the model substituted generic averages. Prompts for bucket returns and
+expenses now receive the current value and are instructed to anchor on
+it — a zero is deliberate (no rent in a family home) and bucket returns
+stay within ~3 points of the researched baseline. (2) The widened
+navbar (NOTES #27) wrapped labels at laptop widths: nav links and the
+AI pill are now whitespace-nowrap, and the KSE-100 badge only renders
+at 2xl widths (it was being crushed into a vertical pill that overlapped
+the logo). (3) The AI ESTIMATE panel floated detached over neighbouring
+cards on scroll — it now closes on any scroll. (4) The confidence chip
+wrapped to two lines — now whitespace-nowrap in both panels. Pre-
+existing issues the QA also flagged (auth flicker on direct
+navigation, narrow stat-card wrapping) are unrelated to AI Assist and
+were left for a separate round.

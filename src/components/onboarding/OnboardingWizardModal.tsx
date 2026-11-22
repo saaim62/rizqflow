@@ -538,7 +538,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     <label className="text-xs font-semibold text-zinc-300">1. Fuel & Commute (PKR/mo)</label>
                     <AiButton
                       type="expense"
-                      context={{ categoryLabel: 'Fuel & Commute', familyMembers, monthlyIncomePkr }}
+                      context={{ categoryLabel: 'Fuel & Commute', familyMembers, monthlyIncomePkr , currentValuePkr: fuelAndCommute }}
                       currentValue={fuelAndCommute}
                       onAccept={(val) => setFuelAndCommute(val)}
                       formatValue={(x) => formatCompactPkr(x)}
@@ -559,7 +559,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     <label className="text-xs font-semibold text-zinc-300">2. Utilities & Internet (PKR/mo)</label>
                     <AiButton
                       type="expense"
-                      context={{ categoryLabel: 'Utilities & Internet', familyMembers, monthlyIncomePkr }}
+                      context={{ categoryLabel: 'Utilities & Internet', familyMembers, monthlyIncomePkr , currentValuePkr: utilitiesAndInternet }}
                       currentValue={utilitiesAndInternet}
                       onAccept={(val) => setUtilitiesAndInternet(val)}
                       formatValue={(x) => formatCompactPkr(x)}
@@ -580,7 +580,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     <label className="text-xs font-semibold text-zinc-300">3. Groceries & Food (PKR/mo)</label>
                     <AiButton
                       type="expense"
-                      context={{ categoryLabel: 'Groceries & Food', familyMembers, monthlyIncomePkr }}
+                      context={{ categoryLabel: 'Groceries & Food', familyMembers, monthlyIncomePkr , currentValuePkr: groceriesAndFood }}
                       currentValue={groceriesAndFood}
                       onAccept={(val) => setGroceriesAndFood(val)}
                       formatValue={(x) => formatCompactPkr(x)}
@@ -601,7 +601,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     <label className="text-xs font-semibold text-zinc-300">4. Rent / Housing (PKR/mo)</label>
                     <AiButton
                       type="expense"
-                      context={{ categoryLabel: 'Rent & Housing', familyMembers, monthlyIncomePkr }}
+                      context={{ categoryLabel: 'Rent & Housing', familyMembers, monthlyIncomePkr , currentValuePkr: rentOrHousing }}
                       currentValue={rentOrHousing}
                       onAccept={(val) => setRentOrHousing(val)}
                       formatValue={(x) => formatCompactPkr(x)}
@@ -622,7 +622,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     <label className="text-xs font-semibold text-zinc-300">5. Family & Healthcare (PKR/mo)</label>
                     <AiButton
                       type="expense"
-                      context={{ categoryLabel: 'Family & Healthcare', familyMembers, monthlyIncomePkr }}
+                      context={{ categoryLabel: 'Family & Healthcare', familyMembers, monthlyIncomePkr , currentValuePkr: familyAndOther }}
                       currentValue={familyAndOther}
                       onAccept={(val) => setFamilyAndOther(val)}
                       formatValue={(x) => formatCompactPkr(x)}

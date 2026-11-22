@@ -90,6 +90,7 @@ export function PlannerIntakeForm({
           categoryLabel: c.label,
           familyMembers: profile.familyMembers,
           monthlyIncomePkr: profile.monthlyIncomePkr,
+          currentValuePkr: profile.expenses[c.key],
         })
       )
     );
@@ -432,7 +433,7 @@ export function PlannerIntakeForm({
                   <label className="text-[11px] text-zinc-400">1. Fuel & Commute (PKR)</label>
                   <AiButton
                     type="expense"
-                    context={{ categoryLabel: 'Fuel & Commute', familyMembers: profile.familyMembers, monthlyIncomePkr: profile.monthlyIncomePkr }}
+                    context={{ categoryLabel: 'Fuel & Commute', familyMembers: profile.familyMembers, monthlyIncomePkr: profile.monthlyIncomePkr , currentValuePkr: profile.expenses.fuelAndCommute }}
                     currentValue={profile.expenses.fuelAndCommute}
                     onAccept={(val) => updateExpenseField('fuelAndCommute', val)}
                     formatValue={(x) => formatCompactPkr(x)}
@@ -453,7 +454,7 @@ export function PlannerIntakeForm({
                   <label className="text-[11px] text-zinc-400">2. Utilities & Internet (PKR)</label>
                   <AiButton
                     type="expense"
-                    context={{ categoryLabel: 'Utilities & Internet', familyMembers: profile.familyMembers, monthlyIncomePkr: profile.monthlyIncomePkr }}
+                    context={{ categoryLabel: 'Utilities & Internet', familyMembers: profile.familyMembers, monthlyIncomePkr: profile.monthlyIncomePkr , currentValuePkr: profile.expenses.utilitiesAndInternet }}
                     currentValue={profile.expenses.utilitiesAndInternet}
                     onAccept={(val) => updateExpenseField('utilitiesAndInternet', val)}
                     formatValue={(x) => formatCompactPkr(x)}
@@ -474,7 +475,7 @@ export function PlannerIntakeForm({
                   <label className="text-[11px] text-zinc-400">3. Groceries & Food (PKR)</label>
                   <AiButton
                     type="expense"
-                    context={{ categoryLabel: 'Groceries & Food', familyMembers: profile.familyMembers, monthlyIncomePkr: profile.monthlyIncomePkr }}
+                    context={{ categoryLabel: 'Groceries & Food', familyMembers: profile.familyMembers, monthlyIncomePkr: profile.monthlyIncomePkr , currentValuePkr: profile.expenses.groceriesAndFood }}
                     currentValue={profile.expenses.groceriesAndFood}
                     onAccept={(val) => updateExpenseField('groceriesAndFood', val)}
                     formatValue={(x) => formatCompactPkr(x)}
@@ -495,7 +496,7 @@ export function PlannerIntakeForm({
                   <label className="text-[11px] text-zinc-400">4. Rent & Housing (PKR)</label>
                   <AiButton
                     type="expense"
-                    context={{ categoryLabel: 'Rent & Housing', familyMembers: profile.familyMembers, monthlyIncomePkr: profile.monthlyIncomePkr }}
+                    context={{ categoryLabel: 'Rent & Housing', familyMembers: profile.familyMembers, monthlyIncomePkr: profile.monthlyIncomePkr , currentValuePkr: profile.expenses.rentOrHousing }}
                     currentValue={profile.expenses.rentOrHousing}
                     onAccept={(val) => updateExpenseField('rentOrHousing', val)}
                     formatValue={(x) => formatCompactPkr(x)}
@@ -516,7 +517,7 @@ export function PlannerIntakeForm({
                   <label className="text-[11px] text-zinc-400">5. Family Support & Other (PKR)</label>
                   <AiButton
                     type="expense"
-                    context={{ categoryLabel: 'Family Support & Other', familyMembers: profile.familyMembers, monthlyIncomePkr: profile.monthlyIncomePkr }}
+                    context={{ categoryLabel: 'Family Support & Other', familyMembers: profile.familyMembers, monthlyIncomePkr: profile.monthlyIncomePkr , currentValuePkr: profile.expenses.familyAndOther }}
                     currentValue={profile.expenses.familyAndOther}
                     onAccept={(val) => updateExpenseField('familyAndOther', val)}
                     formatValue={(x) => formatCompactPkr(x)}

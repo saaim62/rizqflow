@@ -42,7 +42,7 @@ export function AiAssistToggle({ inMenu = false }: { inMenu?: boolean }) {
     <button
       onClick={() => setEnabled(!enabled)}
       title={enabled ? 'AI Assist is ON — prediction buttons appear beside fields' : 'Turn AI Assist ON — prediction buttons appear beside fields'}
-      className={`flex items-center gap-2 rounded-lg text-xs font-bold transition-all ${
+      className={`flex items-center gap-2 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 transition-all ${
         inMenu ? 'w-full justify-center px-3 py-2' : 'px-3 py-1.5'
       } ${
         enabled
@@ -123,7 +123,7 @@ export function Navbar() {
           </Link>
 
           {/* Pakistan Market Live Badge */}
-          <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[11px] font-medium text-zinc-300">
+          <div className="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[11px] font-medium text-zinc-300 whitespace-nowrap shrink-0">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span>KSE-100 · Sarafa · Data {DATA_AS_OF_SHORT}</span>
           </div>
@@ -138,7 +138,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-all ${
                   isActive
                     ? 'bg-white/10 text-white border border-white/15 shadow-sm font-semibold'
                     : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'

@@ -111,7 +111,10 @@ export const PREDICTIONS: Record<PredictionType, PredictionSpec> = {
     buildPrompt: (c) =>
       `Predict a realistic long-run expected annual return % for this Pakistan investment bucket: "${s(c.bucketLabel)}" (id ${s(c.bucketId)}). ` +
       `Consider PSX historical returns, Sarafa gold trends, Pakistan real-estate appreciation, money-market / Naya Pakistan certificate style rates and savings-account rates as applicable. ` +
-      `Be conservative — this feeds a retirement plan.`,
+      (typeof c.currentReturnPct === 'number'
+        ? `The app's current assumption for this bucket is ${n(c.currentReturnPct)}% — a researched baseline. Give a NOMINAL long-run figure (for equities, price growth plus dividends). Stay within about 3 points of the baseline unless you have a strong specific reason to move it; wild swings break the user's plan. `
+        : '') +
+      `Be sensible — this feeds a retirement plan.`,
   },
   expense: {
     label: 'Monthly expense (PKR)',
@@ -121,6 +124,9 @@ export const PREDICTIONS: Record<PredictionType, PredictionSpec> = {
     buildPrompt: (c) =>
       `Predict a realistic monthly spend in PKR for the expense category "${s(c.categoryLabel)}" in Lahore, Pakistan, ` +
       `for a household of ${n(c.familyMembers, 4)} with monthly take-home income Rs ${n(c.monthlyIncomePkr)}. ` +
+      (typeof c.currentValuePkr === 'number'
+        ? `The user currently spends Rs ${n(c.currentValuePkr)} on this category. If that current spend is 0, return 0 — a zero is deliberate (for example, living in a family home means no rent). Otherwise anchor on their actual spending and adjust modestly; do not replace real spending with a generic average. `
+        : '') +
       `value = one month's typical spend on that category only.`,
   },
   'salary-raise': {

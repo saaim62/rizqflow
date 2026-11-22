@@ -46,7 +46,13 @@ export function AiButton({ type, context, currentValue, onAccept, formatValue }:
     if (!open) return;
     const close = () => setOpen(false);
     window.addEventListener('resize', close);
-    return () => window.removeEventListener('resize', close);
+    // The panel is fixed-position: close it on any scroll so it never
+    // floats detached over neighbouring cards (QA finding, NOTES #30).
+    window.addEventListener('scroll', close, true);
+    return () => {
+      window.removeEventListener('resize', close);
+      window.removeEventListener('scroll', close, true);
+    };
   }, [open ]);
 
   if (!aiOn) return null;
@@ -144,7 +150,7 @@ export function AiButton({ type, context, currentValue, onAccept, formatValue }:
                 <p className="text-[11px] text-zinc-400 leading-relaxed">{result.reasoning}</p>
                 <div className="flex items-center justify-between pt-1">
                   <span
-                    className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide ${
+                    className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide whitespace-nowrap ${
                       result.confidence === 'high'
                         ? 'bg-emerald-500/15 text-emerald-300'
                         : result.confidence === 'low'

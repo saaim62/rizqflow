@@ -46,7 +46,7 @@ export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitte
     setFillingReturns(true);
     const results = await Promise.all(
       assetBuckets.map((b) =>
-        predict('bucket-return', { bucketId: b.id, bucketLabel: b.label })
+        predict('bucket-return', { bucketId: b.id, bucketLabel: b.label, currentReturnPct: b.expectedAnnualReturnPct })
       )
     );
     onChange(
@@ -170,7 +170,7 @@ export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitte
                     %
                     <AiButton
                       type="bucket-return"
-                      context={{ bucketId: bucket.id, bucketLabel: bucket.label }}
+                      context={{ bucketId: bucket.id, bucketLabel: bucket.label, currentReturnPct: bucket.expectedAnnualReturnPct }}
                       currentValue={bucket.expectedAnnualReturnPct}
                       onAccept={(val) => updateReturn(bucket.id, val)}
                       formatValue={(x) => `${x}%`}

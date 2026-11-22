@@ -76,7 +76,7 @@ export function AiOutlook({ ticker, companyName, currentPrice }: AiOutlookProps)
               ? `${fmt(result.value)} – ${fmt(result.valueHigh)}`
               : fmt(result.value)}
             <span
-              className={`ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide align-middle ${
+              className={`ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide align-middle whitespace-nowrap ${
                 result.confidence === 'high'
                   ? 'bg-emerald-500/15 text-emerald-300'
                   : result.confidence === 'low'
