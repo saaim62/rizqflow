@@ -508,3 +508,24 @@ down payment and installment, bucket expected return, lump sum, cash
 reserve (negative = debt), salary raise, goal today's cost, holdings
 rate-per-tola / NAV / price-per-share, and the wizard's resale field.
 Pure UI — engines and data untouched.
+
+#33 — Ownership made visible + hourly fuel/power checks (owner
+report, 22 Nov 2026)
+Two real gaps the owner caught: (1) the isCurrentVehicle flag drove
+the swap banner's math but was shown NOWHERE — he could not see
+which car the site thought was his (in the copied portfolio, the
+Alsvin), and there was no way to change it from the Cars page.
+(2) Fuel/power prices were stamped seeds with no refresh cadence,
+while OGRA has moved petrol to DAILY revisions.
+Fixes: every vehicle card now carries an independent "I own this"
+checkbox (more than one vehicle can be owned) with a gold ring +
+YOUR VEHICLE badge when ticked; a new YourVehiclesStrip at the very
+top of the Cars page lists the owned vehicles with price and true
+monthly cost (or explains the checkbox when none are marked); the
+swap banner now NAMES its baseline ("Switching from your X to Y")
+and, with several owned, compares against the owned vehicle with
+the highest monthly true cost. Prices: a scheduled hourly check
+(rizqflow-fuel-power-refresh) verifies the OGRA petrol price (and
+NEPRA tariffs on Mondays) and runs the full update + deploy
+pipeline only on a verified change. Engines untouched — the audited
+plan numbers do not move.

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { CarDecisionSummary, UserProfile } from '@/types';
+import { CarDecisionSummary, UserProfile, VehicleCandidate } from '@/types';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import { Zap, ArrowRight, Check, Sparkles, TrendingUp, Coins } from 'lucide-react';
 
@@ -16,22 +16,37 @@ export function ApplyCarSwapBanner({ decision, profile }: ApplyCarSwapBannerProp
   const [applied, setApplied] = useState(false);
 
   const cheapest = decision.results[0];
-  const currentVeh = profile.vehicles?.find((v) => v.isCurrentVehicle) || profile.vehicles?.[0];
 
-  if (!cheapest || !currentVeh || cheapest.vehicleId === currentVeh.id) {
+  // Baseline (NOTES #33): the vehicle(s) the user marked "I own this".
+  // With several owned, the honest comparison is against the owned
+  // vehicle with the highest monthly true cost — switching THAT one
+  // saves the most. The from-vehicle is named in the banner text;
+  // before this round the flag was invisible everywhere on screen.
+  // No vehicle marked -> fall back to the first vehicle, as before.
+  const allVehicles = profile.vehicles || [];
+  const ownedIds = new Set(allVehicles.filter((v) => v.isCurrentVehicle).map((v) => v.id));
+  const baselinePool: VehicleCandidate[] =
+    ownedIds.size > 0 ? allVehicles.filter((v) => ownedIds.has(v.id)) : allVehicles.slice(0, 1);
+
+  let currentVeh: VehicleCandidate | undefined;
+  let currentVehCost = -1;
+  for (const r of decision.results) {
+    if (r.vehicleId === cheapest?.vehicleId) continue;
+    if (!baselinePool.some((v) => v.id === r.vehicleId)) continue;
+    if (r.realCostPerMonthPkr > currentVehCost) {
+      currentVehCost = r.realCostPerMonthPkr;
+      currentVeh = baselinePool.find((v) => v.id === r.vehicleId);
+    }
+  }
+
+  if (!cheapest || !currentVeh) {
     return null;
   }
 
-  const currentVehTco = decision.results.find((r) => r.vehicleId === currentVeh.id);
-  const winningCandidate = profile.vehicles?.find((v) => v.id === cheapest.vehicleId);
+  const winningCandidate = allVehicles.find((v) => v.id === cheapest.vehicleId);
 
-  // Calculate monthly savings vs current vehicle
-  const monthlySavings = Math.max(
-    0,
-    currentVehTco
-      ? currentVehTco.realCostPerMonthPkr - cheapest.realCostPerMonthPkr
-      : 0
-  );
+  // Monthly savings vs the baseline owned vehicle
+  const monthlySavings = Math.max(0, currentVehCost - cheapest.realCostPerMonthPkr);
 
   const freedEquity = Math.max(0, (currentVeh.pricePkr || 0) - (winningCandidate?.pricePkr || 0));
 
@@ -58,7 +73,7 @@ export function ApplyCarSwapBanner({ decision, profile }: ApplyCarSwapBannerProp
             </h3>
           </div>
           <p className="text-xs text-zinc-300 mt-1 max-w-2xl leading-relaxed">
-            Switching to <strong>{cheapest.name}</strong> frees up{' '}
+            Switching from your <strong>{currentVeh.name}</strong> to <strong>{cheapest.name}</strong> frees up{' '}
             <strong className="text-white font-mono">{formatPkrMasked(freedEquity)}</strong> upfront cash and saves{' '}
             <strong className="text-emerald-400 font-mono">+{formatPkrMasked(monthlySavings)}/month</strong>. Channel these savings directly into PSX dividend compounding!
           </p>

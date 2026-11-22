@@ -374,7 +374,11 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
           return (
             <div
               key={v.id}
-              className="rounded-xl bg-[#0C0C0F] border border-white/[0.08] p-4 flex flex-col justify-between space-y-4 hover:border-white/15 transition-all"
+              className={`rounded-xl bg-[#0C0C0F] border p-4 flex flex-col justify-between space-y-4 transition-all ${
+                v.isCurrentVehicle
+                  ? 'border-amber-400/50 ring-1 ring-amber-400/30'
+                  : 'border-white/[0.08] hover:border-white/15'
+              }`}
             >
               <div className="space-y-3">
                 {/* Header */}
@@ -431,6 +435,25 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                     </button>
                   </div>
                 </div>
+
+                {/* Ownership (NOTES #33): independent checkbox per card —
+                    more than one vehicle can be yours. */}
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={!!v.isCurrentVehicle}
+                    onChange={(e) => updateVehicle(v.id, { isCurrentVehicle: e.target.checked })}
+                    className="accent-amber-400 w-3.5 h-3.5"
+                  />
+                  <span className={`text-[11px] font-semibold ${v.isCurrentVehicle ? 'text-amber-300' : 'text-zinc-400'}`}>
+                    I own this vehicle
+                  </span>
+                  {v.isCurrentVehicle && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono font-bold">
+                      YOUR VEHICLE
+                    </span>
+                  )}
+                </label>
 
                 {/* Price and Efficiency Inputs */}
                 <div className="grid grid-cols-2 gap-2 text-xs">

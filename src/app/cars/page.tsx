@@ -10,6 +10,7 @@ import { CarControls } from '@/components/cars/CarControls';
 import { RealCostLeaderboard } from '@/components/cars/RealCostLeaderboard';
 import { DistanceCrossoverChart } from '@/components/cars/DistanceCrossoverChart';
 import { VehicleCardList } from '@/components/cars/VehicleCardList';
+import { YourVehiclesStrip } from '@/components/cars/YourVehiclesStrip';
 import { UnderTheHood } from '@/components/cars/UnderTheHood';
 import { VehicleCandidate } from '@/types';
 import { Car, Zap, Trophy, ShieldCheck, Sparkles, RotateCcw } from 'lucide-react';
@@ -120,6 +121,8 @@ function CarDecisionContent() {
       </div>
 
       {/* 1. Bold Verdict Banner */}
+      <YourVehiclesStrip decision={decision} profile={activeProfile} />
+
       <VerdictBanner decision={decision} />
 
       {/* 1b. 3D Podium for #1 Lowest Cost Vehicle */}
