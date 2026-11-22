@@ -404,3 +404,10 @@ the add form), the onboarding wizard's money steps, and the gold-rate
 editor. Gate that should have caught this: Gate 5 (modelling honesty)
 — an input the user cannot verify at entry time is an error source,
 not a convenience.
+
+#26 — Cars page order: contenders directly under the parameters (owner instruction, 22 Nov 2026)
+The Vehicle Contenders card sat below the leaderboard and the crossover
+chart, so the user read results for a fleet they had not finished
+editing. Per the owner's instruction it now sits directly below
+Economic Parameters & Driving Profile and above the Real Cost a Month
+Leaderboard: parameters → fleet → ranking → chart → disclosures.

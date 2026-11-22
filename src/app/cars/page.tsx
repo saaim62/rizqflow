@@ -133,20 +133,23 @@ function CarDecisionContent() {
       {/* 2. Controls & Tariff Adjuster */}
       <CarControls profile={activeProfile} onChange={updateProfile} />
 
-      {/* 3. Real Cost Leaderboard (Ranked + 5-step "See Why" waterfall) */}
+      {/* 3. Editable Vehicle Contenders & Bank Financing — directly under
+          the driving/economic parameters and above the leaderboard, so the
+          user edits the fleet first and reads the ranking second
+          (owner instruction, 22 Nov 2026, NOTES #26) */}
+      <VehicleCardList
+        vehicles={activeVehicles}
+        onChange={(updated) => updateProfile({ vehicles: updated })}
+      />
+
+      {/* 4. Real Cost Leaderboard (Ranked + 5-step "See Why" waterfall) */}
       <RealCostLeaderboard decision={decision} />
 
-      {/* 4. Distance Crossover LineChart */}
+      {/* 5. Distance Crossover LineChart */}
       <DistanceCrossoverChart
         decision={decision}
         vehicles={activeVehicles}
         currentDailyKm={activeProfile.dailyCommuteKm || 30}
-      />
-
-      {/* 5. Editable Vehicle Contenders & Bank Financing */}
-      <VehicleCardList
-        vehicles={activeVehicles}
-        onChange={(updated) => updateProfile({ vehicles: updated })}
       />
 
       {/* 6. Under The Hood Disclosures */}
