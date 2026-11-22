@@ -28,11 +28,14 @@ import {
   ArrowRight
 } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useBeginnerGuide } from '@/components/ui/BeginnerDrawer';
 
 function PlannerContent() {
   const { profile, setProfile, resetToPreset, sharePlan } = useProfile();
   const { openGuide } = useBeginnerGuide();
+  const searchParams = useSearchParams();
+  const tickerParam = searchParams.get('ticker');
   const [activeVisualTab, setActiveVisualTab] = useState<'compounding' | 'calendar'>('compounding');
   const [showSnapshotModal, setShowSnapshotModal] = useState(false);
 
@@ -96,6 +99,23 @@ function PlannerContent() {
           </button>
         </div>
       </div>
+
+      {tickerParam && (
+        <div className="flex items-center justify-between p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-200">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>
+              Simulating impact of PSX stock <strong className="text-white font-mono">{tickerParam}</strong> in your wealth plan.
+            </span>
+          </div>
+          <Link
+            href="/markets"
+            className="text-amber-400 hover:text-amber-300 font-medium underline shrink-0"
+          >
+            Back to Markets
+          </Link>
+        </div>
+      )}
 
       {/* 2-Column Responsive Layout: Left = Intake Forms, Right = Live Bento Dashboard */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

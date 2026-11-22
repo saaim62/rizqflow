@@ -23,7 +23,8 @@ import {
   Target,
   DollarSign,
   Briefcase,
-  AlertTriangle
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 
 interface OnboardingWizardModalProps {
@@ -83,6 +84,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
   const [weddingCost, setWeddingCost] = useState<number>(2500000);
   const [houseAge, setHouseAge] = useState<number>(33);
   const [houseCost, setHouseCost] = useState<number>(15000000);
+  const [isFinishing, setIsFinishing] = useState(false);
 
   if (!isOpen) return null;
 
@@ -91,108 +93,176 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
   const emergencyGap = Math.max(0, emergencyTarget - currentCashReservePkr);
   const savingsRatePct = monthlyIncomePkr > 0 ? Math.round((monthlyInvestPkr / monthlyIncomePkr) * 100) : 0;
 
-  const handleFinish = async () => {
-    const goals = [];
-    if (weddingAge > age) {
-      goals.push({
-        id: 'goal-wedding-custom',
-        name: 'Wedding Ceremony',
-        targetAge: weddingAge,
-        costInTodaysPkr: weddingCost,
-      });
+  const canAdvanceStep = (s: number): boolean => {
+    if (s === 1) {
+      if (age < 16 || age > 85) {
+        showToast('Age must be between 16 and 85');
+        return false;
+      }
+      if (retirementAge <= age) {
+        showToast('Retirement age must be greater than current age');
+        return false;
+      }
     }
-    if (houseAge > age) {
-      goals.push({
-        id: 'goal-house-custom',
-        name: 'Home Construction / Downpayment',
-        targetAge: houseAge,
-        costInTodaysPkr: houseCost,
-      });
+    if (s === 3) {
+      if (monthlyIncomePkr < 0 || monthlyInvestPkr < 0) {
+        showToast('Income and investment amounts cannot be negative');
+        return false;
+      }
     }
+    return true;
+  };
 
-    const compiledProfile: UserProfile = {
-      ...profile,
-      role,
-      gender,
-      isBreadwinner,
-      age,
-      retirementAge,
-      maritalStatus,
-      familyMembers,
-      taxStatus,
-      shariahOnly,
-      includeZakat,
-      monthlyIncomePkr,
-      monthlyInvestPkr,
-      annualSalaryRaisePct,
-      lumpSumPkr,
-      currentCashReservePkr,
-      expenses: {
-        fuelAndCommute,
-        utilitiesAndInternet,
-        groceriesAndFood,
-        rentOrHousing,
-        familyAndOther,
-      },
-      dailyCommuteKm,
-      solarKw,
-      solarTariffMode,
-      vehicles: profile.vehicles && profile.vehicles.length > 0 
-        ? profile.vehicles.map((v, i) => i === 0 ? { ...v, pricePkr: currentVehicleResalePkr, isCurrentVehicle: true } : v)
-        : [
-            {
-              id: 'current-user-vehicle',
-              name:
-                currentVehicleType === 'petrol-bike'
-                  ? 'Existing 70cc Bike'
-                  : currentVehicleType === 'ev-car'
-                  ? 'Existing EV Car'
-                  : 'Existing Petrol Car',
-              fuelType: currentVehicleType === 'ev-car' ? 'ev' : 'petrol',
-              pricePkr: currentVehicleResalePkr,
-              isCurrentVehicle: true,
-              // EV cars run on kWh/100km, not km/L (NOTES #23 — the wizard
-              // previously offered only Petrol Car / Motorbike / None, so
-              // an EV like a Nissan Leaf could not be labelled at all).
-              // 16.5 kWh/100km is a Leaf-class real-world figure.
-              ...(currentVehicleType === 'ev-car'
-                ? { kwhPer100Km: 16.5 }
-                : { kmPerLitre: currentVehicleType === 'petrol-bike' ? 45 : 13 }),
-              fiveYearDepreciationPct: 35,
-              annualMaintenancePkr:
-                currentVehicleType === 'petrol-bike' ? 25000 : currentVehicleType === 'ev-car' ? 35000 : 60000,
-            },
+  const handleFinish = async () => {
+    if (isFinishing) return;
+    setIsFinishing(true);
+
+    try {
+      const goals = [];
+      if (weddingAge > age) {
+        goals.push({
+          id: 'goal-wedding-custom',
+          name: 'Wedding Ceremony',
+          targetAge: weddingAge,
+          costInTodaysPkr: weddingCost,
+        });
+      }
+      if (houseAge > age) {
+        goals.push({
+          id: 'goal-house-custom',
+          name: 'Home Construction / Downpayment',
+          targetAge: houseAge,
+          costInTodaysPkr: houseCost,
+        });
+      }
+
+      const compiledVehicles = (() => {
+        if (currentVehicleType === 'none') {
+          if (profile.vehicles && profile.vehicles.length > 0) {
+            return profile.vehicles.map((v) => ({ ...v, isCurrentVehicle: false }));
+          }
+          return [
             {
               id: 'honri-ve2',
               name: 'Honri Ve 2.0 EV',
-              fuelType: 'ev',
+              fuelType: 'ev' as const,
               pricePkr: 3599000,
               kwhPer100Km: 14.0,
               fiveYearDepreciationPct: 30,
               annualMaintenancePkr: 20000,
             },
-          ],
-      lifeGoals: goals.length > 0 ? goals : profile.lifeGoals,
-    };
+          ];
+        }
 
-    if (mode === 'update' && currentUser) {
-      // Recalibrate: update the ACTIVE portfolio in place. (Previously every
-      // recalibration silently created a duplicate portfolio.)
-      updateProfile(compiledProfile);
-      showToast('Active portfolio recalibrated & saved!');
-    } else if (currentUser) {
-      const res = await createNewPortfolio(portfolioName, compiledProfile);
-      if (!res.success) {
-        showToast('Could not save the portfolio to the server — please try again.');
-        return;
+        const ownedVehicle = {
+          id: 'current-user-vehicle',
+          name:
+            currentVehicleType === 'petrol-bike'
+              ? 'Existing 70cc Bike'
+              : currentVehicleType === 'ev-car'
+              ? 'Existing EV Car'
+              : 'Existing Petrol Car',
+          fuelType: (currentVehicleType === 'ev-car' ? 'ev' : 'petrol') as 'ev' | 'petrol',
+          pricePkr: currentVehicleResalePkr,
+          isCurrentVehicle: true,
+          ...(currentVehicleType === 'ev-car'
+            ? { kwhPer100Km: 16.5 }
+            : { kmPerLitre: currentVehicleType === 'petrol-bike' ? 45 : 13 }),
+          fiveYearDepreciationPct: 35,
+          annualMaintenancePkr:
+            currentVehicleType === 'petrol-bike' ? 25000 : currentVehicleType === 'ev-car' ? 35000 : 60000,
+        };
+
+        if (profile.vehicles && profile.vehicles.length > 0) {
+          const existingIndex = profile.vehicles.findIndex((v) => v.isCurrentVehicle);
+          if (existingIndex >= 0) {
+            return profile.vehicles.map((v, i) =>
+              i === existingIndex
+                ? {
+                    ...v,
+                    name: v.name.includes('Existing') ? ownedVehicle.name : v.name,
+                    pricePkr: currentVehicleResalePkr,
+                    fuelType: (currentVehicleType === 'ev-car' ? 'ev' : 'petrol') as 'ev' | 'petrol',
+                    ...(currentVehicleType === 'ev-car'
+                      ? { kwhPer100Km: v.kwhPer100Km || 16.5, kmPerLitre: undefined }
+                      : { kmPerLitre: v.kmPerLitre || (currentVehicleType === 'petrol-bike' ? 45 : 13), kwhPer100Km: undefined }),
+                    isCurrentVehicle: true,
+                  }
+                : { ...v, isCurrentVehicle: false }
+            );
+          }
+          return [ownedVehicle, ...profile.vehicles.map((v) => ({ ...v, isCurrentVehicle: false }))];
+        }
+
+        return [
+          ownedVehicle,
+          {
+            id: 'honri-ve2',
+            name: 'Honri Ve 2.0 EV',
+            fuelType: 'ev' as const,
+            pricePkr: 3599000,
+            kwhPer100Km: 14.0,
+            fiveYearDepreciationPct: 30,
+            annualMaintenancePkr: 20000,
+          },
+        ];
+      })();
+
+      const compiledProfile: UserProfile = {
+        ...profile,
+        role,
+        gender,
+        isBreadwinner,
+        age,
+        retirementAge,
+        maritalStatus,
+        familyMembers,
+        taxStatus,
+        shariahOnly,
+        includeZakat,
+        monthlyIncomePkr,
+        monthlyInvestPkr,
+        annualSalaryRaisePct,
+        lumpSumPkr,
+        currentCashReservePkr,
+        expenses: {
+          fuelAndCommute,
+          utilitiesAndInternet,
+          groceriesAndFood,
+          rentOrHousing,
+          familyAndOther,
+        },
+        dailyCommuteKm,
+        solarKw,
+        solarTariffMode,
+        vehicles: compiledVehicles,
+        lifeGoals:
+          mode === 'update'
+            ? profile.lifeGoals
+            : profile.lifeGoals && profile.lifeGoals.length > 0
+            ? profile.lifeGoals
+            : goals,
+      };
+
+      if (mode === 'update' && currentUser) {
+        updateProfile(compiledProfile);
+        showToast('Active portfolio recalibrated & saved!');
+      } else if (currentUser) {
+        const res = await createNewPortfolio(portfolioName, compiledProfile);
+        if (!res.success) {
+          showToast('Could not save the portfolio to the server — please try again.');
+          return;
+        }
+        showToast(`Portfolio "${portfolioName}" configured & loaded successfully!`);
+      } else {
+        updateProfile(compiledProfile);
+        showToast(`Portfolio "${portfolioName}" configured & loaded successfully!`);
       }
-      showToast(`Portfolio "${portfolioName}" configured & loaded successfully!`);
-    } else {
-      updateProfile(compiledProfile);
-      showToast(`Portfolio "${portfolioName}" configured & loaded successfully!`);
+      if (onComplete) onComplete(compiledProfile, portfolioName);
+      onClose();
+    } finally {
+      setIsFinishing(false);
     }
-    if (onComplete) onComplete(compiledProfile, portfolioName);
-    onClose();
   };
 
   return (
@@ -815,7 +885,9 @@ The plan compares keeping it versus switching, starting from this value.`}
 
           {step < totalSteps ? (
             <button
-              onClick={() => setStep(step + 1)}
+              onClick={() => {
+                if (canAdvanceStep(step)) setStep(step + 1);
+              }}
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs transition-all shadow-lg shadow-emerald-500/20"
             >
               <span>Continue</span>
@@ -824,10 +896,21 @@ The plan compares keeping it versus switching, starting from this value.`}
           ) : (
             <button
               onClick={handleFinish}
-              className="flex items-center gap-2 px-7 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black font-extrabold text-xs transition-all shadow-xl shadow-emerald-500/30"
+              disabled={isFinishing}
+              className="flex items-center gap-2 px-7 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black font-extrabold text-xs transition-all shadow-xl shadow-emerald-500/30 disabled:opacity-50"
             >
-              <Sparkles className="w-4 h-4 text-black" />
-              <span>{mode === 'update' ? 'Save & Recalibrate My Portfolio' : 'Launch & Calibrate My Portfolio'}</span>
+              {isFinishing ? (
+                <Loader2 className="w-4 h-4 animate-spin text-black" />
+              ) : (
+                <Sparkles className="w-4 h-4 text-black" />
+              )}
+              <span>
+                {isFinishing
+                  ? 'Saving...'
+                  : mode === 'update'
+                  ? 'Save & Recalibrate My Portfolio'
+                  : 'Launch & Calibrate My Portfolio'}
+              </span>
             </button>
           )}
         </div>
