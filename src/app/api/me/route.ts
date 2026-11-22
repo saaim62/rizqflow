@@ -16,8 +16,19 @@ export async function PATCH(req: Request) {
   if (blocked) return blocked;
   const user = await currentSessionUser();
   if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
+
+  let body: any;
   try {
-    const { activePortfolioId } = await req.json();
+    body = await req.json();
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Malformed or invalid JSON body.' }, { status: 400 });
+    }
+  } catch {
+    return NextResponse.json({ error: 'Malformed or invalid JSON body.' }, { status: 400 });
+  }
+
+  try {
+    const { activePortfolioId } = body;
     const ok = await setActivePortfolio(user.id, String(activePortfolioId || ''));
     if (!ok) return NextResponse.json({ error: 'Portfolio not found.' }, { status: 404 });
     return NextResponse.json({ ok: true, activePortfolioId });

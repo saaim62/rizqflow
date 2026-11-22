@@ -37,7 +37,7 @@ interface YourVehiclesStripProps {
 
 export function YourVehiclesStrip({ decision, profile }: YourVehiclesStripProps) {
   const { formatPkrMasked } = useProfile();
-  const owned = (profile.vehicles || []).filter((v) => v.isCurrentVehicle);
+  const owned = (profile.vehicles ?? []).filter((v) => v.isCurrentVehicle);
 
   return (
     <div className="rounded-2xl bg-[#0C0C0F] border border-amber-400/30 p-5 sm:p-6 shadow-xl space-y-3">

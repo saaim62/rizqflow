@@ -28,7 +28,7 @@ interface FieldInfoProps {
 
 export function FieldInfo({ title, text }: FieldInfoProps) {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const [pos, setPos] = useState<{ top?: number; bottom?: number; left: number }>({ left: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<number | null>(null);
@@ -49,10 +49,19 @@ export function FieldInfo({ title, text }: FieldInfoProps) {
     cancelClose();
     const rect = btnRef.current?.getBoundingClientRect();
     if (rect) {
-      setPos({
-        top: rect.bottom + 6,
-        left: Math.max(8, Math.min(rect.right - 256, window.innerWidth - 264)),
-      });
+      const isBottomThird = rect.top > (window.innerHeight * 2) / 3;
+      const left = Math.max(8, Math.min(rect.right - 256, window.innerWidth - 264));
+      if (isBottomThird) {
+        setPos({
+          bottom: Math.max(8, window.innerHeight - rect.top + 6),
+          left,
+        });
+      } else {
+        setPos({
+          top: rect.bottom + 6,
+          left,
+        });
+      }
     }
     setOpen(true);
   };
@@ -73,7 +82,7 @@ export function FieldInfo({ title, text }: FieldInfoProps) {
       window.removeEventListener('scroll', close, true);
       document.removeEventListener('mousedown', onMouseDown);
     };
-  }, [open ]);
+  }, [open]);
 
   useEffect(() => cancelClose, []);
 
@@ -86,7 +95,7 @@ export function FieldInfo({ title, text }: FieldInfoProps) {
         onMouseEnter={openPanel}
         onMouseLeave={scheduleClose}
         onClick={() => (open ? setOpen(false) : openPanel())}
-        className="inline-flex items-center justify-center w-4 h-4 rounded-full text-zinc-500 hover:text-amber-400 transition-colors shrink-0"
+        className="inline-flex items-center justify-center p-2 -m-2 rounded-full text-zinc-500 hover:text-amber-400 transition-colors shrink-0"
       >
         <Info className="w-3.5 h-3.5" />
       </button>
@@ -95,7 +104,11 @@ export function FieldInfo({ title, text }: FieldInfoProps) {
         <div
           ref={panelRef}
           className="fixed z-[80] w-[256px] rounded-xl bg-[#17171A] border border-white/15 shadow-2xl shadow-black/60 p-3 space-y-1.5"
-          style={{ top: pos.top, left: pos.left }}
+          style={{
+            top: pos.top !== undefined ? `${pos.top}px` : undefined,
+            bottom: pos.bottom !== undefined ? `${pos.bottom}px` : undefined,
+            left: `${pos.left}px`,
+          }}
           onMouseEnter={cancelClose}
           onMouseLeave={() => setOpen(false)}
         >

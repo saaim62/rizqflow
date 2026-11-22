@@ -201,18 +201,39 @@ export function parseCleanNumber(val: unknown): number | null {
   let s = val.trim();
   if (!s) return null;
 
-  // Handle accounting parentheses: "(15,000)" -> "-15000"
   let isNegative = false;
-  if (s.startsWith('(') && s.endsWith(')')) {
-    isNegative = true;
-    s = s.slice(1, -1).trim();
-  } else if (s.startsWith('-')) {
-    isNegative = true;
-    s = s.slice(1).trim();
-  }
 
-  // Strip currency prefixes and commas
-  s = s.replace(/^(?:Rs\.?|PKR|\$|USD)\s*/i, '');
+  const cleanSign = () => {
+    let changed = true;
+    while (changed) {
+      changed = false;
+      s = s.trim();
+      if (s.startsWith('(') && s.endsWith(')')) {
+        isNegative = true;
+        s = s.slice(1, -1).trim();
+        changed = true;
+      }
+      if (s.startsWith('-')) {
+        isNegative = true;
+        s = s.slice(1).trim();
+        changed = true;
+      }
+      if (s.startsWith('+')) {
+        s = s.slice(1).trim();
+        changed = true;
+      }
+    }
+  };
+
+  // Strip leading minus, plus, or accounting parentheses before currency prefix
+  cleanSign();
+
+  // Strip currency prefixes
+  s = s.replace(/^(?:Rs\.?|PKR|\$|USD)\s*/i, '').trim();
+
+  // Strip minus, plus, or accounting parentheses after currency prefix (e.g. 'Rs. -30 Lac')
+  cleanSign();
+
   s = s.replace(/,/g, '').trim();
 
   // Strip trailing non-numeric units like km, kw, tolas, etc.

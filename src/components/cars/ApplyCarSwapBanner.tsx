@@ -13,7 +13,6 @@ interface ApplyCarSwapBannerProps {
 
 export function ApplyCarSwapBanner({ decision, profile }: ApplyCarSwapBannerProps) {
   const { updateProfile, showToast, formatPkrMasked } = useProfile();
-  const [applied, setApplied] = useState(false);
 
   const cheapest = decision.results[0];
 
@@ -23,7 +22,7 @@ export function ApplyCarSwapBanner({ decision, profile }: ApplyCarSwapBannerProp
   // saves the most. The from-vehicle is named in the banner text;
   // before this round the flag was invisible everywhere on screen.
   // No vehicle marked -> fall back to the first vehicle, as before.
-  const allVehicles = profile.vehicles || [];
+  const allVehicles = profile.vehicles ?? [];
   const ownedIds = new Set(allVehicles.filter((v) => v.isCurrentVehicle).map((v) => v.id));
   const baselinePool: VehicleCandidate[] =
     ownedIds.size > 0 ? allVehicles.filter((v) => ownedIds.has(v.id)) : allVehicles.slice(0, 1);
@@ -48,14 +47,33 @@ export function ApplyCarSwapBanner({ decision, profile }: ApplyCarSwapBannerProp
   // Monthly savings vs the baseline owned vehicle
   const monthlySavings = Math.max(0, currentVehCost - cheapest.realCostPerMonthPkr);
 
-  const freedEquity = Math.max(0, (currentVeh.pricePkr || 0) - (winningCandidate?.pricePkr || 0));
+  // Financed baseline freed equity uses equityTiedUp (down payment) rather than full sticker price
+  const isBaselineFinanced = Boolean(currentVeh.emiQuote?.enabled);
+  const baselineEquity = isBaselineFinanced
+    ? (currentVeh.emiQuote?.downPaymentPkr ?? 0)
+    : (currentVeh.pricePkr ?? 0);
+
+  const isWinnerFinanced = Boolean(winningCandidate?.emiQuote?.enabled);
+  const winnerEquity = isWinnerFinanced
+    ? (winningCandidate?.emiQuote?.downPaymentPkr ?? 0)
+    : (winningCandidate?.pricePkr ?? 0);
+
+  const freedEquity = Math.max(0, baselineEquity - winnerEquity);
+
+  // Do not render the banner if monthlySavings <= 0 && freedEquity <= 0
+  if (monthlySavings <= 0 && freedEquity <= 0) {
+    return null;
+  }
+
+  const decisionSignature = `${currentVeh.id}:${winningCandidate?.id ?? cheapest.vehicleId}:${Math.round(freedEquity)}:${Math.round(monthlySavings)}`;
+  const isApplied = profile.appliedCarSwapKey === decisionSignature;
 
   const handleApply = () => {
     updateProfile({
       lumpSumPkr: profile.lumpSumPkr + freedEquity,
       monthlyInvestPkr: profile.monthlyInvestPkr + monthlySavings,
+      appliedCarSwapKey: decisionSignature,
     });
-    setApplied(true);
     showToast(`Applied: +${formatPkrMasked(freedEquity)} to Lump Sum & +${formatPkrMasked(monthlySavings)}/mo to SIP!`);
   };
 
@@ -74,7 +92,7 @@ export function ApplyCarSwapBanner({ decision, profile }: ApplyCarSwapBannerProp
           </div>
           <p className="text-xs text-zinc-300 mt-1 max-w-2xl leading-relaxed">
             Switching from your <strong>{currentVeh.name}</strong> to <strong>{cheapest.name}</strong> frees up{' '}
-            <strong className="text-white font-mono">{formatPkrMasked(freedEquity)}</strong> upfront cash and saves{' '}
+            <strong className="text-white font-mono">{formatPkrMasked(freedEquity)}</strong> {isBaselineFinanced ? 'estimated equity' : 'upfront cash'} and saves{' '}
             <strong className="text-emerald-400 font-mono">+{formatPkrMasked(monthlySavings)}/month</strong>. Channel these savings directly into PSX dividend compounding!
           </p>
         </div>
@@ -82,15 +100,15 @@ export function ApplyCarSwapBanner({ decision, profile }: ApplyCarSwapBannerProp
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={handleApply}
-            disabled={applied}
+            disabled={isApplied}
             className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs transition-all shadow-md ${
-              applied
+              isApplied
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 cursor-default'
                 : 'bg-emerald-500 hover:bg-emerald-400 text-black shadow-emerald-500/20'
             }`}
           >
-            {applied ? <Check className="w-4 h-4 text-emerald-400" /> : <Coins className="w-4 h-4" />}
-            <span>{applied ? 'Savings Applied to Plan!' : 'Apply to Wealth Plan'}</span>
+            {isApplied ? <Check className="w-4 h-4 text-emerald-400" /> : <Coins className="w-4 h-4" />}
+            <span>{isApplied ? 'Applied ✓' : 'Apply to Wealth Plan'}</span>
           </button>
 
           <Link

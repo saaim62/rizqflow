@@ -288,7 +288,7 @@ Unmapped Field Test,Random Data Value`;
         retirementAge: 10000,
         monthlyIncomePkr: -999999,
         annualSalaryRaisePct: 500,
-        currentCashReservePkr: -50000, // Negative should clamp to 0 in sanitizeProfile
+        currentCashReservePkr: -2_000_000_000, // Negative debt allowed, clamped to -1B
         annualInflationPct: 999,
         familyMembers: 100,
       };
@@ -299,7 +299,7 @@ Unmapped Field Test,Random Data Value`;
       expect(sanitized.retirementAge).toBe(95); // clamped to max retirement age
       expect(sanitized.monthlyIncomePkr).toBe(0); // clamped to min 0
       expect(sanitized.annualSalaryRaisePct).toBe(50); // clamped to max raise 50%
-      expect(sanitized.currentCashReservePkr).toBe(0);
+      expect(sanitized.currentCashReservePkr).toBe(-1_000_000_000); // clamped to min -1B
       expect(sanitized.annualInflationPct).toBe(40); // clamped to max inflation 40%
       expect(sanitized.familyMembers).toBe(30); // clamped to max 30
     });
@@ -378,6 +378,85 @@ Unmapped Field Test,Random Data Value`;
       expect(res.status).toBe(400);
       const json = await res.json();
       expect(json.error).toBe('empty_payload');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 7. FIX-2.5: Numeric Negative Currency Parsing, Strict Booleans & Deduplication
+  // -------------------------------------------------------------------------
+  describe('FIX-2.5: Numeric Negative Currency Parsing & Import Hardening', () => {
+    it('accurately parses negative values with currency prefixes and Pakistani units', () => {
+      expect(parseCleanNumber('Rs. -30 Lac')).toBe(-3_000_000);
+      expect(parseCleanNumber('-2.5 Cr')).toBe(-25_000_000);
+      expect(parseCleanNumber('Rs -30 Lac')).toBe(-3_000_000);
+      expect(parseCleanNumber('(Rs 30 Lac)')).toBe(-3_000_000);
+      expect(parseCleanNumber('-Rs 30 Lac')).toBe(-3_000_000);
+      expect(parseCleanNumber('Rs (-30 Lac)')).toBe(-3_000_000);
+      expect(parseCleanNumber('PKR -10 Lac')).toBe(-1_000_000);
+      expect(parseCleanNumber('PKR -2.5 Cr')).toBe(-25_000_000);
+      expect(parseCleanNumber('$ -50k')).toBe(-50_000);
+      expect(parseCleanNumber('($50k)')).toBe(-50_000);
+      expect(parseCleanNumber('-15,000')).toBe(-15_000);
+      expect(parseCleanNumber('Rs. 30 Lac')).toBe(3_000_000);
+      expect(parseCleanNumber('2.5 Cr')).toBe(25_000_000);
+    });
+
+    it('strictly parses boolean edits without treating "false" as truthy', () => {
+      const parseBooleanStrict = (val: unknown): boolean => {
+        if (typeof val === 'boolean') return val;
+        if (typeof val === 'string') {
+          const s = val.trim().toLowerCase();
+          return s === 'true' || s === '1' || s === 'yes' || s === 'y';
+        }
+        return Boolean(val);
+      };
+
+      expect(parseBooleanStrict(true)).toBe(true);
+      expect(parseBooleanStrict(false)).toBe(false);
+      expect(parseBooleanStrict('true')).toBe(true);
+      expect(parseBooleanStrict('True')).toBe(true);
+      expect(parseBooleanStrict('false')).toBe(false);
+      expect(parseBooleanStrict('False')).toBe(false);
+      expect(parseBooleanStrict('0')).toBe(false);
+      expect(parseBooleanStrict('1')).toBe(true);
+      expect(parseBooleanStrict('yes')).toBe(true);
+      expect(parseBooleanStrict('no')).toBe(false);
+    });
+
+    it('deduplicates duplicate portfolio names in the same multi-import batch using a local Set', () => {
+      const resolveUniqueNameWithSet = (desiredName: string, taken: Set<string>): string => {
+        if (!taken.has(desiredName.toLowerCase())) {
+          taken.add(desiredName.toLowerCase());
+          return desiredName;
+        }
+        let candidate = `${desiredName} (imported)`;
+        let counter = 2;
+        while (taken.has(candidate.toLowerCase())) {
+          candidate = `${desiredName} (imported ${counter})`;
+          counter++;
+        }
+        taken.add(candidate.toLowerCase());
+        return candidate;
+      };
+
+      const existingUserPortfolios = ['Default Growth'];
+      const taken = new Set(existingUserPortfolios.map((n) => n.toLowerCase()));
+
+      const incoming = [
+        'Default Growth', // conflicts with existing -> Default Growth (imported)
+        'Tech Freedom',   // unique -> Tech Freedom
+        'Tech Freedom',   // duplicate in same batch -> Tech Freedom (imported)
+        'Tech Freedom',   // duplicate in same batch -> Tech Freedom (imported 2)
+      ];
+
+      const resolved = incoming.map((name) => resolveUniqueNameWithSet(name, taken));
+
+      expect(resolved).toEqual([
+        'Default Growth (imported)',
+        'Tech Freedom',
+        'Tech Freedom (imported)',
+        'Tech Freedom (imported 2)',
+      ]);
     });
   });
 });

@@ -22,7 +22,8 @@ services:
     # Without .env.server the site still serves; only /api/auth/* and
     # /api/me /api/portfolios answer 503.
     env_file:
-      - .env.server
+      - path: .env.server
+        required: false
     environment:
       NODE_ENV: production
       PORT: "3000"
@@ -45,7 +46,8 @@ services:
     container_name: rizqflow-db
     command: postgres -c shared_buffers=64MB -c max_connections=20
     env_file:
-      - .env.server
+      - path: .env.server
+        required: false
     volumes:
       - rizqflow_pgdata:/var/lib/postgresql/data
     networks:

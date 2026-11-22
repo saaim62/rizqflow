@@ -26,7 +26,13 @@ export async function setSessionCookie(token: string) {
 
 export async function clearSessionCookie() {
   const store = await cookies();
-  store.set(SESSION_COOKIE, '', { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 0 });
+  store.set(SESSION_COOKIE, '', {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+    secure: process.env.NODE_ENV === 'production',
+  });
 }
 
 export async function currentSessionUser(): Promise<ServerUser | null> {

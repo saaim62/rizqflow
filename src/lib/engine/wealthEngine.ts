@@ -25,7 +25,6 @@ export interface VehicleSwapOption {
   paybackMonths: number;
   solarChargingFree: boolean;
   extraMonthlyDividendFromSwapPkr: number;
-  monthsShavedOffFreedom: number;
 }
 
 interface StockAllocation {
@@ -147,7 +146,7 @@ export function calculateExecutionSheet(
       actualSpentPkr,
       feePkr,
       remainderPkr,
-      effectiveYieldPct: a.stock.dividendYieldPct || 8.0,
+      effectiveYieldPct: a.stock.dividendYieldPct ?? 0,
     };
   });
 
@@ -271,7 +270,9 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
   // date; see NOTES #21).
   const buckets = normalizeAssetSplits(profile.assetBuckets || []);
   const psxBucket = buckets.find((b) => b.id === 'psx-dividends' || /psx/i.test(b.label));
-  const psxShare = psxBucket ? psxBucket.monthlySplitPct / 100 : 1;
+  // FIX-1.2: When no PSX bucket exists in assetBuckets, set psxShare = 0.
+  // When assetBuckets is omitted/empty (legacy unpartitioned profile), default to 1 (100% PSX).
+  const psxShare = buckets.length === 0 ? 1 : psxBucket ? psxBucket.monthlySplitPct / 100 : 0;
   const psxCapitalPkr = profile.lumpSumPkr * psxShare;
   const psxExpectedReturnPct = psxBucket?.expectedAnnualReturnPct ?? blendedGrossYieldPct;
   const appreciationPct = Math.max(0, psxExpectedReturnPct - blendedGrossYieldPct);
@@ -279,8 +280,10 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
   // 4. Tax and Zakat rates
   const taxRate = profile.taxStatus === 'filer' ? 0.15 : 0.30;
   const taxRatePct = profile.taxStatus === 'filer' ? 15 : 30;
-  const zakatRate = profile.includeZakat ? 0.025 : 0.0;
-  const netRetentionRate = Math.max(0, 1 - taxRate - zakatRate);
+  // FIX-1.3: netRetentionRate is based on taxRate only. Dividend WHT in Pakistan is 15% (filer)
+  // or 30% (non-filer). Zakat is an annual wealth levy (2.5% of portfolio value), NOT a dividend
+  // withholding tax deducted at source.
+  const netRetentionRate = Math.max(0, 1 - taxRate);
 
   // Initial Monthly Dividends — on the PSX sleeve only (see 3b)
   const initialMonthlyGrossDividendPkr =
@@ -321,9 +324,11 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
   const calendarBasePkr =
     psxCapitalPkr > 0
       ? psxCapitalPkr
-      : profile.monthlyInvestPkr > 0
+      : profile.monthlyInvestPkr > 0 && psxShare > 0
       ? profile.monthlyInvestPkr * psxShare * 12
-      : 1_000_000;
+      : psxShare > 0
+      ? 1_000_000
+      : 0;
 
   normalizedAllocations.forEach((alloc) => {
     const stockPortfolioPkr = calendarBasePkr * (alloc.weightPct / 100);
@@ -377,10 +382,11 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
   const timeline: (WealthTimelinePoint & { portfolioValuePkr: number; annualNetDividendPkr: number })[] = [];
   const annualNewCapital = profile.monthlyInvestPkr * 12;
 
-  // Sleeve state (see 3b): the PSX pot pays the dividends; every other
+  // Sleeve state (see 3b & FIX-1.2): the PSX pot pays the dividends; every other
   // bucket is its own pot compounding at its declared expected return.
+  // When no PSX bucket exists, psxPot stays 0 and otherPots compounds all buckets.
   let psxPot = psxCapitalPkr;
-  let otherPots = (psxBucket ? buckets.filter((b) => b !== psxBucket) : []).map((b) => ({
+  let otherPots = (psxBucket ? buckets.filter((b) => b !== psxBucket) : buckets).map((b) => ({
     share: b.monthlySplitPct / 100,
     returnPct: b.expectedAnnualReturnPct || 0,
     value: profile.lumpSumPkr * (b.monthlySplitPct / 100),
@@ -418,6 +424,21 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
     }));
     currentPortfolio = psxPot + otherPots.reduce((acc, p) => acc + p.value, 0);
 
+    // FIX-1.3: When profile.includeZakat is true, deduct 2.5% of total portfolio value
+    // once per year pro-rata across sleeves before yearly goal checks.
+    // NOTE (no-nisab v1 simplification): In Islamic jurisprudence, Zakat is due on net zakat-eligible
+    // wealth exceeding Nisab (~52.5 tolas silver / ~7.5 tolas gold). In v1, we apply a flat 2.5%
+    // portfolio-level deduction without a Nisab floor check when the toggle is enabled.
+    if (profile.includeZakat && currentPortfolio > 0) {
+      const zakatDeduction = currentPortfolio * 0.025;
+      psxPot -= psxPot * 0.025;
+      otherPots = otherPots.map((p) => ({
+        ...p,
+        value: p.value * (1 - 0.025),
+      }));
+      currentPortfolio -= zakatDeduction;
+    }
+
     const inflationFactor = Math.pow(1 + profile.annualInflationPct / 100, year - 1);
     const monthlyExpenses = totalMonthlyExpenses * inflationFactor;
     const realMonthlyDiv = monthlyNetDiv / inflationFactor;
@@ -428,6 +449,11 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
     let goalWithdrawnThisYear = 0;
     for (const g of goals) {
       if (g.targetAge === currentAge) {
+        // OWNER-DECISION (§6.5): Goal costs inflate with exponent `year` (Math.pow(1 + inf, year))
+        // representing compounding to the end of the target year, whereas monthly living expenses
+        // inflate with `year - 1` (Year 1 expenses in base prices). Preserved as locked convention.
+        // Exact delta for 15M home goal at yr 4 (age 33) is PKR 1,511,654 (Rs 20,407,334 vs Rs 18,895,680);
+        // debt goal at yr 1 (age 30) delta is PKR 60,000 (Rs 810,000 vs Rs 750,000).
         const inflatedCost = g.costInTodaysPkr * Math.pow(1 + profile.annualInflationPct / 100, year);
         const yearsToRetire = Math.max(0, (profile.retirementAge || 60) - g.targetAge);
         const oppRate = (profile.opportunityCostReturnPct ?? 10) / 100;
@@ -595,7 +621,6 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
       paybackMonths,
       solarChargingFree,
       extraMonthlyDividendFromSwapPkr,
-      monthsShavedOffFreedom: 0,
     };
   });
 

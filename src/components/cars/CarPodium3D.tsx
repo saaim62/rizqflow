@@ -15,6 +15,8 @@ interface CarPodium3DProps {
 export function CarPodium3D({ cheapest, runnerUp }: CarPodium3DProps) {
   const { formatPkrMasked, formatCompactPkrMasked, hideAmounts } = useProfile();
 
+  if (!cheapest) return null;
+
   const isEv = cheapest.fuelType === 'ev';
   const isBike = cheapest.fuelType === 'e-scooty';
   const fiveYearDiff = runnerUp

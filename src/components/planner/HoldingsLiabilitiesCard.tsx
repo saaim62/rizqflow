@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { HoldingItem, HoldingKind, LiabilityItem, UserProfile } from '@/types';
 import { netLiquidReservePkr, totalHoldingsPkr, totalLiabilitiesPkr } from '@/lib/engine/wealthEngine';
 import { formatCompactPkr, formatPkr } from '@/lib/format';
@@ -39,6 +39,192 @@ const inputCls =
   'w-full px-2.5 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-white text-xs focus:border-emerald-500 focus:outline-none';
 const numCls = `${inputCls} font-mono`;
 
+function HoldingRow({
+  holding: h,
+  profile,
+  updateHolding,
+  onRemove,
+}: {
+  holding: HoldingItem;
+  profile: UserProfile;
+  updateHolding: (id: string, patch: Partial<HoldingItem>) => void;
+  onRemove: () => void;
+}) {
+  const kindMeta = KIND_OPTIONS.find((k) => k.value === h.kind);
+  const [rawQty, setRawQty] = useState<string>(
+    h.quantity !== undefined && h.quantity !== null ? String(h.quantity) : ''
+  );
+
+  useEffect(() => {
+    setRawQty(h.quantity !== undefined && h.quantity !== null ? String(h.quantity) : '');
+  }, [h.quantity]);
+
+  return (
+    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.07] space-y-2">
+      <div className="flex items-center gap-2">
+        <select
+          value={h.kind}
+          onChange={(e) => {
+            const kind = e.target.value as HoldingKind;
+            const meta = KIND_OPTIONS.find((k) => k.value === kind);
+            updateHolding(h.id, { kind, unitLabel: meta?.unitLabel });
+          }}
+          className={`${inputCls} w-auto shrink-0`}
+        >
+          {KIND_OPTIONS.map((k) => (
+            <option key={k.value} value={k.value} className="bg-zinc-900">
+              {k.label}
+            </option>
+          ))}
+        </select>
+        <input
+          type="text"
+          value={h.label}
+          onChange={(e) => updateHolding(h.id, { label: e.target.value })}
+          placeholder="Item name"
+          className={inputCls}
+        />
+        <button
+          type="button"
+          onClick={onRemove}
+          className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 shrink-0"
+          aria-label="Remove item"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        {kindMeta?.unitLabel && (
+          <>
+            <label className="space-y-1 block">
+              <span className="text-[10px] text-zinc-500">Qty ({kindMeta.unitLabel})</span>
+              <input
+                type="number"
+                value={rawQty}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setRawQty(val);
+                  if (val === '') {
+                    updateHolding(h.id, { quantity: 0 });
+                  } else {
+                    updateHolding(h.id, { quantity: Number(val) });
+                  }
+                }}
+                className={numCls}
+              />
+            </label>
+            <label className="space-y-1 block">
+              <span className="flex items-center justify-between text-[10px] text-zinc-500">
+                <span>
+                  {h.kind === 'fund' ? 'NAV / unit' : h.kind === 'gold' ? 'Rate / tola' : 'Price / share'}
+                </span>
+                <FieldInfo
+                  title={
+                    h.kind === 'gold'
+                      ? 'Rate / tola — what it means'
+                      : h.kind === 'fund'
+                      ? 'NAV / unit — what it means'
+                      : 'Price / share — what it means'
+                  }
+                  text={
+                    h.kind === 'gold'
+                      ? `The price of one tola (11.66 grams) of gold at YOUR purity.
+
+24K is the headline Sarafa rate. 21K is worth 21/24 of it, 22K is 22/24, and so on.
+
+Your holding's value = tola x this rate.`
+                      : h.kind === 'fund'
+                      ? `NAV is the price of ONE unit of the mutual fund today — funds publish it daily.
+
+Your holding's value = units x NAV.`
+                      : `The current market price of ONE share.
+
+Your holding's value = shares x this price.`
+                  }
+                />
+                {h.kind === 'gold' ? (
+                  <AiButton
+                    type="gold-rate"
+                    context={{ purityKarat: h.purityKarat ?? 24, rate24kPerTola: profile.goldPerTolaPkr ?? DEFAULT_MARKET_RATES.goldPerTolaPkr }}
+                    currentValue={h.unitPricePkr}
+                    onAccept={(val) => updateHolding(h.id, { unitPricePkr: val })}
+                    formatValue={(x) => formatCompactPkr(x)}
+                  />
+                ) : h.kind === 'fund' ? (
+                  <AiButton
+                    type="fund-nav"
+                    context={{ fundName: h.label }}
+                    currentValue={h.unitPricePkr}
+                    onAccept={(val) => updateHolding(h.id, { unitPricePkr: val })}
+                    formatValue={(x) => `Rs ${x.toLocaleString('en-US')}`}
+                  />
+                ) : (
+                  <AiButton
+                    type="stock-price"
+                    context={{ ticker: h.label, companyName: h.label }}
+                    currentValue={h.unitPricePkr}
+                    onAccept={(val) => updateHolding(h.id, { unitPricePkr: val })}
+                    formatValue={(x) => `Rs ${x.toLocaleString('en-US')}`}
+                  />
+                )}
+              </span>
+              <input
+                type="number"
+                value={h.unitPricePkr ?? ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    updateHolding(h.id, { unitPricePkr: 0 });
+                  } else {
+                    updateHolding(h.id, { unitPricePkr: Number(val) });
+                  }
+                }}
+                className={numCls}
+              />
+              <AmountWords value={h.unitPricePkr ?? 0} />
+            </label>
+          </>
+        )}
+        {h.kind === 'gold' && (
+          <label className="space-y-1 block">
+            <span className="text-[10px] text-zinc-500">Purity</span>
+            <select
+              value={h.purityKarat ?? 24}
+              onChange={(e) => updateHolding(h.id, { purityKarat: Number(e.target.value) })}
+              className={inputCls}
+            >
+              {[24, 22, 21, 18].map((k) => (
+                <option key={k} value={k} className="bg-zinc-900">
+                  {k}K
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <label className="space-y-1 block">
+          <span className="text-[10px] text-zinc-500">Value (PKR)</span>
+          <input
+            type="number"
+            value={h.valuePkr ?? ''}
+            onChange={(e) => updateHolding(h.id, { valuePkr: e.target.value === '' ? 0 : Number(e.target.value) })}
+            className={numCls}
+          />
+          <AmountWords value={h.valuePkr ?? 0} />
+        </label>
+      </div>
+
+      <input
+        type="text"
+        value={h.details ?? ''}
+        onChange={(e) => updateHolding(h.id, { details: e.target.value || undefined })}
+        placeholder={kindMeta?.detailsHint}
+        className={inputCls}
+      />
+    </div>
+  );
+}
+
 export function HoldingsLiabilitiesCard({ profile, onChange }: Props) {
   const holdings = profile.holdings ?? [];
   const liabilities = profile.liabilities ?? [];
@@ -56,14 +242,14 @@ export function HoldingsLiabilitiesCard({ profile, onChange }: Props) {
         const merged = { ...h, ...patch };
         // Quantity × unit price drives the value when both are present
         // (fund units × NAV, shares × price, tola × rate).
-        if (
-          (patch.quantity !== undefined || patch.unitPricePkr !== undefined) &&
-          merged.quantity &&
-          merged.quantity > 0 &&
-          merged.unitPricePkr &&
-          merged.unitPricePkr > 0
-        ) {
-          merged.valuePkr = Math.round(merged.quantity * merged.unitPricePkr);
+        if (patch.quantity !== undefined || patch.unitPricePkr !== undefined) {
+          const qty = merged.quantity ?? 0;
+          const price = merged.unitPricePkr ?? 0;
+          if (qty <= 0 || price <= 0) {
+            merged.valuePkr = 0;
+          } else {
+            merged.valuePkr = Math.round(qty * price);
+          }
         }
         return merged;
       })
@@ -109,158 +295,15 @@ export function HoldingsLiabilitiesCard({ profile, onChange }: Props) {
           </p>
         )}
 
-        {holdings.map((h) => {
-          const kindMeta = KIND_OPTIONS.find((k) => k.value === h.kind);
-          return (
-            <div key={h.id} className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.07] space-y-2">
-              <div className="flex items-center gap-2">
-                <select
-                  value={h.kind}
-                  onChange={(e) => {
-                    const kind = e.target.value as HoldingKind;
-                    const meta = KIND_OPTIONS.find((k) => k.value === kind);
-                    updateHolding(h.id, { kind, unitLabel: meta?.unitLabel });
-                  }}
-                  className={`${inputCls} w-auto shrink-0`}
-                >
-                  {KIND_OPTIONS.map((k) => (
-                    <option key={k.value} value={k.value} className="bg-zinc-900">
-                      {k.label}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  value={h.label}
-                  onChange={(e) => updateHolding(h.id, { label: e.target.value })}
-                  placeholder="Item name"
-                  className={inputCls}
-                />
-                <button
-                  type="button"
-                  onClick={() => setHoldings(holdings.filter((x) => x.id !== h.id))}
-                  className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 shrink-0"
-                  aria-label="Remove item"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                {kindMeta?.unitLabel && (
-                  <>
-                    <label className="space-y-1 block">
-                      <span className="text-[10px] text-zinc-500">Qty ({kindMeta.unitLabel})</span>
-                      <input
-                        type="number"
-                        value={h.quantity ?? ''}
-                        onChange={(e) => updateHolding(h.id, { quantity: Number(e.target.value) || undefined })}
-                        className={numCls}
-                      />
-                    </label>
-                    <label className="space-y-1 block">
-                      <span className="flex items-center justify-between text-[10px] text-zinc-500">
-                        <span>
-                          {h.kind === 'fund' ? 'NAV / unit' : h.kind === 'gold' ? 'Rate / tola' : 'Price / share'}
-                        </span>
-                        <FieldInfo
-                          title={
-                            h.kind === 'gold'
-                              ? 'Rate / tola — what it means'
-                              : h.kind === 'fund'
-                              ? 'NAV / unit — what it means'
-                              : 'Price / share — what it means'
-                          }
-                          text={
-                            h.kind === 'gold'
-                              ? `The price of one tola (11.66 grams) of gold at YOUR purity.
-
-24K is the headline Sarafa rate. 21K is worth 21/24 of it, 22K is 22/24, and so on.
-
-Your holding's value = tola x this rate.`
-                              : h.kind === 'fund'
-                              ? `NAV is the price of ONE unit of the mutual fund today — funds publish it daily.
-
-Your holding's value = units x NAV.`
-                              : `The current market price of ONE share.
-
-Your holding's value = shares x this price.`
-                          }
-                        />
-                        {h.kind === 'gold' ? (
-                          <AiButton
-                            type="gold-rate"
-                            context={{ purityKarat: h.purityKarat ?? 24, rate24kPerTola: profile.goldPerTolaPkr || DEFAULT_MARKET_RATES.goldPerTolaPkr }}
-                            currentValue={h.unitPricePkr}
-                            onAccept={(val) => updateHolding(h.id, { unitPricePkr: val })}
-                            formatValue={(x) => formatCompactPkr(x)}
-                          />
-                        ) : h.kind === 'fund' ? (
-                          <AiButton
-                            type="fund-nav"
-                            context={{ fundName: h.label }}
-                            currentValue={h.unitPricePkr}
-                            onAccept={(val) => updateHolding(h.id, { unitPricePkr: val })}
-                            formatValue={(x) => `Rs ${x.toLocaleString('en-US')}`}
-                          />
-                        ) : (
-                          <AiButton
-                            type="stock-price"
-                            context={{ ticker: h.label, companyName: h.label }}
-                            currentValue={h.unitPricePkr}
-                            onAccept={(val) => updateHolding(h.id, { unitPricePkr: val })}
-                            formatValue={(x) => `Rs ${x.toLocaleString('en-US')}`}
-                          />
-                        )}
-                      </span>
-                      <input
-                        type="number"
-                        value={h.unitPricePkr ?? ''}
-                        onChange={(e) => updateHolding(h.id, { unitPricePkr: Number(e.target.value) || undefined })}
-                        className={numCls}
-                      />
-                      <AmountWords value={h.unitPricePkr ?? 0} />
-                    </label>
-                  </>
-                )}
-                {h.kind === 'gold' && (
-                  <label className="space-y-1 block">
-                    <span className="text-[10px] text-zinc-500">Purity</span>
-                    <select
-                      value={h.purityKarat ?? 24}
-                      onChange={(e) => updateHolding(h.id, { purityKarat: Number(e.target.value) })}
-                      className={inputCls}
-                    >
-                      {[24, 22, 21, 18].map((k) => (
-                        <option key={k} value={k} className="bg-zinc-900">
-                          {k}K
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-                <label className="space-y-1 block">
-                  <span className="text-[10px] text-zinc-500">Value (PKR)</span>
-                  <input
-                    type="number"
-                    value={h.valuePkr || ''}
-                    onChange={(e) => updateHolding(h.id, { valuePkr: Number(e.target.value) || 0 })}
-                    className={numCls}
-                  />
-                  <AmountWords value={h.valuePkr} />
-                </label>
-              </div>
-
-              <input
-                type="text"
-                value={h.details ?? ''}
-                onChange={(e) => updateHolding(h.id, { details: e.target.value || undefined })}
-                placeholder={kindMeta?.detailsHint}
-                className={inputCls}
-              />
-            </div>
-          );
-        })}
+        {holdings.map((h) => (
+          <HoldingRow
+            key={h.id}
+            holding={h}
+            profile={profile}
+            updateHolding={updateHolding}
+            onRemove={() => setHoldings(holdings.filter((x) => x.id !== h.id))}
+          />
+        ))}
       </div>
 
       {/* ---- Liabilities ---- */}
@@ -295,12 +338,12 @@ Your holding's value = shares x this price.`
               />
               <input
                 type="number"
-                value={l.amountPkr || ''}
-                onChange={(e) => updateLiability(l.id, { amountPkr: Number(e.target.value) || 0 })}
+                value={l.amountPkr ?? ''}
+                onChange={(e) => updateLiability(l.id, { amountPkr: e.target.value === '' ? 0 : Number(e.target.value) })}
                 placeholder="Amount (PKR)"
                 className={`${numCls} w-[130px] shrink-0`}
               />
-              <AmountWords value={l.amountPkr} />
+              <AmountWords value={l.amountPkr ?? 0} />
               <button
                 type="button"
                 onClick={() => setLiabilities(liabilities.filter((x) => x.id !== l.id))}

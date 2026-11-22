@@ -175,19 +175,24 @@ export function ImportPortfolioModal({ isOpen, onClose, onSuccess }: ImportPortf
   };
 
   // Helper to ensure imported name doesn't overwrite existing portfolio
-  const resolveUniqueName = (desiredName: string): string => {
-    const existingNames = new Set(userPortfolios.map((p) => p.name.toLowerCase()));
-    if (!existingNames.has(desiredName.toLowerCase())) {
+  const resolveUniqueNameWithSet = (desiredName: string, takenNames: Set<string>): string => {
+    if (!takenNames.has(desiredName.toLowerCase())) {
+      takenNames.add(desiredName.toLowerCase());
       return desiredName;
     }
-    // Append (imported)
     let candidate = `${desiredName} (imported)`;
     let counter = 2;
-    while (existingNames.has(candidate.toLowerCase())) {
+    while (takenNames.has(candidate.toLowerCase())) {
       candidate = `${desiredName} (imported ${counter})`;
       counter++;
     }
+    takenNames.add(candidate.toLowerCase());
     return candidate;
+  };
+
+  const resolveUniqueName = (desiredName: string): string => {
+    const existingNames = new Set(userPortfolios.map((p) => p.name.toLowerCase()));
+    return resolveUniqueNameWithSet(desiredName, existingNames);
   };
 
   // File drag & drop handlers
@@ -251,8 +256,9 @@ export function ImportPortfolioModal({ isOpen, onClose, onSuccess }: ImportPortf
       } else {
         // Multi-portfolio envelope
         let count = 0;
+        const takenNames = new Set(userPortfolios.map((p) => p.name.toLowerCase()));
         for (const item of nativePortfolios) {
-          const finalName = resolveUniqueName(item.name);
+          const finalName = resolveUniqueNameWithSet(item.name, takenNames);
           const sanitized = sanitizeProfile(item.profile, getDefaultFallbackProfile());
           if (currentUser) {
             await createNewPortfolio(finalName, sanitized);
@@ -310,7 +316,14 @@ export function ImportPortfolioModal({ isOpen, onClose, onSuccess }: ImportPortf
       } else if (typeof (prev as any)[targetPath] === 'number') {
         (updated as any)[targetPath] = Number(newValue) || 0;
       } else if (typeof (prev as any)[targetPath] === 'boolean') {
-        (updated as any)[targetPath] = Boolean(newValue);
+        if (typeof newValue === 'boolean') {
+          (updated as any)[targetPath] = newValue;
+        } else if (typeof newValue === 'string') {
+          const s = newValue.trim().toLowerCase();
+          (updated as any)[targetPath] = s === 'true' || s === '1' || s === 'yes' || s === 'y';
+        } else {
+          (updated as any)[targetPath] = Boolean(newValue);
+        }
       } else {
         (updated as any)[targetPath] = newValue;
       }
@@ -392,6 +405,7 @@ export function ImportPortfolioModal({ isOpen, onClose, onSuccess }: ImportPortf
                     if (e.target.files && e.target.files.length > 0) {
                       handleFileSelected(e.target.files[0]);
                     }
+                    e.target.value = '';
                   }}
                 />
                 <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-zinc-400 mb-3">

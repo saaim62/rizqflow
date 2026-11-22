@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserProfile, SolarTariffMode } from '@/types';
 import { Sun, Gauge, Percent, Fuel, Zap } from 'lucide-react';
 
@@ -10,10 +10,15 @@ interface CarControlsProps {
 }
 
 export function CarControls({ profile, onChange }: CarControlsProps) {
-  const solarTariff = profile.solarTariffMode || 'net-billing-2026';
-  const dailyKm = profile.dailyCommuteKm || 30;
+  const solarTariff = profile.solarTariffMode ?? 'net-billing-2026';
+  const dailyKm = profile.dailyCommuteKm ?? 30;
   const oppCost = profile.opportunityCostReturnPct ?? 10;
-  const petrolPrice = profile.petrolPricePerLitre || 322;
+  const petrolPrice = profile.petrolPricePerLitre ?? 322;
+  const [rawPetrolPrice, setRawPetrolPrice] = useState<string>(String(profile.petrolPricePerLitre ?? 322));
+
+  useEffect(() => {
+    setRawPetrolPrice(String(profile.petrolPricePerLitre ?? 322));
+  }, [profile.petrolPricePerLitre]);
 
   return (
     <div className="rounded-2xl bg-[#0C0C0F] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-6">
@@ -113,14 +118,14 @@ export function CarControls({ profile, onChange }: CarControlsProps) {
               step={5}
               value={dailyKm}
               onChange={(e) => onChange({ dailyCommuteKm: Number(e.target.value) })}
-              className="w-full h-2 bg-black/[0.05] rounded-lg appearance-none cursor-pointer accent-emerald-400 border border-white/10"
+              className="w-full h-2 bg-white/15 rounded-lg appearance-none cursor-pointer accent-emerald-400 border border-white/10"
             />
 
-            <div className="flex justify-between text-[10px] font-mono text-zinc-500 mt-1">
-              <span>5 km</span>
-              <span>30 km (Avg)</span>
-              <span>60 km</span>
-              <span>100 km</span>
+            <div className="relative text-[10px] font-mono text-zinc-500 mt-1 h-4">
+              <span className="absolute left-0">5 km</span>
+              <span className="absolute -translate-x-1/2" style={{ left: '26.3%' }}>30 km (Avg)</span>
+              <span className="absolute -translate-x-1/2" style={{ left: '57.9%' }}>60 km</span>
+              <span className="absolute right-0">100 km</span>
             </div>
           </div>
 
@@ -155,8 +160,13 @@ export function CarControls({ profile, onChange }: CarControlsProps) {
               step={1}
               value={oppCost}
               onChange={(e) => onChange({ opportunityCostReturnPct: Number(e.target.value) })}
-              className="w-full h-2 bg-black/[0.05] rounded-lg appearance-none cursor-pointer accent-emerald-400 border border-white/10"
+              className="w-full h-2 bg-white/15 rounded-lg appearance-none cursor-pointer accent-emerald-400 border border-white/10"
             />
+            <div className="relative text-[10px] font-mono text-zinc-500 mt-1 h-4">
+              <span className="absolute left-0">0%</span>
+              <span className="absolute -translate-x-1/2" style={{ left: '50%' }}>10% (PSX avg)</span>
+              <span className="absolute right-0">20%</span>
+            </div>
             <span className="text-[10px] text-zinc-400 block mt-1">
               Alternative return if cash was kept in PSX Grade-A dividends or money market funds.
             </span>
@@ -169,7 +179,7 @@ export function CarControls({ profile, onChange }: CarControlsProps) {
                 Petrol Price (PKR / Litre)
               </label>
               <span className="text-sm font-bold font-mono text-white tabular-nums">
-                Rs {petrolPrice}
+                Rs {rawPetrolPrice || '0'}
               </span>
             </div>
             <input
@@ -177,8 +187,14 @@ export function CarControls({ profile, onChange }: CarControlsProps) {
               min={150}
               max={500}
               step={5}
-              value={petrolPrice}
-              onChange={(e) => onChange({ petrolPricePerLitre: Number(e.target.value) })}
+              value={rawPetrolPrice}
+              onChange={(e) => {
+                const val = e.target.value;
+                setRawPetrolPrice(val);
+                if (val !== '') {
+                  onChange({ petrolPricePerLitre: Number(val) });
+                }
+              }}
               className="w-full px-3 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
             />
           </div>

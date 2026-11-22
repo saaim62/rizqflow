@@ -101,7 +101,7 @@ export function StockScreener({ stocks, initialTicker }: StockScreenerProps) {
               placeholder="Search ticker, company (e.g. FFC, Meezan, KAPCO)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl bg-[#0C0C0F] border border-white/10 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50 transition-colors"
+              className="w-full pl-10 pr-16 py-2 rounded-xl bg-[#0C0C0F] border border-white/10 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50 transition-colors"
             />
             {searchTerm && (
               <button
@@ -178,7 +178,8 @@ export function StockScreener({ stocks, initialTicker }: StockScreenerProps) {
             <select
               value={sortField}
               onChange={(e) => setSortField(e.target.value as SortField)}
-              className="bg-black/[0.05] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-emerald-500/50"
+              style={{ colorScheme: 'dark' }}
+              className="bg-[#0C0C0F] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-emerald-500/50 [color-scheme:dark]"
             >
               <option value="streak-red">Longest Red Streak (SIP Dips)</option>
               <option value="streak-green">Longest Green Streak</option>

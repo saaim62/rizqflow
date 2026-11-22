@@ -25,7 +25,7 @@ export function WealthHeadlineCards({ plan, profile }: WealthHeadlineCardsProps)
   const { openGuide } = useBeginnerGuide();
 
   const isTodayMoney = profile.inflationAdjusted;
-  const targetRetirementAge = profile.retirementAge || 60;
+  const targetRetirementAge = profile.retirementAge ?? 60;
 
   return (
     <div className="space-y-4">
@@ -68,7 +68,7 @@ export function WealthHeadlineCards({ plan, profile }: WealthHeadlineCardsProps)
                 <DollarSign className="w-3 h-3 text-emerald-400" />
                 USD Valuation
               </span>
-              <span className="text-zinc-500 font-mono text-[9px]">Rs {profile.usdToPkr || 276.5}</span>
+              <span className="text-zinc-500 font-mono text-[9px]">Rs {profile.usdToPkr ?? 276.5}</span>
             </div>
             <div className="text-xl sm:text-2xl font-extrabold text-emerald-400 font-mono tabular-nums mt-1.5">
               {hideAmounts

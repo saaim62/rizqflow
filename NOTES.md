@@ -643,3 +643,119 @@ behaviour, not a surprise.
 - **Parser:** browser-search replies carry snippets/prose before the answer and are incompatible with `response_format`, so `parsePrediction` now also scans balanced `{...}` objects from last to first and accepts the first that parses with a numeric value; the legacy whole-span path runs first, so plain replies behave exactly as before.
 - **Not used:** Groq Compound (`groq/compound`, `groq/compound-mini`) — verified against Groq's changelog: deprecated Aug 2026 and **decommissioned 21 Sep 2026**; the model IDs now error. `browser_search` on gpt-oss is its documented replacement.
 - **Deliberately unchanged:** the remaining ten prediction types stay ungrounded (stable knowledge or deliberately anchored to in-app baselines); verified market data is still never a prediction target; clamps unchanged. New tests: `tests/ai-grounding.test.ts` (grounded set, prompt rules, search-reply parsing).
+
+*Renumbering note: entries #39–#42 below were filed as #38–#41 on the `swarm/fix-audit-round-2` branch and renumbered on merge — #38 above (AI grounding) landed on main first, the same day. Code comments from that round still cite the branch numbers.*
+
+#39 — Canvas PNG Export Contrast, Markets Terminal, Pulse Bar & A11y (23 Nov 2026)
+Audit Round 2 UI & accessibility remediations across global markets, snapshot export, and core modals:
+(1) Canvas PNG Export (FIX-1.5, ShareSnapshotModal.tsx):
+    - Replaced the three dark text fills (`#0C0C0F` used for the "Rizq" wordmark, the freedom date, and the real purchasing power wealth figure) with cream ink `#F5F1E6`.
+    - Audited all canvas draw calls for contrast against dark obsidian/bento backgrounds: bumped the bottom disclaimer seal fill from `#5C574D` (2.73:1 contrast ratio) to `#8C867A` (5.6:1 contrast ratio), guaranteeing all text elements exceed the 3:1 contrast threshold.
+    - Added unit test suite `tests/shareSnapshot.test.ts` with a Canvas 2D context stub asserting zero `#0C0C0F` text fills remain across all text rendering operations and auditing contrast ratios.
+(2) Markets Terminal & Quick Simulator (FIX-3.2(a)(b)(c)):
+    - QuickSimulator.tsx: dynamically derives WHT tax copy from actual filer status (`Net of 15% Filer WHT` vs `Net of 30% Non-Filer WHT`) instead of hardcoding 15% Filer copy.
+    - markets/page.tsx: replaced ternary month mapping (`parts[1] === '11' ? 'Nov' : 'Oct'`) with a full 12-month calendar mapping table (`MONTH_NAMES`). Stylized daily metal price delta and percentage badges with sign-aware coloring (positive `+` in emerald, negative in rose, flat in zinc) instead of static red.
+    - MarketPulseBar.tsx: dynamically derived 24K gold and silver streak badges from `METAL_ASSETS` history data (displaying sign-aware `▼ Nd` or `▲ Nd`) instead of hardcoded `▼ 5d` / `▼ 3d`. Added strict input validation asserting all benchmark overrides are finite numbers `> 0` before saving.
+(3) Layout, A11y & Form Polish (FIX-3.4):
+    - globals.css: updated `body { overflow-x: hidden }` to `overflow-x: clip`, resolving the CSS overflow containment conflict that prevented the Planner sticky sidebar (`position: sticky`) from anchoring during vertical scroll. Theme tokens remained strictly untouched.
+    - QuickSimulator.tsx: upgraded slider track background to `bg-white/15` for clear visibility on dark canvas and aligned the tick labels (`Rs 5 Lac`, `Rs 30 Lac`, `Rs 60 Lac`, `Rs 1 Crore`) by their true mathematical percentage offsets (`0%`, `26.3%`, `57.9%`, `100%`) rather than CSS flex space-between.
+    - FieldInfo.tsx: increased tap target bounding box to ~32px (`p-2 -m-2`) for touch accessibility while retaining zero layout footprint; added viewport boundary detection to flip the explanation popover upward when triggered in the bottom third of the viewport, preserving the NOTES #35 hover grace-timer behavior.
+    - StockScreener.tsx: added `[color-scheme:dark]` and `style={{ colorScheme: 'dark' }}` to the native `<select>` element to prevent white-on-white text illegibility on Windows/Linux; expanded search input right padding to `pr-16` so typed queries never overlap the "Clear" button.
+    - page.tsx: corrected "Beginner Guide" hero button hover styling from `text-zinc-500 hover:text-zinc-800` to `text-zinc-400 hover:text-white` so it remains clearly legible on obsidian background; bound gold and silver ticker pills to dynamic streak history.
+    - Modals A11y: added `role="dialog"`, `aria-modal="true"`, and keyboard `Escape`-to-close handlers across `ShareSnapshotModal`, `AuthModal`, and `MarketPulseBar` benchmark editor.
+
+#40 — Core Engines, Types & State Sanitizer Hardening (Audit Round 2, 23 Nov 2026)
+Audit Round 2 pure calculation engine math, type contract, and state sanitizer hardening:
+(1) WealthFlow Non-PSX Asset Compounding (FIX-1.2, wealthEngine.ts):
+    - When `assetBuckets` contains no PSX bucket (e.g. 100% physical gold portfolio), `psxShare` is set to 0, PSX pot and dividend flows remain 0, and all user-declared buckets compound in `otherPots` at their declared expected returns and shares.
+    - Preserved byte-identical behavior when PSX bucket exists, and preserved 100% PSX default when `assetBuckets` is omitted (legacy unpartitioned profile).
+    - Added closed-form gold-only compounding test verifying 10-year compounding matching $P \times (1+r)^t$ exactly.
+(2) Zakat Annual Wealth Tax Modeling (FIX-1.3, wealthEngine.ts):
+    - Corrected modeling misconception: Zakat is an annual 2.5% wealth levy on eligible assets, NOT a dividend withholding tax (WHT) deducted at source.
+    - Changed `netRetentionRate` to `1 - taxRate` only (15% filer, 30% non-filer).
+    - When `profile.includeZakat` is true, 2.5% is deducted annually pro-rata across all asset sleeves before yearly goal checks. Documented no-nisab v1 simplification.
+    - Added 3-year hand-computed verification test asserting exact rupee outputs year-by-year; Zakat OFF remains bit-identical.
+(3) Dip-Buying Non-Hindsight Execution (FIX-1.4, streakEngine.ts):
+    - Eliminated look-ahead bias in `simulateDipStrategy`: replaced hindsight `windowSlice.reduce(min)` with an executable chronological rule.
+    - In each window, walks days chronologically and executes purchase at the first close completing a $\ge 3$-day consecutive down streak; falls back to window's final close only if no dip occurs.
+    - Handled short histories (`history.length < safeMonths`) by capping window count to `Math.min(safeMonths, n)` rather than repeatedly buying the last day.
+    - Added crafted price-series unit test verifying that when a 3-day drop triggers a buy, it executes on that close rather than cherry-picking lower prices later in the window.
+(4) Car TCO 0% Down-Payment & 84-Month Loan Proration (FIX-2.7, carTcoEngine.ts):
+    - Replaced falsy checks (`!quote.downPaymentPkr || quote.downPaymentPkr <= 0`) with explicit null/undefined/< 0 checks, allowing `downPaymentPkr === 0` (100% bank financing) as a valid complete quote with `equityTiedUp = 0` (zero capital opportunity cost).
+    - For loan tenures > 60 months (e.g. 84-month auto loans), prorated bank markup over the 5-year evaluation window via `totalInterest * Math.min(tenure, 60) / tenure` (linear proration simplification).
+    - Verified solar net-billing (Rs 11) and grid tariffs remain untouched. Added 0%-down and 84-month proration tests.
+(5) State URL Sanitizer Hardening (FIX-3.1, stateUrl.ts):
+    - Strict boolean parsing: `parseStrictBoolean(val, fallback)` checks `val === true || val === 'true'` vs `val === false || val === 'false'`, preventing string `"false"` from evaluating truthy.
+    - Deep element-level clamping and validation for `assetBuckets` (whitelisted IDs, percentages 0–100, money $\ge 0$), `lifeGoals` (valid ages, money $\ge 0$), and `vehicles` (whitelisted fuel types, valid consumption rates, validated EMI quotes).
+    - Clamped `currentCashReservePkr` allowing negative values for debt modeling.
+    - Added tests proving the owner's golden fixture round-trips field-for-field unchanged.
+(6) Polish & Documentation (§6.5, FIX-3.2(d), FIX-3.3(b)):
+    - Replaced `dividendYieldPct || 8.0` with `?? 0` in execution sheet calculation.
+    - Removed unused hardcoded `monthsShavedOffFreedom: 0` from `VehicleSwapOption`.
+    - Added clarifying code comments documenting the inflation exponent convention (`Math.pow(1 + inf, year)` for goals/wealth vs `year - 1` for annual expenses) and calculated exact PKR deltas for FIX-REPORT-ROUND-2.md (home goal at yr 4 delta: PKR 1,511,654; debt goal at yr 1 delta: PKR 60,000).
+    - Golden baseline verified bit-identical to the rupee.
+
+#41 — Sync, Auth/Session Hardening, AI Cache, Import/Export & Infra (Audit Round 2, 23 Nov 2026)
+Audit Round 2 API sync, auth session hardening, AI cache, import/export, and infrastructure remediations:
+(1) ProfileProvider Debounce & Sync Ordering (FIX-2.1, ProfileProvider.tsx):
+    - Stored pending debounced profile updates in a ref (`pendingSaveRef`).
+    - Flushed pending updates immediately with the outgoing portfolio ID before any portfolio switch (`await flushPendingSync()`), preventing lost edits during rapid switches (< 900ms).
+    - Registered a `beforeunload` listener calling both `api.updatePortfolio` and `fetch('/api/portfolios/${id}', { keepalive: true })` to guarantee delivery on page unload.
+    - Added unit test in `tests/sync.test.ts` verifying rapid edit → switch still sends the update for the old portfolio ID.
+(2) Shared Plan Hash Support for Signed-in Users (FIX-2.2, ProfileProvider.tsx):
+    - Enabled `window.location.hash` plan decoding for signed-in users on page load: loads the shared plan as the active view without overwriting saved portfolios in the DB.
+    - Synchronized `lastSyncedRef` with the loaded shared plan to suppress automatic persist echoing unless explicitly edited or recalibrated.
+    - Dispatched distinct toast: `"Loaded shared plan — it isn't saved to your account"` for signed-in users vs `'Loaded shared plan from URL!'` for anonymous users.
+    - Covered both auth states in `tests/sync.test.ts`.
+(3) Server & API Hardening (FIX-2.3):
+    - `src/lib/server/http.ts`: Mirrored `setSessionCookie`'s `secure: process.env.NODE_ENV === 'production'` in `clearSessionCookie` (with `maxAge: 0`).
+    - `src/lib/server/db.ts`: Cleared cached `schemaReady` promise on rejection so transient database connection errors automatically retry on subsequent requests.
+    - `src/app/api/auth/signin/route.ts`: Unified missing-account, wrong-password, and out-of-range password failures to 401 `{ error: 'Invalid email or password.' }` to prevent account enumeration and protect scrypt from DoS.
+    - Auth & Portfolio routes (`/api/auth/*`, `/api/me`, `/api/portfolios/*`): Enforced 400 on malformed/null/array JSON bodies; enforced password length 6–128; rejected non-object/array profile payloads with 400 and executed server-side `sanitizeProfile` before persisting.
+    - Added test suite in `tests/server-auth.test.ts`.
+(4) AI Cache & Rate Limit Hardening (FIX-2.4):
+    - `src/lib/server/ai.ts`: Constructed cache keys via `stableStringify` (recursive sorted-key serialization), eliminating `[object Object]` collision bugs on complex context objects while maintaining deterministic keys across property insertion orders.
+    - Capped AI prediction cache, foreign mapping cache, and daily IP counts map at 500 entries using FIFO/LRU eviction.
+    - `src/lib/server/rateLimit.ts`: Capped auth rate-limiting buckets map at 500 entries.
+    - Automatic daily count map reset on day rollover. Kept AI endpoints public for anonymous users.
+    - Added collision and capacity tests in `tests/server-auth.test.ts`.
+(5) Portfolio Import & Numeric Parser Hardening (FIX-2.5):
+    - `src/lib/portfolioTransfer.ts`: Rewrote `cleanSign()` in `parseCleanNumber` to properly parse negative values positioned after currency prefixes and within accounting parentheses (e.g. `parseCleanNumber('Rs. -30 Lac') === -3000000`, `parseCleanNumber('-2.5 Cr') === -25000000`, `parseCleanNumber('Rs (-30 Lac)') === -3000000`).
+    - `src/components/portfolio/ImportPortfolioModal.tsx`: Used a local `takenNames` Set during multi-portfolio batch import loops to ensure duplicates in the same batch receive distinct names (e.g. `Dev`, `Dev (imported)`).
+    - Strict boolean parsing for inline foreign edits: `'true' -> true`, `'false' -> false`, avoiding JavaScript's `Boolean('false') === true` bug.
+    - Reset file input (`e.target.value = ''`) after handling so re-uploading the same file reliably fires `onChange`.
+    - Added unit test suite in `tests/portfolioTransfer.test.ts`.
+(6) Infrastructure, Salt & Hydration (FIX-3.3(c)(d)(e), §6.6):
+    - `docker-compose.prod.yml`: Added `required: false` to `env_file: - path: .env.server` for both `rizqflow` and `db` services, keeping `.:/app` volume mount intact.
+    - `src/lib/auth.ts`: Upgraded local salt generation in `makeSalt()` to use `crypto.getRandomValues(bytes)` with a local-only fallback comment.
+    - Enforced unique portfolio names on manual create and rename across client `ProfileProvider` and server API routes (409 on collision).
+    - Resolved signed-out hydration flash (BUG-AUTH-01) by synchronously hydrating from `localStorage` / URL hash on client mount, and exported `hasLoaded: boolean` in `ProfileContextType`.
+    - `README.md`: Rewrote the persistence section to document PostgreSQL server-backed accounts, httpOnly session cookies, scrypt hashing, and multi-device synchronization under Gate 6 Amendment 2.
+
+#42 — Onboarding, Planner, Cars & Zero-Value Sweep (Audit Round 2, 23 Nov 2026)
+Audit Round 2 UI, accessibility, and zero-value preservation across Onboarding, Planner, and Cars:
+(1) Zero-Value Sweep & Clearable Inputs (FIX-1.1):
+    - Replaced every numeric `|| default` with `?? default` in `OnboardingWizardModal.tsx`, `PlannerIntakeForm.tsx`, `MultiAssetSplitter.tsx`, `WealthHeadlineCards.tsx`, `CompoundingChart.tsx`, `CarControls.tsx`, `VehicleCardList.tsx`, and `cars/page.tsx`, ensuring deliberate `0` entries (e.g. `lumpSumPkr: 0`, `rentOrHousing: 0`, `annualSalaryRaisePct: 0`, `dailyCommuteKm: 0`) are never overwritten by fallback values.
+    - Added raw string state across clearable inputs (`rawRetirementAge`, `rawPetrolPrice`, `rawKmPerLitre`, `rawKwhPer100Km`, `rawQty`, `rawPrice`, `rawEmiDown`, `rawEmiInstallment`) so clearing an input does not snap back to defaults while typing.
+    - Updated `HoldingsLiabilitiesCard.tsx` so setting or clearing `quantity <= 0` or `unitPricePkr <= 0` immediately resets `valuePkr` to 0.
+(2) ApplyCarSwapBanner Persistence & Financed Equity (FIX-1.6):
+    - Persists decision signature (`${currentVeh.id}:${winningCandidate?.id ?? cheapest.vehicleId}:${Math.round(freedEquity)}:${Math.round(monthlySavings)}`) to `profile.appliedCarSwapKey`. When applied, the button displays "Applied ✓" and stays disabled until input parameters change.
+    - Financed baseline freed equity is computed from tied-up equity (`currentVeh.emiQuote?.downPaymentPkr`) rather than the full sticker price, and rendered with "estimated equity" copy.
+    - Suppressed banner rendering when `monthlySavings <= 0 && freedEquity <= 0`.
+(3) Empty Vehicle Fleet Safety (FIX-1.7):
+    - Updated `cars/page.tsx` to check `profile.vehicles !== undefined ? profile.vehicles : DEFAULT_CARS`, allowing users to maintain an empty fleet (`[]`) without resurrecting `DEFAULT_CARS`.
+    - Rendered clean empty state in `VehicleCardList.tsx` ("No vehicles yet — add your first") with options to add custom vehicles or pick presets (Yadea M3, BYD Atto 3, or restore default fleet).
+    - Audited all car consumers (`CarPodium3D`, `RealCostLeaderboard`, `YourVehiclesStrip`, `DistanceCrossoverChart`, `VerdictBanner`) for empty fleet safety with fallback placeholders and null checks.
+(4) Confirmation Modal & AI Fill Error Handling (FIX-2.6):
+    - Added confirmation modal before `resetToPreset('junior-engineer')` in `planner/page.tsx` to prevent accidental profile overwrites.
+    - Wrapped `aiFillExpenses`, `aiFillReturns`, `aiFillVehicle`, and all prediction handlers in `try { ... } catch (err) { showToast(...); } finally { clear loading }`, guaranteeing loading states are cleared and user is notified on failure.
+(5) Planner Polish, Goal Editing, Zakat & A11y (FIX-3.2(e)(f), FIX-3.3(a), FIX-3.4(a)):
+    - `MultiAssetSplitter.tsx`: exported `autoBalanceBuckets` with 0.1% rounding remainder absorbed into the largest bucket, guaranteeing exact 100.0% totals across fractional splits (tested with 12.7 / 30.7 / 42.1 / 7.7 / 6.8).
+    - `LifeGoalsManager.tsx`: wired `handleUpdateGoal` to an inline edit UI (name, target age, today's cost in PKR) with Save and Cancel buttons.
+    - Zakat UI copy updated across Onboarding and Planner to "2.5% of portfolio value, yearly".
+    - Removed unused `dividendGrowthPct` from wizard step 2.
+    - Upgraded slider tracks to `bg-white/15` and aligned tick labels by exact mathematical percentages in `MultiAssetSplitter.tsx` and `CarControls.tsx`.
+    - Added `role="dialog"`, `aria-modal="true"`, and keyboard `Escape` handler to `OnboardingWizardModal.tsx`.
+(6) Unit Testing (tests/ui-planner-cars.test.ts):
+    - Added 11 unit tests covering MultiAssetSplitter auto-balance remainder, wizard zero-value drafts, holding zero-value resets, car swap decision signature persistence, empty fleet safety, and AI fill rejected promise handling.
+    - Verified full test suite (172/172 tests green) and Next.js production build (`npm run build`).

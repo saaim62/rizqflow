@@ -1,4 +1,11 @@
-import { HoldingItem, LiabilityItem, UserProfile } from '@/types';
+import {
+  AssetBucket,
+  HoldingItem,
+  LiabilityItem,
+  LifeGoal,
+  UserProfile,
+  VehicleCandidate,
+} from '@/types';
 
 const STORAGE_KEY = 'rizqflow_user_profile_v2';
 
@@ -33,6 +40,99 @@ function clamp(val: any, min: number, max: number, defaultVal: number): number {
 }
 
 /**
+ * Strict boolean parser: returns true for true/'true', false for false/'false',
+ * or fallback for any other/unrecognized value.
+ */
+function parseStrictBoolean(val: any, fallbackVal: boolean): boolean {
+  if (val === true || val === 'true') return true;
+  if (val === false || val === 'false') return false;
+  return fallbackVal;
+}
+
+function cleanText(val: any, max: number): string {
+  return typeof val === 'string' ? val.slice(0, max) : '';
+}
+
+const VALID_BUCKET_IDS: AssetBucket['id'][] = [
+  'psx-dividends',
+  'gold',
+  'real-estate',
+  'money-market',
+  'cash',
+];
+
+function sanitizeAssetBuckets(raw: any, fallback: AssetBucket[]): AssetBucket[] {
+  if (!Array.isArray(raw)) return fallback;
+  return raw.map((b: any, i: number) => {
+    const id = VALID_BUCKET_IDS.includes(b?.id)
+      ? b.id
+      : (VALID_BUCKET_IDS[i % VALID_BUCKET_IDS.length] as AssetBucket['id']);
+    return {
+      id,
+      label: cleanText(b?.label, 120) || id,
+      currentValuePkr: clamp(b?.currentValuePkr, 0, 1_000_000_000, 0),
+      monthlySplitPct: clamp(b?.monthlySplitPct, 0, 100, 0),
+      expectedAnnualReturnPct: clamp(b?.expectedAnnualReturnPct, 0, 100, 0),
+    };
+  });
+}
+
+function sanitizeLifeGoals(raw: any, fallback: LifeGoal[], profileAge: number): LifeGoal[] {
+  if (!Array.isArray(raw)) return fallback;
+  return raw.map((g: any, i: number) => ({
+    id: cleanText(g?.id, 64) || `goal-${i}`,
+    name: cleanText(g?.name, 120) || 'Life Goal',
+    targetAge: clamp(g?.targetAge, profileAge, 100, profileAge + 5),
+    costInTodaysPkr: clamp(g?.costInTodaysPkr, 0, 10_000_000_000, 0),
+  }));
+}
+
+const VALID_FUEL_TYPES: VehicleCandidate['fuelType'][] = ['petrol', 'ev', 'e-scooty'];
+
+function sanitizeVehicles(raw: any, fallback: VehicleCandidate[]): VehicleCandidate[] {
+  if (!Array.isArray(raw)) return fallback;
+  return raw.map((v: any, i: number) => {
+    const fuelType: VehicleCandidate['fuelType'] = VALID_FUEL_TYPES.includes(v?.fuelType)
+      ? v.fuelType
+      : 'petrol';
+    const vehicle: VehicleCandidate = {
+      id: cleanText(v?.id, 64) || `veh-${i}`,
+      name: cleanText(v?.name, 120) || 'Vehicle',
+      fuelType,
+      pricePkr: clamp(v?.pricePkr, 0, 1_000_000_000, 0),
+      fiveYearDepreciationPct: clamp(v?.fiveYearDepreciationPct, 0, 100, 35),
+      annualMaintenancePkr: clamp(v?.annualMaintenancePkr, 0, 10_000_000, 30000),
+    };
+
+    if (v?.isCurrentVehicle === true || v?.isCurrentVehicle === 'true') {
+      vehicle.isCurrentVehicle = true;
+    }
+
+    if (fuelType === 'petrol') {
+      vehicle.kmPerLitre = clamp(v?.kmPerLitre, 0.1, 200, 14);
+    } else {
+      vehicle.kwhPer100Km = clamp(
+        v?.kwhPer100Km,
+        0.1,
+        200,
+        fuelType === 'e-scooty' ? 3.5 : 14
+      );
+    }
+
+    if (v?.emiQuote && typeof v.emiQuote === 'object') {
+      vehicle.emiQuote = {
+        enabled: parseStrictBoolean(v.emiQuote.enabled, false),
+        downPaymentPkr: clamp(v.emiQuote.downPaymentPkr, 0, 1_000_000_000, 0),
+        monthlyInstallmentPkr: clamp(v.emiQuote.monthlyInstallmentPkr, 0, 100_000_000, 0),
+        tenureMonths: clamp(v.emiQuote.tenureMonths, 1, 120, 36),
+      };
+    }
+
+    return vehicle;
+  });
+}
+
+/**
  * Validates and clamps a raw parsed profile object against standard boundaries.
  */
 export function sanitizeProfile(raw: any, fallback: UserProfile): UserProfile {
@@ -56,14 +156,14 @@ export function sanitizeProfile(raw: any, fallback: UserProfile): UserProfile {
     retirementAge,
     maritalStatus: clean.maritalStatus === 'married' ? 'married' : 'unmarried',
     familyMembers: clamp(clean.familyMembers, 1, 30, fallback.familyMembers),
-    isBreadwinner: Boolean(clean.isBreadwinner ?? fallback.isBreadwinner),
+    isBreadwinner: parseStrictBoolean(clean.isBreadwinner, fallback.isBreadwinner),
     monthlyIncomePkr: clamp(clean.monthlyIncomePkr, 0, 100_000_000, fallback.monthlyIncomePkr),
     annualSalaryRaisePct: clamp(clean.annualSalaryRaisePct, 0, 50, fallback.annualSalaryRaisePct),
     lumpSumPkr: clamp(clean.lumpSumPkr, 0, 1_000_000_000, fallback.lumpSumPkr),
     monthlyInvestPkr: clamp(clean.monthlyInvestPkr, 0, 100_000_000, fallback.monthlyInvestPkr),
     currentCashReservePkr: clamp(
       clean.currentCashReservePkr,
-      0,
+      -1_000_000_000,
       1_000_000_000,
       fallback.currentCashReservePkr
     ),
@@ -85,10 +185,10 @@ export function sanitizeProfile(raw: any, fallback: UserProfile): UserProfile {
       familyAndOther: clamp(expenses.familyAndOther, 0, 50_000_000, fallback.expenses.familyAndOther),
     },
     taxStatus: clean.taxStatus === 'non-filer' ? 'non-filer' : 'filer',
-    shariahOnly: Boolean(clean.shariahOnly ?? fallback.shariahOnly),
-    includeZakat: Boolean(clean.includeZakat ?? fallback.includeZakat),
-    reinvestDividends: Boolean(clean.reinvestDividends ?? fallback.reinvestDividends),
-    inflationAdjusted: Boolean(clean.inflationAdjusted ?? fallback.inflationAdjusted),
+    shariahOnly: parseStrictBoolean(clean.shariahOnly, fallback.shariahOnly),
+    includeZakat: parseStrictBoolean(clean.includeZakat, fallback.includeZakat),
+    reinvestDividends: parseStrictBoolean(clean.reinvestDividends, fallback.reinvestDividends),
+    inflationAdjusted: parseStrictBoolean(clean.inflationAdjusted, fallback.inflationAdjusted),
     annualInflationPct: clamp(clean.annualInflationPct, 0, 40, fallback.annualInflationPct),
     dividendGrowthPct: clamp(clean.dividendGrowthPct, 0, 40, fallback.dividendGrowthPct),
     opportunityCostReturnPct: clamp(
@@ -106,19 +206,27 @@ export function sanitizeProfile(raw: any, fallback: UserProfile): UserProfile {
       ? clean.solarTariffMode
       : fallback.solarTariffMode,
     dailyCommuteKm: clamp(clean.dailyCommuteKm, 0, 500, fallback.dailyCommuteKm),
-    assetBuckets: Array.isArray(clean.assetBuckets) ? clean.assetBuckets : fallback.assetBuckets,
-    lifeGoals: Array.isArray(clean.lifeGoals) ? clean.lifeGoals : fallback.lifeGoals,
-    vehicles: Array.isArray(clean.vehicles) ? clean.vehicles : fallback.vehicles,
+    assetBuckets: sanitizeAssetBuckets(clean.assetBuckets, fallback.assetBuckets),
+    lifeGoals: sanitizeLifeGoals(clean.lifeGoals, fallback.lifeGoals, age),
+    vehicles: sanitizeVehicles(clean.vehicles, fallback.vehicles),
     holdings: sanitizeHoldings(clean.holdings),
     liabilities: sanitizeLiabilities(clean.liabilities),
+    appliedCarSwapKey:
+      typeof clean.appliedCarSwapKey === 'string'
+        ? cleanText(clean.appliedCarSwapKey, 128)
+        : undefined,
+    currentVehicleType:
+      typeof clean.currentVehicleType === 'string'
+        ? cleanText(clean.currentVehicleType, 32)
+        : undefined,
+    currentVehicleResalePkr:
+      typeof clean.currentVehicleResalePkr === 'number'
+        ? clamp(clean.currentVehicleResalePkr, 0, 1_000_000_000, 0)
+        : undefined,
   };
 }
 
 const HOLDING_KINDS = ['gold', 'fund', 'real-estate', 'bank', 'stock', 'other'];
-
-function cleanText(val: any, max: number): string {
-  return typeof val === 'string' ? val.slice(0, max) : '';
-}
 
 /** Item-level holdings (NOTES #23): validate shape, clamp amounts. */
 function sanitizeHoldings(raw: any): HoldingItem[] {
