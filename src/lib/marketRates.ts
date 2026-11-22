@@ -3,17 +3,17 @@ import { MarketRatesConfig, UserProfile } from '@/types';
 const STORAGE_KEY = 'rizqflow_custom_market_rates';
 
 /**
- * Pakistan economic defaults — seeded reference values as of November 21, 2026 (see DATA_AS_OF in src/data/marketData.ts).
+ * Pakistan economic defaults — seeded reference values as of November 22, 2026 (see DATA_AS_OF in src/data/marketData.ts).
  */
 export const DEFAULT_MARKET_RATES: MarketRatesConfig = {
   petrolPricePerLitre: 322,
-  goldPerTolaPkr: 379836,
+  goldPerTolaPkr: 376336,
   usdToPkr: 276.51,
   gridRatePerKwh: 55,
   kse100Index: 177382,
   solarNetMeteringLegacyRate: 26,
   solarNetBilling2026Rate: 11,
-  lastUpdated: '2026-11-21',
+  lastUpdated: '2026-11-22',
 };
 
 // ---------------------------------------------------------------------------
@@ -24,7 +24,7 @@ export const DEFAULT_MARKET_RATES: MarketRatesConfig = {
 // ---------------------------------------------------------------------------
 const STALE_SEED_VALUES: Partial<Record<keyof MarketRatesConfig, number[]>> = {
   petrolPricePerLitre: [265],
-  goldPerTolaPkr: [385000],
+  goldPerTolaPkr: [385000, 379836],
   usdToPkr: [276.28],
 };
 

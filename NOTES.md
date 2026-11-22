@@ -560,30 +560,6 @@ no surface used. Button removed; it will not be missed.
 GROQ_MODEL_FALLBACK, NODE_ENV, PORT) with the optionality and
 defaults, for local setup.
 
-#35 — Gold & silver Sat 21 Nov 2026 closes (hourly fuel/power check, 22 Nov 2026)
-The 21:23 PKT run was the first at/after 16:30 PKT, so it ran the daily
-wider-market check (Sunday — PSX closed, so gold/silver/USD only, latest
-PSX close kept). Petrol verified UNCHANGED at Rs 322/L (OGRA notification
-issued Fri 20 Nov, effective 21–23 Nov; Dunya, Aaj, ARY, Business Recorder
-agree) and USD/PKR unchanged at 276.51 (SBP M2M close Fri 20 Nov).
-Gold and silver HAD moved: APSGJA Sat 21 Nov closes are gold Rs 376,336
-(down Rs 3,500 — The Nation, ProPakistani, MM News) and silver Rs 4,600
-(down Rs 108 — MM News, Karachi Post weekly summary). Two pages still
-showing silver Rs 4,708 were repeating Friday's rate, not Saturday's;
-MM News' own article gives 4,600, so 4,600 stands. No new APGJSA rate
-was issued Sunday, so Saturday's closes remain in force.
-Changes: DEFAULT_MARKET_RATES gold 379,836 -> 376,336, lastUpdated
-2026-11-22; superseded 379,836 appended to STALE_SEED_VALUES so saved
-profiles on the old default heal (deliberate custom values untouched);
-daily gold/silver series rolled forward one day (30 points kept, 21 Nov
-appended, 22 Oct dropped — streaks now gold −6, silver −4; gold insight
-also stops calling the 30-day high of Rs 435,636 the "all-time peak");
-GOLD_YEAR_HISTORY final point 21 Nov @ 376,336 (true drawdown from the
-29 Jan peak now −34.3%); MARKET_SNAPSHOT gold/silver updated; preset
-profiles, wealth-engine gold fallback and the types comment follow the
-new default; DATA_SOURCES records the Saturday closes. Tests updated
-to the new closes plus a stale-heal assertion for 379,836.
-
 #36 — Portfolio Import & Export with AI field mapping (22 Nov 2026)
 Added native and foreign portfolio import/export capability:
 (1) Native Export: pure client-side JSON envelope generation (single:
@@ -764,3 +740,41 @@ Audit Round 2 UI, accessibility, and zero-value preservation across Onboarding, 
 - Deployed #38–#42 and live-tested `/api/ai/predict`: **car-price grounding works** — Changan Alsvin 1.3L returned **Rs 3,789,000** via `gpt-oss-120b + browser_search`, reasoning citing a real PakWheels on-road listing (vs the Rs 13.0 Lac ungrounded failure that started #38).
 - But car-maintenance and car-depreciation grounded calls **ran into the 60s timeout** (their searches browse workshop/spec pages interactively) and fell back anyway — first to Qwen (during a short gpt-oss rate-limit window after the search-heavy call), then to the plain primary once the window passed. Net effect of grounding those two: a ~60s wait for the same answer.
 - **Change:** `GROUNDED_PREDICTION_TYPES` is now `{car-price}` only. Maintenance keeps the annual-km scaling prompt; depreciation keeps its cross-year framing (search wording removed since no tool is attached). Fallback chain unchanged. Verified live after redeploy.
+
+
+#44 — Gold & silver Sat 21 Nov 2026 closes (hourly fuel/power check, 22 Nov 2026)
+The 21:23 PKT run was the first at/after 16:30 PKT, so it ran the daily
+wider-market check (Sunday — PSX closed, so gold/silver/USD only, latest
+PSX close kept). Petrol verified UNCHANGED at Rs 322/L (OGRA notification
+issued Fri 20 Nov, effective 21–23 Nov; Dunya, Aaj, ARY, Business Recorder
+agree) and USD/PKR unchanged at 276.51 (SBP M2M close Fri 20 Nov).
+Gold and silver HAD moved: APSGJA Sat 21 Nov closes are gold Rs 376,336
+(down Rs 3,500 — The Nation, ProPakistani, MM News) and silver Rs 4,600
+(down Rs 108 — MM News, Karachi Post weekly summary). Two pages still
+showing silver Rs 4,708 were repeating Friday's rate, not Saturday's;
+MM News' own article gives 4,600, so 4,600 stands. No new APGJSA rate
+was issued Sunday, so Saturday's closes remain in force.
+Changes: DEFAULT_MARKET_RATES gold 379,836 -> 376,336, lastUpdated
+2026-11-22; superseded 379,836 appended to STALE_SEED_VALUES so saved
+profiles on the old default heal (deliberate custom values untouched);
+daily gold/silver series rolled forward one day (30 points kept, 21 Nov
+appended, 22 Oct dropped — streaks now gold −6, silver −4; gold insight
+also stops calling the 30-day high of Rs 435,636 the "all-time peak");
+GOLD_YEAR_HISTORY final point 21 Nov @ 376,336 (true drawdown from the
+29 Jan peak now −34.3%); MARKET_SNAPSHOT gold/silver updated; preset
+profiles, wealth-engine gold fallback and the types comment follow the
+new default; DATA_SOURCES records the Saturday closes. Tests updated
+to the new closes plus a stale-heal assertion for 379,836.
+Guardian (Gate 7) PASS, 113/113 re-verified independently on the pre-audit tree; two minor
+findings: (1) fixed in this change — the `// All-time peak` comment on
+the 30-day high (435,636, 5 Nov) now reads `// 30-day high`. (2) Left
+as a follow-up, not changed: DATA_AS_OF_SHORT still reads '20 Nov
+2026' because it anchors the PSX close (KSE-100 last traded Fri 20
+Nov) across the markets page and navbar; the gold card therefore
+shows the PSX date next to a 21 Nov gold close. The full DATA_AS_OF
+('Fri 20 Nov 2026 (PSX close) · Gold & silver: Sat 21 Nov 2026')
+states both dates and is what /api/market-snapshot serves; flipping
+the short label to 21 Nov would mislabel the PSX side instead.
+Merged onto Audit Round 2 main (79da2b63): wealth-engine FIX-1.2/1.3,
+typed vehicle fields and the rewritten engine/edge tests were taken
+from main as the base; only the gold/silver values above were changed.

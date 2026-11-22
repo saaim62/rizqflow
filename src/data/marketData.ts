@@ -70,7 +70,6 @@ function generateStockHistory(
 // ---------------------------------------------------------------------------
 
 const goldHistory: PricePoint[] = [
-  { date: '2026-10-22', price: 422000 },
   { date: '2026-10-23', price: 423500 },
   { date: '2026-10-24', price: 421800 },
   { date: '2026-10-25', price: 424200 },
@@ -84,7 +83,7 @@ const goldHistory: PricePoint[] = [
   { date: '2026-11-02', price: 431800 },
   { date: '2026-11-03', price: 433900 },
   { date: '2026-11-04', price: 434800 },
-  { date: '2026-11-05', price: 435636 }, // All-time peak
+  { date: '2026-11-05', price: 435636 }, // 30-day high
   { date: '2026-11-06', price: 431200 },
   { date: '2026-11-07', price: 433500 },
   { date: '2026-11-08', price: 430100 },
@@ -99,11 +98,11 @@ const goldHistory: PricePoint[] = [
   { date: '2026-11-17', price: 411500 }, // Down 2
   { date: '2026-11-18', price: 404800 }, // Down 3
   { date: '2026-11-19', price: 395236 }, // Down 4
-  { date: '2026-11-20', price: 379836 }, // Down 5 (-15,400 today)
+  { date: '2026-11-20', price: 379836 }, // Down 5 (-15,400 on 20 Nov)
+  { date: '2026-11-21', price: 376336 }, // Down 6 (-3,500 today, APSGJA Sat 21 Nov close)
 ];
 
 const silverHistory: PricePoint[] = [
-  { date: '2026-10-22', price: 5120 },
   { date: '2026-10-23', price: 5150 },
   { date: '2026-10-24', price: 5100 },
   { date: '2026-10-25', price: 5180 },
@@ -133,6 +132,7 @@ const silverHistory: PricePoint[] = [
   { date: '2026-11-18', price: 4990 }, // Down 1
   { date: '2026-11-19', price: 4850 }, // Down 2
   { date: '2026-11-20', price: 4708 }, // Down 3
+  { date: '2026-11-21', price: 4600 }, // Down 4 (-108 today, APSGJA Sat 21 Nov close)
 ];
 
 export const METAL_ASSETS: MetalAsset[] = [
@@ -140,21 +140,21 @@ export const METAL_ASSETS: MetalAsset[] = [
     id: 'gold-24k',
     name: '24K Gold (Tola)',
     unit: 'per tola',
-    currentPrice: 379836,
+    currentPrice: 376336,
     history: goldHistory,
     streak: computeStreakStats(goldHistory, true),
     insight:
-      'Gold has dropped 5 consecutive sessions down to Rs 379,836, representing a -12.8% correction off its all-time peak of Rs 435,636 on Nov 5. Active SIP dip accumulation zone.',
+      'Gold has dropped 6 consecutive sessions down to Rs 376,336, representing a -13.6% correction off its 30-day high of Rs 435,636 on Nov 5. Active SIP dip accumulation zone.',
   },
   {
     id: 'silver-24k',
     name: '24K Silver (Tola)',
     unit: 'per tola',
-    currentPrice: 4708,
+    currentPrice: 4600,
     history: silverHistory,
     streak: computeStreakStats(silverHistory, true),
     insight:
-      'Silver is on a 3-day losing streak down to Rs 4,708/tola, entering a short-term dip consolidation zone.',
+      'Silver is on a 4-day losing streak down to Rs 4,600/tola, entering a short-term dip consolidation zone.',
   },
 ];
 
@@ -171,7 +171,7 @@ export const METAL_ASSETS: MetalAsset[] = [
 export const DATA_AS_OF = 'Fri 20 Nov 2026 (PSX close) · Gold & silver: Sat 21 Nov 2026';
 export const DATA_AS_OF_SHORT = '20 Nov 2026';
 export const DATA_SOURCES =
-  'PSX data portal (dps.psx.com.pk), danioPSX, smartmoney.pk dividend records, SBP interbank closing rate, OGRA petrol notification (20 Nov 2026), All Pakistan Sarafa Gems & Jewellers Association · Gold year history: APSGJA via ARY News / Express Tribune / ProPakistani (29 Jan 2026 peak, FY26 closes) and the goldrateshub monthly archive (World Bank mid-month method), retrieved 21 Nov 2026';
+  'PSX data portal (dps.psx.com.pk), danioPSX, smartmoney.pk dividend records, SBP interbank closing rate, OGRA petrol notification (20 Nov 2026), All Pakistan Sarafa Gems & Jewellers Association · Gold year history: APSGJA via ARY News / Express Tribune / ProPakistani (29 Jan 2026 peak, FY26 closes) and the goldrateshub monthly archive (World Bank mid-month method), retrieved 21 Nov 2026 · Gold & silver Sat 21 Nov 2026 closes (gold Rs 376,336, silver Rs 4,600) per APSGJA via The Nation / ProPakistani / MM News, verified 22 Nov 2026';
 
 export const MARKET_SNAPSHOT = {
   kse100Index: 177382.57,
@@ -179,8 +179,8 @@ export const MARKET_SNAPSHOT = {
   kse100ChangePct: 0.35,
   usdPkrInterbank: 276.51,
   petrolPerLitre: 322, // OGRA daily pricing, effective 21 Nov 2026
-  goldPerTolaPkr: 379836,
-  silverPerTolaPkr: 4708,
+  goldPerTolaPkr: 376336,
+  silverPerTolaPkr: 4600,
 };
 
 // ---------------------------------------------------------------------------
@@ -210,7 +210,7 @@ export const GOLD_YEAR_HISTORY: PricePoint[] = [
   { date: '2026-08-15', price: 459225 }, // Aug 2026 monthly average
   { date: '2026-09-15', price: 449235 }, // Sep 2026 monthly average
   { date: '2026-10-15', price: 426436 }, // Oct 2026 monthly average
-  { date: '2026-11-20', price: 379836 }, // Latest Sarafa close (= daily series)
+  { date: '2026-11-21', price: 376336 }, // Latest Sarafa close (= daily series)
 ];
 
 interface StockRawConfig {
@@ -578,7 +578,7 @@ const RAW_PRESETS: PresetProfileConfig[] = [
       dividendGrowthPct: 10,
       opportunityCostReturnPct: 10,
       usdToPkr: 276.5,
-      goldPerTolaPkr: 379836,
+      goldPerTolaPkr: 376336,
       petrolPricePerLitre: 322,
       gridRatePerKwh: 55,
       solarKw: 0,
@@ -702,7 +702,7 @@ const RAW_PRESETS: PresetProfileConfig[] = [
       dividendGrowthPct: 8,
       opportunityCostReturnPct: 10,
       usdToPkr: 276.5,
-      goldPerTolaPkr: 379836,
+      goldPerTolaPkr: 376336,
       petrolPricePerLitre: 322,
       gridRatePerKwh: 55,
       solarKw: 0,
@@ -795,7 +795,7 @@ const RAW_PRESETS: PresetProfileConfig[] = [
       dividendGrowthPct: 10,
       opportunityCostReturnPct: 10,
       usdToPkr: 276.5,
-      goldPerTolaPkr: 379836,
+      goldPerTolaPkr: 376336,
       petrolPricePerLitre: 322,
       gridRatePerKwh: 55,
       solarKw: 10,

@@ -567,7 +567,7 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
   const finalRealTodaysPkr = lastPoint ? lastPoint.realTodaysPkr : Math.round(profile.lumpSumPkr);
   const finalWealthUsd = Math.round(finalRealTodaysPkr / (profile.usdToPkr || 276.5));
   const finalWealthGoldTolas = Number(
-    (finalRealTodaysPkr / (profile.goldPerTolaPkr || 379836)).toFixed(1)
+    (finalRealTodaysPkr / (profile.goldPerTolaPkr || 376336)).toFixed(1)
   );
   const safeMonthlyIncome4PctTodaysPkr = Math.round((finalRealTodaysPkr * 0.04) / 12);
 
