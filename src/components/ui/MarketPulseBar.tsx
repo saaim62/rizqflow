@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import { DEFAULT_MARKET_RATES, saveCustomMarketRates } from '@/lib/marketRates';
+import { AmountWords } from '@/components/ui/AmountWords';
 import { useMarketSnapshot } from '@/lib/useMarketSnapshot';
 import { SlidersHorizontal, X, RotateCcw, Check, Sun, Fuel, DollarSign, Coins } from 'lucide-react';
 
@@ -158,6 +159,7 @@ export function MarketPulseBar() {
                   className="w-full px-3 py-2 rounded-lg bg-black border border-white/10 font-mono text-white text-sm"
                   required
                 />
+                <AmountWords value={goldRate} />
               </div>
 
               <div>

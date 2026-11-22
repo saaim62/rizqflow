@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { UserProfile, UserRole, TaxStatus, SolarTariffMode } from '@/types';
+import { AmountWords } from '@/components/ui/AmountWords';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import { formatPkr } from '@/lib/format';
 import { 
@@ -471,6 +472,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     step={10000}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#0C0C0F] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
+                  <AmountWords value={monthlyIncomePkr} />
                   <span className="text-[11px] text-zinc-400">{formatPkr(monthlyIncomePkr)} / month</span>
                 </div>
 
@@ -483,6 +485,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     step={5000}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#0C0C0F] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
+                  <AmountWords value={monthlyInvestPkr} />
                   <span className="text-[11px] text-emerald-400 font-semibold">
                     {savingsRatePct}% savings rate ({formatPkr(monthlyInvestPkr)} / mo)
                   </span>
@@ -497,6 +500,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     step={50000}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#0C0C0F] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
+                  <AmountWords value={lumpSumPkr} />
                   <span className="text-[11px] text-zinc-400">Immediate capital for dividend stocks ({formatPkr(lumpSumPkr)})</span>
                 </div>
 
@@ -509,6 +513,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     step={25000}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#0C0C0F] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
+                  <AmountWords value={currentCashReservePkr} />
                   <span className="text-[11px] text-zinc-400">Emergency fund ({formatPkr(currentCashReservePkr)})</span>
                 </div>
               </div>
@@ -535,6 +540,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     step={1000}
                     className="w-full px-3.5 py-2 rounded-xl bg-[#0C0C0F] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
+                  <AmountWords value={fuelAndCommute} />
                 </div>
 
                 <div className="space-y-1.5">
@@ -546,6 +552,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     step={1000}
                     className="w-full px-3.5 py-2 rounded-xl bg-[#0C0C0F] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
+                  <AmountWords value={utilitiesAndInternet} />
                 </div>
 
                 <div className="space-y-1.5">
@@ -557,6 +564,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     step={2000}
                     className="w-full px-3.5 py-2 rounded-xl bg-[#0C0C0F] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
+                  <AmountWords value={groceriesAndFood} />
                 </div>
 
                 <div className="space-y-1.5">
@@ -568,6 +576,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     step={2000}
                     className="w-full px-3.5 py-2 rounded-xl bg-[#0C0C0F] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
+                  <AmountWords value={rentOrHousing} />
                 </div>
 
                 <div className="space-y-1.5 sm:col-span-2">
@@ -579,6 +588,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     step={1000}
                     className="w-full px-3.5 py-2 rounded-xl bg-[#0C0C0F] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                   />
+                  <AmountWords value={familyAndOther} />
                 </div>
               </div>
 
@@ -638,6 +648,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-zinc-300">Current Vehicle Resale Value (PKR)</label>
                   <input type="number" value={currentVehicleResalePkr} onChange={(e) => setCurrentVehicleResalePkr(Number(e.target.value))} step={50000} className="w-full px-3.5 py-2 rounded-xl bg-[#0C0C0F] border border-white/10 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none" />
+                  <AmountWords value={currentVehicleResalePkr} />
                   <span className="text-[11px] text-zinc-400">What you could sell it for today — drives the EV-swap math ({formatPkr(currentVehicleResalePkr)})</span>
                 </div>
               )}

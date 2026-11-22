@@ -4,6 +4,7 @@ import React from 'react';
 import { HoldingItem, HoldingKind, LiabilityItem, UserProfile } from '@/types';
 import { netLiquidReservePkr, totalHoldingsPkr, totalLiabilitiesPkr } from '@/lib/engine/wealthEngine';
 import { formatPkr } from '@/lib/format';
+import { AmountWords } from '@/components/ui/AmountWords';
 import { Briefcase, Plus, Trash2 } from 'lucide-react';
 
 /**
@@ -164,6 +165,7 @@ export function HoldingsLiabilitiesCard({ profile, onChange }: Props) {
                         onChange={(e) => updateHolding(h.id, { unitPricePkr: Number(e.target.value) || undefined })}
                         className={numCls}
                       />
+                      <AmountWords value={h.unitPricePkr ?? 0} />
                     </label>
                   </>
                 )}
@@ -191,6 +193,7 @@ export function HoldingsLiabilitiesCard({ profile, onChange }: Props) {
                     onChange={(e) => updateHolding(h.id, { valuePkr: Number(e.target.value) || 0 })}
                     className={numCls}
                   />
+                  <AmountWords value={h.valuePkr} />
                 </label>
               </div>
 
@@ -243,6 +246,7 @@ export function HoldingsLiabilitiesCard({ profile, onChange }: Props) {
                 placeholder="Amount (PKR)"
                 className={`${numCls} w-[130px] shrink-0`}
               />
+              <AmountWords value={l.amountPkr} />
               <button
                 type="button"
                 onClick={() => setLiabilities(liabilities.filter((x) => x.id !== l.id))}

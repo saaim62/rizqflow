@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCompactPkr, formatPct, formatPkr, formatTolas, formatUsd, maskAmount } from '@/lib/format';
+import { formatCompactPkr, formatPct, formatPkr, formatPkrWords, formatTolas, formatUsd, maskAmount } from '@/lib/format';
 import { computeStreakStats, simulateDipStrategy } from '@/lib/engine/streakEngine';
 import { GOLD_YEAR_HISTORY, METAL_ASSETS, PRESET_PROFILES, PSX_STOCKS } from '@/data/marketData';
 import {
@@ -744,5 +744,29 @@ describe('NOTES #23: decimal splits, holdings, liabilities, EV car', () => {
     // 25 km/day × 1825 days = 45,625 km → 456.25 × 16.5 kWh × Rs 55 grid
     expect(leaf!.fiveYearFuelOrChargePkr).toBeCloseTo(414047, -2);
     expect(leaf!.totalFiveYearCostPkr).toBeGreaterThan(leaf!.fiveYearFuelOrChargePkr);
+  });
+});
+
+describe('NOTES #25: formatPkrWords input hints', () => {
+  it('spells amounts in Lac / Crore / Arab exactly as users say them', () => {
+    expect(formatPkrWords(100000)).toBe('1 Lac');
+    expect(formatPkrWords(1000000)).toBe('10 Lac');
+    expect(formatPkrWords(10000000)).toBe('1 Crore');
+    expect(formatPkrWords(12500000)).toBe('1 Crore 25 Lac');
+    expect(formatPkrWords(10000000000)).toBe('10 Arab');
+    expect(formatPkrWords(3544611)).toBe('35 Lac 44 Thousand 611');
+    expect(formatPkrWords(300000)).toBe('3 Lac');
+    expect(formatPkrWords(25000)).toBe('25 Thousand');
+  });
+
+  it('stays silent where digits are already easy to read', () => {
+    expect(formatPkrWords(0)).toBe('');
+    expect(formatPkrWords(500)).toBe('');
+    expect(formatPkrWords(999)).toBe('');
+    expect(formatPkrWords(NaN)).toBe('');
+  });
+
+  it('marks negatives (a debt entered as a negative reserve)', () => {
+    expect(formatPkrWords(-750000)).toBe('−7 Lac 50 Thousand');
   });
 });

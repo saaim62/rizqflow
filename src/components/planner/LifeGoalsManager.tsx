@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { LifeGoal } from '@/types';
+import { AmountWords } from '@/components/ui/AmountWords';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import { Calendar, Plus, Trash2, Sparkles } from 'lucide-react';
 
@@ -106,6 +107,7 @@ export function LifeGoalsManager({
                 className="w-full px-2.5 py-1.5 rounded-lg bg-black border border-white/10 text-white font-mono text-xs"
                 required
               />
+              <AmountWords value={newGoalCost} />
             </div>
           </div>
 

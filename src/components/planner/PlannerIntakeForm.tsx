@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { UserProfile, UserRole, TaxStatus, AssetBucket, LifeGoal } from '@/types';
 import { MultiAssetSplitter } from '@/components/planner/MultiAssetSplitter';
+import { AmountWords } from '@/components/ui/AmountWords';
 import { LifeGoalsManager } from '@/components/planner/LifeGoalsManager';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import { 
@@ -219,6 +220,7 @@ export function PlannerIntakeForm({
                   onChange={(e) => updateProfileField('monthlyIncomePkr', Number(e.target.value))}
                   className="w-full px-3 py-2 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-sm focus:outline-none focus:border-emerald-500/50"
                 />
+                <AmountWords value={profile.monthlyIncomePkr} />
               </div>
 
               <div>
@@ -247,6 +249,7 @@ export function PlannerIntakeForm({
                   onChange={(e) => updateProfileField('monthlyInvestPkr', Number(e.target.value))}
                   className="w-full px-3 py-2 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-sm focus:outline-none focus:border-emerald-500/50"
                 />
+                <AmountWords value={profile.monthlyInvestPkr} />
               </div>
 
               <div>
@@ -260,6 +263,7 @@ export function PlannerIntakeForm({
                   onChange={(e) => updateProfileField('lumpSumPkr', Number(e.target.value))}
                   className="w-full px-3 py-2 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-sm focus:outline-none focus:border-emerald-500/50"
                 />
+                <AmountWords value={profile.lumpSumPkr} />
               </div>
 
               <div className="sm:col-span-2">
@@ -273,6 +277,7 @@ export function PlannerIntakeForm({
                   onChange={(e) => updateProfileField('currentCashReservePkr', Number(e.target.value))}
                   className="w-full px-3 py-2 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-sm focus:outline-none focus:border-emerald-500/50"
                 />
+                <AmountWords value={profile.currentCashReservePkr} />
               </div>
             </div>
           </div>
@@ -373,6 +378,7 @@ export function PlannerIntakeForm({
                   onChange={(e) => updateExpenseField('fuelAndCommute', Number(e.target.value))}
                   className="w-full px-3 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
                 />
+                  <AmountWords value={profile.expenses.fuelAndCommute} />
               </div>
 
               <div>
@@ -384,6 +390,7 @@ export function PlannerIntakeForm({
                   onChange={(e) => updateExpenseField('utilitiesAndInternet', Number(e.target.value))}
                   className="w-full px-3 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
                 />
+                  <AmountWords value={profile.expenses.utilitiesAndInternet} />
               </div>
 
               <div>
@@ -395,6 +402,7 @@ export function PlannerIntakeForm({
                   onChange={(e) => updateExpenseField('groceriesAndFood', Number(e.target.value))}
                   className="w-full px-3 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
                 />
+                  <AmountWords value={profile.expenses.groceriesAndFood} />
               </div>
 
               <div>
@@ -406,6 +414,7 @@ export function PlannerIntakeForm({
                   onChange={(e) => updateExpenseField('rentOrHousing', Number(e.target.value))}
                   className="w-full px-3 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
                 />
+                  <AmountWords value={profile.expenses.rentOrHousing} />
               </div>
 
               <div className="sm:col-span-2">
@@ -417,6 +426,7 @@ export function PlannerIntakeForm({
                   onChange={(e) => updateExpenseField('familyAndOther', Number(e.target.value))}
                   className="w-full px-3 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
                 />
+                  <AmountWords value={profile.expenses.familyAndOther} />
               </div>
             </div>
           </div>

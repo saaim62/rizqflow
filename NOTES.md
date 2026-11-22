@@ -388,3 +388,19 @@ in place (the efficiency field swaps km/L ↔ kWh/100km with it). Gate
 that should have caught this: Gate 5's spirit — a comparison tool whose
 comparison set cannot be extended by its user is modelling only the
 data it shipped with.
+
+#25 — Raw digit strings hide zero-errors; amounts now spell themselves (owner request, 22 Nov 2026)
+Typing 10000000000 into a price field gives the eye nothing to check —
+one zero too many or too few is invisible until the plan comes out
+wrong. Every money input now shows a live words line underneath via
+formatPkrWords + the AmountWords component: Pakistani units, exact
+decomposition (100000 → "1 Lac", 10000000 → "1 Crore",
+12500000 → "1 Crore 25 Lac", 10000000000 → "10 Arab",
+3544611 → "35 Lac 44 Thousand 611"). Silent below Rs 1,000, where the
+digits are already readable. Wired into the planner intake (income,
+SIP, lump, reserve, all five expenses), goal costs, holdings &
+liabilities values, vehicle prices/maintenance/EMI fields (cards and
+the add form), the onboarding wizard's money steps, and the gold-rate
+editor. Gate that should have caught this: Gate 5 (modelling honesty)
+— an input the user cannot verify at entry time is an error source,
+not a convenience.

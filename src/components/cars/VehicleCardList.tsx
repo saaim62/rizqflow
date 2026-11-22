@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { VehicleCandidate, BankEmiQuote } from '@/types';
 import { useProfile } from '@/components/providers/ProfileProvider';
+import { AmountWords } from '@/components/ui/AmountWords';
 import { 
   Car, 
   Bike, 
@@ -182,6 +183,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                 onChange={(e) => setDraft({ ...draft, pricePkr: Number(e.target.value) })}
                 className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
               />
+              <AmountWords value={draft.pricePkr} />
             </div>
             <div>
               <label className="text-[10px] text-zinc-400 block mb-1">
@@ -216,6 +218,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                 onChange={(e) => setDraft({ ...draft, annualMaintenancePkr: Number(e.target.value) })}
                 className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
               />
+              <AmountWords value={draft.annualMaintenancePkr} />
             </div>
           </div>
           <div className="flex gap-2 justify-end">
@@ -306,6 +309,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                       onChange={(e) => updateVehicle(v.id, { pricePkr: Number(e.target.value) })}
                       className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
                     />
+                    <AmountWords value={v.pricePkr} />
                   </div>
 
                   <div>
@@ -365,6 +369,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                       }
                       className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
                     />
+                    <AmountWords value={v.annualMaintenancePkr} />
                   </div>
                 </div>
 
@@ -421,6 +426,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                               }
                               className="w-full px-2 py-1 rounded bg-black border border-white/10 font-mono text-white text-xs"
                             />
+                            <AmountWords value={v.emiQuote?.downPaymentPkr || 0} />
                           </div>
 
                           <div className="grid grid-cols-2 gap-2">
@@ -440,6 +446,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                                 }
                                 className="w-full px-2 py-1 rounded bg-black border border-white/10 font-mono text-white text-xs"
                               />
+                              <AmountWords value={v.emiQuote?.monthlyInstallmentPkr || 0} />
                             </div>
                             <div>
                               <label className="text-[10px] text-zinc-400 block mb-0.5">

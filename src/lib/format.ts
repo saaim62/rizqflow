@@ -148,6 +148,40 @@ export function formatCompactPkr(n: number): string {
 }
 
 /**
+ * Spell a PKR amount out in Pakistani number words for input hints
+ * (NOTES #25): 100000 -> "1 Lac", 1000000 -> "10 Lac",
+ * 10000000 -> "1 Crore", 12500000 -> "1 Crore 25 Lac",
+ * 10000000000 -> "10 Arab", 3544611 -> "35 Lac 44 Thousand 611".
+ * Returns '' below Rs 1,000 (and for 0 / non-finite) so hints stay silent
+ * where the digits are already easy to read.
+ */
+export function formatPkrWords(n: number): string {
+  if (n === null || n === undefined || isNaN(n) || !isFinite(n) || n === 0) {
+    return '';
+  }
+  const isNegative = n < 0;
+  let rest = Math.round(Math.abs(n));
+  if (rest < 1000) return '';
+
+  const parts: string[] = [];
+  const units: [number, string][] = [
+    [1_000_000_000, 'Arab'],
+    [10_000_000, 'Crore'],
+    [100_000, 'Lac'],
+    [1_000, 'Thousand'],
+  ];
+  for (const [unit, label] of units) {
+    const count = Math.floor(rest / unit);
+    if (count > 0) {
+      parts.push(`${count} ${label}`);
+      rest -= count * unit;
+    }
+  }
+  if (rest > 0) parts.push(`${rest}`);
+  return `${isNegative ? '−' : ''}${parts.join(' ')}`;
+}
+
+/**
  * Format number as a percentage:
  * Examples: "+9.2%", "-12.8%", "8.5%"
  */
