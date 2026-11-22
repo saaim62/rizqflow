@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserProfile, UserRole, TaxStatus, AssetBucket, LifeGoal } from '@/types';
 import { MultiAssetSplitter } from '@/components/planner/MultiAssetSplitter';
 import { AmountWords } from '@/components/ui/AmountWords';
@@ -41,7 +41,7 @@ export function PlannerIntakeForm({
   onSelectPreset,
   activePreset,
 }: PlannerIntakeFormProps) {
-  const { formatPkrMasked } = useProfile();
+  const { formatPkrMasked, showToast } = useProfile();
 
   // Accordion state
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({
@@ -52,6 +52,12 @@ export function PlannerIntakeForm({
     expenses: false,
     solarVehicle: false,
   });
+
+  const [rawRetirementAge, setRawRetirementAge] = useState<string>(String(profile.retirementAge ?? 60));
+
+  useEffect(() => {
+    setRawRetirementAge(String(profile.retirementAge ?? 60));
+  }, [profile.retirementAge]);
 
   const toggleSection = (key: string) => {
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -85,22 +91,27 @@ export function PlannerIntakeForm({
   /** AI Fill: predict all five expense categories in parallel, apply in ONE profile update. */
   const aiFillExpenses = async () => {
     setFillingExpenses(true);
-    const results = await Promise.all(
-      EXPENSE_CATEGORIES.map((c) =>
-        predict('expense', {
-          categoryLabel: c.label,
-          familyMembers: profile.familyMembers,
-          monthlyIncomePkr: profile.monthlyIncomePkr,
-          currentValuePkr: profile.expenses[c.key],
-        })
-      )
-    );
-    const nextExpenses = { ...profile.expenses };
-    results.forEach((r, i) => {
-      if (r) nextExpenses[EXPENSE_CATEGORIES[i].key] = Math.max(0, Math.round(r.value));
-    });
-    onChange({ ...profile, expenses: nextExpenses });
-    setFillingExpenses(false);
+    try {
+      const results = await Promise.all(
+        EXPENSE_CATEGORIES.map((c) =>
+          predict('expense', {
+            categoryLabel: c.label,
+            familyMembers: profile.familyMembers,
+            monthlyIncomePkr: profile.monthlyIncomePkr,
+            currentValuePkr: profile.expenses[c.key],
+          })
+        )
+      );
+      const nextExpenses = { ...profile.expenses };
+      results.forEach((r, i) => {
+        if (r) nextExpenses[EXPENSE_CATEGORIES[i].key] = Math.max(0, Math.round(r.value));
+      });
+      onChange({ ...profile, expenses: nextExpenses });
+    } catch (err) {
+      showToast('Could not complete AI autofill for expenses');
+    } finally {
+      setFillingExpenses(false);
+    }
   };
 
   const totalExpenses = Object.values(profile.expenses).reduce((a, b) => a + b, 0);
@@ -116,7 +127,7 @@ export function PlannerIntakeForm({
         { id: 'cash', label: 'Cash Reserve', currentValuePkr: 0, monthlySplitPct: 5, expectedAnnualReturnPct: 8 },
       ];
 
-  const lifeGoals: LifeGoal[] = profile.lifeGoals || [];
+  const lifeGoals: LifeGoal[] = profile.lifeGoals ?? [];
 
   return (
     <div className="space-y-5">
@@ -204,9 +215,10 @@ export function PlannerIntakeForm({
               ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
               : 'bg-[#0C0C0F] text-zinc-400 border-white/5 hover:text-white'
           }`}
+          title="2.5% of portfolio value, yearly"
         >
           <Percent className="w-3.5 h-3.5" />
-          <span>Zakat 2.5% {profile.includeZakat ? 'Deducted' : 'Exempt (CZ-50)'}</span>
+          <span>Zakat: {profile.includeZakat ? '2.5% of portfolio value, yearly' : 'Exempt (CZ-50)'}</span>
         </button>
 
         {/* Inflation Adjusted */}
@@ -236,7 +248,7 @@ export function PlannerIntakeForm({
             <div>
               <span className="font-bold text-sm text-white">Income, Career Raises & SIP</span>
               <span className="block text-[11px] text-zinc-400 font-mono">
-                Lump sum: {formatPkrMasked(profile.lumpSumPkr)} · SIP: {formatPkrMasked(profile.monthlyInvestPkr)}/mo · +{profile.annualSalaryRaisePct || 0}% Raise
+                Lump sum: {formatPkrMasked(profile.lumpSumPkr)} · SIP: {formatPkrMasked(profile.monthlyInvestPkr)}/mo · +{profile.annualSalaryRaisePct ?? 0}% Raise
               </span>
             </div>
           </div>
@@ -274,7 +286,7 @@ The plan raises both your income and your monthly investment by this rate every 
                   <AiButton
                     type="salary-raise"
                     context={{ roleLabel: profile.role }}
-                    currentValue={profile.annualSalaryRaisePct || 0}
+                    currentValue={profile.annualSalaryRaisePct ?? 0}
                     onAccept={(val) => updateProfileField('annualSalaryRaisePct', val)}
                     formatValue={(x) => `${x}%`}
                   />
@@ -284,7 +296,7 @@ The plan raises both your income and your monthly investment by this rate every 
                   step={1}
                   min={0}
                   max={40}
-                  value={profile.annualSalaryRaisePct || 0}
+                  value={profile.annualSalaryRaisePct ?? 0}
                   onChange={(e) => updateProfileField('annualSalaryRaisePct', Number(e.target.value))}
                   className="w-full px-3 py-2 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-sm focus:outline-none focus:border-emerald-500/50"
                 />
@@ -403,7 +415,7 @@ In debt? Enter it as a negative number: -750,000 means you owe Rs 7.5 Lac. The p
             <LifeGoalsManager
               lifeGoals={lifeGoals}
               currentAge={profile.age}
-              retirementAge={profile.retirementAge || 60}
+              retirementAge={profile.retirementAge ?? 60}
               onChange={(updated) => updateProfileField('lifeGoals', updated)}
             />
           </div>
@@ -569,7 +581,7 @@ In debt? Enter it as a negative number: -750,000 means you owe Rs 7.5 Lac. The p
             <div>
               <span className="font-bold text-sm text-white">Age & Career Profile</span>
               <span className="block text-[11px] text-zinc-400">
-                Age {profile.age} &rarr; Target Retirement Age {profile.retirementAge || 60}
+                Age {profile.age} &rarr; Target Retirement Age {profile.retirementAge ?? 60}
               </span>
             </div>
           </div>
@@ -593,8 +605,13 @@ In debt? Enter it as a negative number: -750,000 means you owe Rs 7.5 Lac. The p
                 <label className="text-[11px] text-zinc-400 block mb-1">Target Retirement Age</label>
                 <input
                   type="number"
-                  value={profile.retirementAge || 60}
-                  onChange={(e) => updateProfileField('retirementAge', Number(e.target.value))}
+                  value={rawRetirementAge}
+                  onChange={(e) => {
+                    setRawRetirementAge(e.target.value);
+                    if (e.target.value !== '') {
+                      updateProfileField('retirementAge', Number(e.target.value));
+                    }
+                  }}
                   className="w-full px-3 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
                 />
               </div>

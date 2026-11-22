@@ -816,3 +816,404 @@ describe('NOTES #27: AI prediction registry (pure)', () => {
     expect(isPredictionType(42)).toBe(false);
   });
 });
+
+describe('Round 2 Engine Math & Sanitizer Hardening Verification', () => {
+  it('FIX-1.2: compounds gold-only asset bucket with closed-form P*(1+r)^t, zero PSX dividends and zero PSX pot', () => {
+    const base = PRESET_PROFILES['junior-engineer'].profile;
+    const goldProfile: UserProfile = {
+      ...base,
+      age: 30,
+      retirementAge: 40,
+      lumpSumPkr: 1_000_000,
+      monthlyInvestPkr: 0,
+      annualSalaryRaisePct: 0,
+      annualInflationPct: 0,
+      includeZakat: false,
+      lifeGoals: [],
+      assetBuckets: [
+        {
+          id: 'gold',
+          label: '24K Physical Gold',
+          currentValuePkr: 1_000_000,
+          monthlySplitPct: 100,
+          expectedAnnualReturnPct: 10,
+        },
+      ],
+    };
+
+    const plan = calculateLifePlan(goldProfile);
+    expect(plan.initialMonthlyGrossDividendPkr).toBe(0);
+    expect(plan.initialMonthlyNetDividendPkr).toBe(0);
+    expect(plan.monthlyPayoutCalendar.every((m) => m.amountPkr === 0)).toBe(true);
+
+    // 10 years at 10% annual return: P_t = 1,000,000 * (1.10)^t
+    expect(plan.timeline).toHaveLength(10);
+    for (let t = 1; t <= 10; t++) {
+      const point = plan.timeline[t - 1];
+      const expectedNominal = Math.round(1_000_000 * Math.pow(1.10, t));
+      expect(point.nominalPortfolioPkr).toBe(expectedNominal);
+      expect(point.monthlyNetDividendPkr).toBe(0);
+    }
+    // At year 10: 1,000,000 * (1.1)^10 = 2,593,742
+    expect(plan.finalNominalWealthPkr).toBe(2593742);
+    expect(plan.finalRealTodaysPkr).toBe(2593742);
+  });
+
+  it('FIX-1.3: deducts 2.5% Zakat annually from wealth across 3 years with hand-computed closed-form verification', () => {
+    const base = PRESET_PROFILES['junior-engineer'].profile;
+    const profileZakatOff: UserProfile = {
+      ...base,
+      age: 30,
+      retirementAge: 33, // 3 years -> clamped to minimum 10 simulation years
+      lumpSumPkr: 1_000_000,
+      monthlyInvestPkr: 0,
+      annualSalaryRaisePct: 0,
+      annualInflationPct: 0,
+      includeZakat: false,
+      taxStatus: 'filer',
+      lifeGoals: [],
+      assetBuckets: [
+        {
+          id: 'gold',
+          label: '24K Physical Gold',
+          currentValuePkr: 1_000_000,
+          monthlySplitPct: 100,
+          expectedAnnualReturnPct: 10,
+        },
+      ],
+    };
+
+    const profileZakatOn: UserProfile = {
+      ...profileZakatOff,
+      includeZakat: true,
+    };
+
+    const planOff = calculateLifePlan(profileZakatOff);
+    const planOn = calculateLifePlan(profileZakatOn);
+
+    // Hand-computed step-by-step for 10% annual return and 2.5% annual Zakat deduction:
+    // Year 0: 1,000,000
+    // Year 1:
+    //   Before Zakat: 1,000,000 * 1.10 = 1,100,000
+    //   Zakat (2.5%): 1,100,000 * 0.025 = 27,500
+    //   After Zakat:  1,100,000 - 27,500 = 1,072,500
+    expect(planOff.timeline[0].nominalPortfolioPkr).toBe(1100000);
+    expect(planOn.timeline[0].nominalPortfolioPkr).toBe(1072500);
+
+    // Year 2:
+    //   Before Zakat: 1,072,500 * 1.10 = 1,179,750
+    //   Zakat (2.5%): 1,179,750 * 0.025 = 29,493.75
+    //   After Zakat:  1,179,750 - 29,493.75 = 1,150,256.25 -> rounded: 1,150,256
+    expect(planOff.timeline[1].nominalPortfolioPkr).toBe(1210000);
+    expect(planOn.timeline[1].nominalPortfolioPkr).toBe(1150256);
+
+    // Year 3:
+    //   Before Zakat: 1,150,256.25 * 1.10 = 1,265,281.875
+    //   Zakat (2.5%): 1,265,281.875 * 0.025 = 31,632.046875
+    //   After Zakat:  1,265,281.875 - 31,632.046875 = 1,233,649.828125 -> rounded: 1,233,650
+    expect(planOff.timeline[2].nominalPortfolioPkr).toBe(1331000);
+    expect(planOn.timeline[2].nominalPortfolioPkr).toBe(1233650);
+
+    // Net dividend retention rate is based on 1 - taxRate only (not reduced by zakat)
+    expect(planOn.taxRatePct).toBe(15);
+  });
+
+  it('FIX-1.4: simulateDipStrategy executes at first 3-day red streak close without hindsight look-ahead bias', () => {
+    // Crafted price history in a single 6-day window:
+    // Day 0: 100
+    // Day 1: 95 (down 1)
+    // Day 2: 90 (down 2)
+    // Day 3: 85 (down 3) <- First close completing >= 3-day down streak! Executable rule MUST buy here @ 85.
+    // Day 4: 70 (down 4) <- Lower price
+    // Day 5: 50 (down 5) <- Lowest price in window (50). Hindsight reduce(min) would have bought here.
+    const mockStock: PsxStock = {
+      ticker: 'TEST',
+      name: 'Test Stock',
+      sector: 'Test',
+      price: 50,
+      dividendYieldPct: 10,
+      payoutMonths: [3, 6, 9, 12],
+      isShariah: true,
+      grade: 'A',
+      gradeReason: 'Test',
+      beginnerSummary: 'Test',
+      history: [
+        { date: '2026-11-01', price: 100 },
+        { date: '2026-11-02', price: 95 },
+        { date: '2026-11-03', price: 90 },
+        { date: '2026-11-04', price: 85 },
+        { date: '2026-11-05', price: 70 },
+        { date: '2026-11-06', price: 50 },
+      ],
+      streak: {
+        currentStreak: -5,
+        longestUpStreak: 0,
+        longestDownStreak: 5,
+        changeToday: -20,
+        changeTodayPct: -28.57,
+        drawdownFromPeakPct: -50,
+        isSipDipZone: true,
+      },
+    };
+
+    // Run 1-month simulation with Rs 85,000 budget
+    const sim = simulateDipStrategy(mockStock, 85000, 1);
+    // DCA buys at day 0 (price: 100) -> 850 shares
+    expect(sim.dcaShares).toBe(850);
+    expect(sim.dcaAvgCost).toBe(100);
+
+    // Executable Dip Strategy buys at Day 3 (price: 85) -> exactly 1000 shares!
+    // If it had look-ahead bias (bought at minimum day 5 @ 50), it would have bought 1700 shares.
+    expect(sim.dipShares).toBe(1000);
+    expect(sim.dipAvgCost).toBe(85);
+
+    // Short history (length 3 < safeMonths 6): reduces windowCount to 3 instead of repeatedly buying last day
+    const shortStock: PsxStock = {
+      ...mockStock,
+      history: [
+        { date: '2026-11-01', price: 100 },
+        { date: '2026-11-02', price: 95 },
+        { date: '2026-11-03', price: 90 },
+      ],
+    };
+    const shortSim = simulateDipStrategy(shortStock, 10000, 6);
+    expect(shortSim.dcaShares).toBeGreaterThan(0);
+    // 3 distinct windows bought 10000/100=100, 10000/95=105, 10000/90=111 -> 316 shares
+    expect(shortSim.dcaShares).toBe(100 + 105 + 111);
+  });
+
+  it('FIX-2.7: evaluates 0% down-payment financing as valid and prorates interest for 84-month tenure', () => {
+    const base = PRESET_PROFILES['solar-commuter'].profile;
+    const testVehicles: VehicleCandidate[] = [
+      {
+        id: 'zero-down-car',
+        name: 'Zero Down 100% Financed Car',
+        fuelType: 'petrol',
+        pricePkr: 3_000_000,
+        kmPerLitre: 14,
+        fiveYearDepreciationPct: 35,
+        annualMaintenancePkr: 50000,
+        emiQuote: {
+          enabled: true,
+          downPaymentPkr: 0, // 100% financing
+          monthlyInstallmentPkr: 70000,
+          tenureMonths: 60,
+        },
+      },
+      {
+        id: 'eighty-four-month-car',
+        name: '84-Month Financed Car',
+        fuelType: 'petrol',
+        pricePkr: 3_000_000,
+        kmPerLitre: 14,
+        fiveYearDepreciationPct: 35,
+        annualMaintenancePkr: 50000,
+        emiQuote: {
+          enabled: true,
+          downPaymentPkr: 600000,
+          monthlyInstallmentPkr: 50000,
+          tenureMonths: 84, // 7-year loan (>60 months)
+        },
+      },
+    ];
+
+    const decision = evaluateCarDecision({ ...base, vehicles: testVehicles });
+    const zeroDown = decision.results.find((r) => r.vehicleId === 'zero-down-car')!;
+    const longTenure = decision.results.find((r) => r.vehicleId === 'eighty-four-month-car')!;
+
+    // 1. Zero down payment quote is COMPLETE, not incomplete
+    expect(zeroDown.isQuoteIncomplete).toBe(false);
+    // Total paid = 0 + 70000 * 60 = 4,200,000 -> interest = 1,200,000
+    expect(zeroDown.fiveYearBankInterestPkr).toBe(1200000);
+    // Opportunity cost on 0 equity tied up is 0
+    expect(zeroDown.fiveYearOpportunityCostPkr).toBe(0);
+
+    // 2. 84-month loan: total interest = 600000 + 50000 * 84 - 3000000 = 1,800,000
+    // Prorated to 60 months: 1,800,000 * (60 / 84) = 1,285,714.28... -> 1285714
+    expect(longTenure.isQuoteIncomplete).toBe(false);
+    expect(longTenure.fiveYearBankInterestPkr).toBe(1285714);
+  });
+
+  it('FIX-3.1: parses booleans strictly and round-trips owner golden fixture field-for-field unchanged', () => {
+    const fallback = PRESET_PROFILES['junior-engineer'].profile;
+
+    // 1. Strict boolean parsing defense
+    const strictClean = sanitizeProfile(
+      {
+        shariahOnly: 'false',
+        includeZakat: 'false',
+        reinvestDividends: 'false',
+        inflationAdjusted: 'false',
+        isBreadwinner: 'false',
+      },
+      fallback
+    );
+    expect(strictClean.shariahOnly).toBe(false);
+    expect(strictClean.includeZakat).toBe(false);
+    expect(strictClean.reinvestDividends).toBe(false);
+    expect(strictClean.inflationAdjusted).toBe(false);
+    expect(strictClean.isBreadwinner).toBe(false);
+
+    // 2. Owner's golden fixture round-trips field-for-field unchanged
+    const fixtureRaw = {
+      age: 29,
+      role: 'freelancer' as const,
+      gender: 'male' as const,
+      solarKw: 11,
+      expenses: {
+        rentOrHousing: 0,
+        familyAndOther: 5000,
+        fuelAndCommute: 8162,
+        groceriesAndFood: 25000,
+        utilitiesAndInternet: 5000,
+      },
+      usdToPkr: 276.5,
+      vehicles: [
+        {
+          id: 'alsvin-petrol',
+          name: 'Changan Alsvin 1.3L Petrol',
+          fuelType: 'petrol' as const,
+          pricePkr: 3800000,
+          kmPerLitre: 14,
+          annualMaintenancePkr: 60000,
+          fiveYearDepreciationPct: 35,
+        },
+        {
+          id: 'honri-ve-2',
+          name: 'Honri Ve 2.0 (200km EV)',
+          fuelType: 'ev' as const,
+          pricePkr: 3999000,
+          kwhPer100Km: 13,
+          annualMaintenancePkr: 25000,
+          fiveYearDepreciationPct: 30,
+        },
+        {
+          id: 'nissan-leaf',
+          name: 'Nissan Leaf 40kWh EV',
+          fuelType: 'ev' as const,
+          pricePkr: 4800000,
+          kwhPer100Km: 15,
+          isCurrentVehicle: true,
+          annualMaintenancePkr: 35000,
+          fiveYearDepreciationPct: 40,
+        },
+        {
+          id: 'yadea-m3',
+          name: 'Yadea M3 E-Scooty',
+          fuelType: 'e-scooty' as const,
+          pricePkr: 250000,
+          kwhPer100Km: 3.5,
+          annualMaintenancePkr: 12000,
+          fiveYearDepreciationPct: 25,
+        },
+        {
+          id: 'veh-1795357128954-709371',
+          name: 'Nora Neo',
+          fuelType: 'ev' as const,
+          pricePkr: 2600000,
+          kwhPer100Km: 2,
+          annualMaintenancePkr: 7000,
+          fiveYearDepreciationPct: 70,
+        },
+      ],
+      lifeGoals: [
+        {
+          id: 'goal-house-custom',
+          name: 'Home Construction / Downpayment',
+          targetAge: 33,
+          costInTodaysPkr: 15000000,
+        },
+        {
+          id: 'goal-debt-2027',
+          name: 'Debt Clearance (installments, due 2027)',
+          targetAge: 30,
+          costInTodaysPkr: 750000,
+        },
+      ],
+      taxStatus: 'filer' as const,
+      lumpSumPkr: 0,
+      shariahOnly: true,
+      assetBuckets: [
+        {
+          id: 'psx-dividends' as const,
+          label: 'PSX Dividend Equities',
+          currentValuePkr: 0,
+          monthlySplitPct: 50,
+          expectedAnnualReturnPct: 14,
+        },
+        {
+          id: 'gold' as const,
+          label: '24K Physical Gold',
+          currentValuePkr: 0,
+          monthlySplitPct: 20,
+          expectedAnnualReturnPct: 12,
+        },
+        {
+          id: 'real-estate' as const,
+          label: 'Real Estate / Land',
+          currentValuePkr: 0,
+          monthlySplitPct: 15,
+          expectedAnnualReturnPct: 13,
+        },
+        {
+          id: 'money-market' as const,
+          label: 'Shariah Money Market',
+          currentValuePkr: 0,
+          monthlySplitPct: 10,
+          expectedAnnualReturnPct: 11,
+        },
+        {
+          id: 'cash' as const,
+          label: 'Emergency Cash',
+          currentValuePkr: 200000,
+          monthlySplitPct: 5,
+          expectedAnnualReturnPct: 8,
+        },
+      ],
+      includeZakat: false,
+      familyMembers: 2,
+      isBreadwinner: true,
+      maritalStatus: 'unmarried' as const,
+      retirementAge: 40,
+      dailyCommuteKm: 25,
+      goldPerTolaPkr: 379836,
+      gridRatePerKwh: 55,
+      solarTariffMode: 'net-metering-legacy' as const,
+      monthlyIncomePkr: 300000,
+      monthlyInvestPkr: 100000,
+      dividendGrowthPct: 10,
+      inflationAdjusted: false,
+      reinvestDividends: true,
+      annualInflationPct: 8,
+      currentVehicleType: 'petrol-bike',
+      petrolPricePerLitre: 322,
+      annualSalaryRaisePct: 12,
+      currentCashReservePkr: -750000,
+      currentVehicleResalePkr: 1000000,
+      opportunityCostReturnPct: 10,
+    };
+
+    const sanitized = sanitizeProfile(fixtureRaw, fallback);
+    expect(sanitized.currentCashReservePkr).toBe(-750000);
+    expect(sanitized.age).toBe(29);
+    expect(sanitized.role).toBe('freelancer');
+    expect(sanitized.assetBuckets).toHaveLength(5);
+    expect(sanitized.assetBuckets[0].monthlySplitPct).toBe(50);
+    expect(sanitized.assetBuckets[0].id).toBe('psx-dividends');
+    expect(sanitized.lifeGoals).toHaveLength(2);
+    expect(sanitized.lifeGoals[0].costInTodaysPkr).toBe(15000000);
+    expect(sanitized.vehicles).toHaveLength(5);
+    expect(sanitized.vehicles[0].pricePkr).toBe(3800000);
+    expect(sanitized.currentVehicleType).toBe('petrol-bike');
+    expect(sanitized.currentVehicleResalePkr).toBe(1000000);
+
+    // Full round-trip via hash encode/decode
+    const hash = encodeProfileToHash(sanitized);
+    const decoded = decodeProfileFromHash(hash, fallback);
+    expect(decoded).toBeDefined();
+    expect(decoded?.currentCashReservePkr).toBe(-750000);
+    expect(decoded?.assetBuckets).toEqual(sanitized.assetBuckets);
+    expect(decoded?.lifeGoals).toEqual(sanitized.lifeGoals);
+    expect(decoded?.vehicles).toEqual(sanitized.vehicles);
+  });
+});

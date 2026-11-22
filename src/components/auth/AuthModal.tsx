@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import {
   User,
@@ -68,6 +68,18 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
   const [renameValue, setRenameValue] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [importModalOpen, setImportModalOpen] = useState(false);
+
+  // Escape key closes modal (when import modal is not active)
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !importModalOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose, importModalOpen]);
 
   const downloadJson = (filename: string, data: unknown) => {
     const jsonStr = JSON.stringify(data, null, 2);
@@ -172,13 +184,18 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin', onOpenOnboa
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-md my-8 rounded-2xl bg-[#0C0C0F] border border-white/10 shadow-2xl shadow-emerald-500/10 flex flex-col overflow-hidden text-zinc-100">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="auth-modal-title"
+        className="relative w-full max-w-md my-8 rounded-2xl bg-[#0C0C0F] border border-white/10 shadow-2xl shadow-emerald-500/10 flex flex-col overflow-hidden text-zinc-100"
+      >
 
         {/* Header */}
         <div className="p-6 border-b border-white/[0.08] bg-gradient-to-r from-emerald-500/10 to-amber-500/10 flex items-center justify-between">
           <div className="space-y-0.5">
             <div className="flex items-center gap-1.5">
-              <span className="font-bold text-lg text-white">Rizq<span className="text-[#E8C15A]">Flow</span> Portfolios</span>
+              <span id="auth-modal-title" className="font-bold text-lg text-white">Rizq<span className="text-[#E8C15A]">Flow</span> Portfolios</span>
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
             </div>
             <p className="text-xs text-zinc-400">

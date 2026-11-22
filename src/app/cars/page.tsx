@@ -66,9 +66,9 @@ const DEFAULT_CARS: VehicleCandidate[] = [
 function CarDecisionContent() {
   const { profile, updateProfile, showToast } = useProfile();
 
-  // If profile vehicles are empty, default to standard fleet
+  // Allow an empty fleet ([]) without resurrecting DEFAULT_CARS
   const activeVehicles = useMemo(() => {
-    if (profile.vehicles && profile.vehicles.length > 0) {
+    if (profile.vehicles !== undefined) {
       return profile.vehicles;
     }
     return DEFAULT_CARS;
@@ -152,7 +152,7 @@ function CarDecisionContent() {
       <DistanceCrossoverChart
         decision={decision}
         vehicles={activeVehicles}
-        currentDailyKm={activeProfile.dailyCommuteKm || 30}
+        currentDailyKm={activeProfile.dailyCommuteKm ?? 30}
       />
 
       {/* 6. Under The Hood Disclosures */}

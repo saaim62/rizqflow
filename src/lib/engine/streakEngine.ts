@@ -157,13 +157,26 @@ export function simulateDipStrategy(
   const sorted = [...history].sort((a, b) => a.date.localeCompare(b.date));
   const n = sorted.length;
   const chunk = monthlyBudgetPkr;
-  const step = Math.max(1, Math.floor(n / safeMonths));
+
+  // FIX-1.4: Precompute consecutive down streaks across history
+  const downStreaks = new Array(n).fill(0);
+  for (let i = 1; i < n; i++) {
+    if (sorted[i].price < sorted[i - 1].price) {
+      downStreaks[i] = downStreaks[i - 1] + 1;
+    } else {
+      downStreaks[i] = 0;
+    }
+  }
+
+  // Handle short histories (history.length < safeMonths) by reducing window count
+  const windowCount = Math.min(safeMonths, n);
+  const step = Math.max(1, Math.floor(n / windowCount));
 
   // 1. Fixed Monthly DCA: buy on fixed schedule
   let dcaShares = 0;
   let dcaTotalInvested = 0;
 
-  for (let m = 0; m < safeMonths; m++) {
+  for (let m = 0; m < windowCount; m++) {
     const idx = Math.min(n - 1, m * step);
     const price = Math.max(0.1, sorted[idx].price);
     const sharesBought = Math.floor(chunk / price);
@@ -173,20 +186,27 @@ export function simulateDipStrategy(
 
   const dcaAvgCost = dcaShares > 0 ? dcaTotalInvested / dcaShares : stock.price;
 
-  // 2. SIP Dip Buying: buy opportunistically in each window at the lowest price or dip zone
+  // 2. SIP Dip Buying: walk each window chronologically and buy at the first
+  // close completing a >= 3-day consecutive down streak (fallback to window's
+  // final close if none occurs). Eliminates hindsight look-ahead bias.
   let dipShares = 0;
   let dipTotalInvested = 0;
 
-  for (let m = 0; m < safeMonths; m++) {
+  for (let m = 0; m < windowCount; m++) {
     const startIdx = m * step;
-    const endIdx = Math.min(n, (m + 1) * step);
-    const windowSlice = sorted.slice(startIdx, endIdx);
+    const endIdx = m === windowCount - 1 ? n : Math.min(n, (m + 1) * step);
 
-    // Find the dip in this window: point with lowest price
-    const dipPoint =
-      windowSlice.length > 0
-        ? windowSlice.reduce((best, curr) => (curr.price < best.price ? curr : best), windowSlice[0])
-        : sorted[Math.min(n - 1, startIdx)];
+    let dipPoint: PricePoint | null = null;
+    for (let i = startIdx; i < endIdx; i++) {
+      if (downStreaks[i] >= 3) {
+        dipPoint = sorted[i];
+        break;
+      }
+    }
+
+    if (!dipPoint) {
+      dipPoint = sorted[Math.max(startIdx, endIdx - 1)];
+    }
 
     const price = Math.max(0.1, dipPoint.price);
     const sharesBought = Math.floor(chunk / price);

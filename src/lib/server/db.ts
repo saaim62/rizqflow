@@ -59,3 +59,11 @@ export function ensureSchema(): Promise<void> {
   }
   return schemaReady;
 }
+
+export function _resetDbSchemaForTesting(): void {
+  schemaReady = null;
+  if (pool) {
+    pool.end().catch(() => {});
+    pool = null;
+  }
+}

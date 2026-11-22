@@ -52,8 +52,13 @@ export function RealCostLeaderboard({ decision }: RealCostLeaderboardProps) {
         </div>
       </div>
 
-      <div className="space-y-3">
-        {results.map((res, index) => {
+      {results.length === 0 ? (
+        <div className="py-8 text-center text-zinc-500 text-xs font-mono">
+          No vehicles to rank. Add contenders in the vehicle fleet to compare true 5-year TCO.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {results.map((res, index) => {
           const isCheapest = index === 0;
           const isExpanded = expandedId === res.vehicleId;
           const isBike = res.fuelType === 'e-scooty';
@@ -189,7 +194,8 @@ export function RealCostLeaderboard({ decision }: RealCostLeaderboardProps) {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

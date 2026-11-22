@@ -7,16 +7,27 @@ import { allowAttempt } from '@/lib/server/rateLimit';
 export async function POST(req: Request) {
   const blocked = guardAccounts();
   if (blocked) return blocked;
+
+  let body: any;
   try {
-    const { name, email, password } = await req.json();
+    body = await req.json();
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Malformed or invalid JSON body.' }, { status: 400 });
+    }
+  } catch {
+    return NextResponse.json({ error: 'Malformed or invalid JSON body.' }, { status: 400 });
+  }
+
+  try {
+    const { name, email, password } = body;
     const cleanName = String(name || '').trim();
     const cleanEmail = String(email || '').trim().toLowerCase();
     const cleanPass = String(password || '');
     if (!cleanName) return NextResponse.json({ error: 'Please enter your name.' }, { status: 400 });
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail))
       return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 });
-    if (cleanPass.length < 6)
-      return NextResponse.json({ error: 'Password must be at least 6 characters.' }, { status: 400 });
+    if (cleanPass.length < 6 || cleanPass.length > 128)
+      return NextResponse.json({ error: 'Password must be between 6 and 128 characters.' }, { status: 400 });
     if (!allowAttempt(clientKey(req, cleanEmail)))
       return NextResponse.json({ error: 'Too many attempts. Please wait a few minutes.' }, { status: 429 });
 

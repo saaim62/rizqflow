@@ -433,21 +433,23 @@ describe('QA Edge Cases: Tax, Zakat & DRIP Dynamics', () => {
   it('validates exact net retention across all 4 Tax/Zakat combinations', () => {
     const base = createBaseProfile({ lumpSumPkr: 1000000 });
 
+    // FIX-1.3: Dividend WHT retention is 1 - taxRate only (15% filer, 30% non-filer).
+    // Zakat is an annual 2.5% portfolio levy, not a dividend WHT at source.
     // 1. Filer, No Zakat: retention = 1 - 0.15 = 0.85
     const filerNoZakat = calculateLifePlan({ ...base, taxStatus: 'filer', includeZakat: false });
-    // 2. Filer, With Zakat: retention = 1 - 0.15 - 0.025 = 0.825
+    // 2. Filer, With Zakat: dividend retention is still 1 - 0.15 = 0.85 (Zakat applies annually to wealth)
     const filerZakat = calculateLifePlan({ ...base, taxStatus: 'filer', includeZakat: true });
     // 3. Non-Filer, No Zakat: retention = 1 - 0.30 = 0.70
     const nonFilerNoZakat = calculateLifePlan({ ...base, taxStatus: 'non-filer', includeZakat: false });
-    // 4. Non-Filer, With Zakat: retention = 1 - 0.30 - 0.025 = 0.675
+    // 4. Non-Filer, With Zakat: dividend retention is still 1 - 0.30 = 0.70
     const nonFilerZakat = calculateLifePlan({ ...base, taxStatus: 'non-filer', includeZakat: true });
 
     const gross = filerNoZakat.initialMonthlyGrossDividendPkr;
 
     expect(filerNoZakat.initialMonthlyNetDividendPkr).toBeCloseTo(gross * 0.85, -1);
-    expect(filerZakat.initialMonthlyNetDividendPkr).toBeCloseTo(gross * 0.825, -1);
+    expect(filerZakat.initialMonthlyNetDividendPkr).toBeCloseTo(gross * 0.85, -1);
     expect(nonFilerNoZakat.initialMonthlyNetDividendPkr).toBeCloseTo(gross * 0.70, -1);
-    expect(nonFilerZakat.initialMonthlyNetDividendPkr).toBeCloseTo(gross * 0.675, -1);
+    expect(nonFilerZakat.initialMonthlyNetDividendPkr).toBeCloseTo(gross * 0.70, -1);
   });
 
   it('DRIP compounding: reinvesting dividends yields substantially higher portfolio than cash withdrawal', () => {
@@ -698,7 +700,7 @@ describe('QA Edge Cases: Car Decision Map 5-Year TCO Boundary Matrix', () => {
 
   it('rejects partial or malformed EMI quotes by setting isQuoteIncomplete flag', () => {
     const testCases: Partial<VehicleCandidate['emiQuote']>[] = [
-      { enabled: true, downPaymentPkr: 0, monthlyInstallmentPkr: 50000, tenureMonths: 36 },
+      { enabled: true, downPaymentPkr: undefined as any, monthlyInstallmentPkr: 50000, tenureMonths: 36 },
       { enabled: true, downPaymentPkr: 500000, monthlyInstallmentPkr: 0, tenureMonths: 36 },
       { enabled: true, downPaymentPkr: 500000, monthlyInstallmentPkr: 50000, tenureMonths: 0 },
       { enabled: true, downPaymentPkr: -100, monthlyInstallmentPkr: 50000, tenureMonths: 36 },

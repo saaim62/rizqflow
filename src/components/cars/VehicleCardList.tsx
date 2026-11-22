@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { VehicleCandidate, BankEmiQuote } from '@/types';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import { AmountWords } from '@/components/ui/AmountWords';
@@ -83,8 +83,438 @@ Take this figure from the bank's lease quote for the same vehicle and the same p
   },
 };
 
+type FuelChoice = VehicleCandidate['fuelType'];
+
+const PRESET_VEHICLES: Record<string, VehicleCandidate> = {
+  'honri-ve-2': {
+    id: 'honri-ve-2',
+    name: 'Honri Ve 2.0 (200km EV)',
+    fuelType: 'ev',
+    pricePkr: 3999000,
+    kwhPer100Km: 13,
+    fiveYearDepreciationPct: 30,
+    annualMaintenancePkr: 25000,
+  },
+  'alsvin-petrol': {
+    id: 'alsvin-petrol',
+    name: 'Changan Alsvin 1.3L Petrol',
+    fuelType: 'petrol',
+    pricePkr: 3800000,
+    kmPerLitre: 14,
+    fiveYearDepreciationPct: 35,
+    annualMaintenancePkr: 60000,
+  },
+  'yadea-m3': {
+    id: 'yadea-m3',
+    name: 'Yadea M3 E-Scooty',
+    fuelType: 'e-scooty',
+    pricePkr: 250000,
+    kwhPer100Km: 3.5,
+    fiveYearDepreciationPct: 25,
+    annualMaintenancePkr: 12000,
+  },
+};
+
+const DEFAULT_FLEET: VehicleCandidate[] = [
+  PRESET_VEHICLES['alsvin-petrol'],
+  PRESET_VEHICLES['honri-ve-2'],
+  {
+    id: 'nissan-leaf',
+    name: 'Nissan Leaf 40kWh EV',
+    fuelType: 'ev',
+    pricePkr: 4800000,
+    kwhPer100Km: 15,
+    fiveYearDepreciationPct: 40,
+    annualMaintenancePkr: 35000,
+  },
+  PRESET_VEHICLES['yadea-m3'],
+  {
+    id: 'cd70-petrol',
+    name: 'Honda CD70 Petrol Bike',
+    fuelType: 'petrol',
+    pricePkr: 160000,
+    kmPerLitre: 50,
+    fiveYearDepreciationPct: 20,
+    annualMaintenancePkr: 15000,
+  },
+];
+
+function VehicleCardItem({
+  vehicle: v,
+  updateVehicle,
+  updateEmiQuote,
+  removeVehicle,
+  changeFuelType,
+  aiFillVehicle,
+  fillingId,
+  aiOn,
+  openEmiId,
+  toggleEmi,
+  formatPkrMasked,
+}: {
+  vehicle: VehicleCandidate;
+  updateVehicle: (id: string, updates: Partial<VehicleCandidate>) => void;
+  updateEmiQuote: (id: string, emiUpdates: Partial<BankEmiQuote>) => void;
+  removeVehicle: (id: string) => void;
+  changeFuelType: (id: string, fuelType: FuelChoice) => void;
+  aiFillVehicle: (v: VehicleCandidate) => void;
+  fillingId: string | null;
+  aiOn: boolean;
+  openEmiId: string | null;
+  toggleEmi: (id: string) => void;
+  formatPkrMasked: (n: number) => string;
+}) {
+  const isBike = v.fuelType === 'e-scooty';
+  const isEv = v.fuelType === 'ev';
+  const isEmiOpen = openEmiId === v.id;
+  const hasEmi = Boolean(v.emiQuote && v.emiQuote.enabled);
+  const isQuoteIncomplete =
+    hasEmi &&
+    (v.emiQuote?.downPaymentPkr === undefined ||
+      v.emiQuote.downPaymentPkr === null ||
+      v.emiQuote.downPaymentPkr < 0 ||
+      !v.emiQuote?.monthlyInstallmentPkr ||
+      v.emiQuote.monthlyInstallmentPkr <= 0 ||
+      !v.emiQuote?.tenureMonths ||
+      v.emiQuote.tenureMonths <= 0);
+
+  const initialEff = v.fuelType === 'petrol'
+    ? (v.kmPerLitre !== undefined ? String(v.kmPerLitre) : '14')
+    : (v.kwhPer100Km !== undefined ? String(v.kwhPer100Km) : (isBike ? '3.5' : '14'));
+
+  const [rawEfficiency, setRawEfficiency] = useState<string>(initialEff);
+
+  useEffect(() => {
+    const cur = v.fuelType === 'petrol'
+      ? (v.kmPerLitre !== undefined ? String(v.kmPerLitre) : '14')
+      : (v.kwhPer100Km !== undefined ? String(v.kwhPer100Km) : (isBike ? '3.5' : '14'));
+    setRawEfficiency(cur);
+  }, [v.kmPerLitre, v.kwhPer100Km, v.fuelType, isBike]);
+
+  return (
+    <div
+      key={v.id}
+      className={`rounded-xl bg-[#0C0C0F] border p-4 flex flex-col justify-between space-y-4 transition-all ${
+        v.isCurrentVehicle
+          ? 'border-amber-400/50 ring-1 ring-amber-400/30'
+          : 'border-white/[0.08] hover:border-white/15'
+      }`}
+    >
+      <div className="space-y-3">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div
+              className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                isEv
+                  ? 'bg-emerald-500/15 text-emerald-400'
+                  : isBike
+                  ? 'bg-amber-500/15 text-amber-400'
+                  : 'bg-blue-500/15 text-blue-400'
+              }`}
+            >
+              {isBike ? <Bike className="w-4 h-4" /> : isEv ? <Zap className="w-4 h-4" /> : <Car className="w-4 h-4" />}
+            </div>
+            <div>
+              <h4 className="font-bold text-sm text-white">{v.name}</h4>
+              <select
+                value={v.fuelType}
+                onChange={(e) => changeFuelType(v.id, e.target.value as FuelChoice)}
+                className="bg-transparent text-[10px] text-zinc-400 font-mono uppercase focus:outline-none cursor-pointer"
+                title="Change vehicle type"
+              >
+                <option value="petrol" className="bg-zinc-900">Petrol</option>
+                <option value="ev" className="bg-zinc-900">Electric (EV)</option>
+                <option value="e-scooty" className="bg-zinc-900">E-Scooty</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1">
+            {aiOn && (
+              <button
+                onClick={() => aiFillVehicle(v)}
+                disabled={fillingId === v.id}
+                className="flex items-center gap-1 px-1.5 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/25 text-[9px] font-bold transition-all disabled:opacity-60"
+                title="AI Fill: predict depreciation, maintenance and efficiency for this vehicle"
+              >
+                {fillingId === v.id ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3 h-3" />
+                )}
+                <span>AI Fill</span>
+              </button>
+            )}
+            <button
+              onClick={() => removeVehicle(v.id)}
+              className="p-1 rounded text-zinc-500 hover:text-rose-400 transition-colors"
+              title="Remove vehicle"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Ownership */}
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={!!v.isCurrentVehicle}
+            onChange={(e) => updateVehicle(v.id, { isCurrentVehicle: e.target.checked })}
+            className="accent-amber-400 w-3.5 h-3.5"
+          />
+          <span className={`text-[11px] font-semibold ${v.isCurrentVehicle ? 'text-amber-300' : 'text-zinc-400'}`}>
+            I own this vehicle
+          </span>
+        </label>
+
+        {/* Form Fields Grid */}
+        <div className="space-y-2.5 pt-1">
+          <div>
+            <label className="text-[10px] text-zinc-400 block mb-1">Vehicle Name</label>
+            <input
+              type="text"
+              value={v.name}
+              onChange={(e) => updateVehicle(v.id, { name: e.target.value })}
+              className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 text-white text-xs font-semibold"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[10px] text-zinc-400">Price (PKR)</label>
+                <AiButton
+                  type="car-price"
+                  context={{ name: v.name, fuelType: v.fuelType }}
+                  currentValue={v.pricePkr}
+                  onAccept={(val) => updateVehicle(v.id, { pricePkr: val })}
+                  formatValue={(x) => formatCompactPkr(x)}
+                />
+              </div>
+              <input
+                type="number"
+                step={50000}
+                value={v.pricePkr}
+                onChange={(e) => updateVehicle(v.id, { pricePkr: Number(e.target.value) })}
+                className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
+              />
+              <AmountWords value={v.pricePkr} />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[10px] text-zinc-400 flex items-center gap-1">
+                  <span>{v.fuelType === 'petrol' ? 'Mileage (km/L)' : 'Eff. (kWh/100km)'}</span>
+                  <FieldInfo {...(v.fuelType === 'petrol' ? INFO.effPetrol : INFO.effEv)} />
+                </label>
+                <AiButton
+                  type="car-efficiency"
+                  context={{ name: v.name, fuelType: v.fuelType }}
+                  currentValue={v.fuelType === 'petrol' ? v.kmPerLitre : v.kwhPer100Km}
+                  onAccept={(val) =>
+                    updateVehicle(
+                      v.id,
+                      v.fuelType === 'petrol' ? { kmPerLitre: val } : { kwhPer100Km: val }
+                    )
+                  }
+                  formatValue={(x) =>
+                    v.fuelType === 'petrol' ? `${x} km/L` : `${x} kWh/100km`
+                  }
+                />
+              </div>
+              {v.fuelType === 'petrol' ? (
+                <input
+                  type="number"
+                  step={0.5}
+                  value={rawEfficiency}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setRawEfficiency(val);
+                    if (val !== '') {
+                      updateVehicle(v.id, { kmPerLitre: Number(val) });
+                    }
+                  }}
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
+                />
+              ) : (
+                <input
+                  type="number"
+                  step={0.5}
+                  value={rawEfficiency}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setRawEfficiency(val);
+                    if (val !== '') {
+                      updateVehicle(v.id, { kwhPer100Km: Number(val) });
+                    }
+                  }}
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
+                />
+              )}
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[10px] text-zinc-400 flex items-center gap-1">5-Yr Deprec. (%) <FieldInfo {...INFO.depreciation} /></label>
+                <AiButton
+                  type="car-depreciation"
+                  context={{ name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }}
+                  currentValue={v.fiveYearDepreciationPct}
+                  onAccept={(val) => updateVehicle(v.id, { fiveYearDepreciationPct: val })}
+                  formatValue={(x) => `${x}%`}
+                />
+              </div>
+              <input
+                type="number"
+                min={0}
+                max={90}
+                value={v.fiveYearDepreciationPct}
+                onChange={(e) =>
+                  updateVehicle(v.id, { fiveYearDepreciationPct: Number(e.target.value) })
+                }
+                className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[10px] text-zinc-400 flex items-center gap-1">Maintenance (PKR/yr) <FieldInfo {...INFO.maintenance} /></label>
+                <AiButton
+                  type="car-maintenance"
+                  context={{ name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }}
+                  currentValue={v.annualMaintenancePkr}
+                  onAccept={(val) => updateVehicle(v.id, { annualMaintenancePkr: val })}
+                  formatValue={(x) => formatCompactPkr(x)}
+                />
+              </div>
+              <input
+                type="number"
+                step={5000}
+                value={v.annualMaintenancePkr}
+                onChange={(e) =>
+                  updateVehicle(v.id, { annualMaintenancePkr: Number(e.target.value) })
+                }
+                className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
+              />
+              <AmountWords value={v.annualMaintenancePkr} />
+            </div>
+          </div>
+        </div>
+
+        {/* Bank Financing (EMI Accordion) */}
+        <div className="pt-2 border-t border-white/5">
+          <button
+            onClick={() => toggleEmi(v.id)}
+            className="w-full flex items-center justify-between p-2 rounded-lg bg-black/[0.04] hover:bg-black/[0.08] text-xs font-semibold text-zinc-300 transition-colors"
+          >
+            <div className="flex items-center gap-1.5">
+              <Landmark className="w-3.5 h-3.5 text-amber-400" />
+              <span>Bank Lease / Financing (EMI)</span>
+              {hasEmi && (
+                <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold">
+                  ACTIVE
+                </span>
+              )}
+            </div>
+            {isEmiOpen ? (
+              <ChevronUp className="w-3.5 h-3.5 text-zinc-400" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
+            )}
+          </button>
+
+          {isEmiOpen && (
+            <div className="mt-2 p-3 rounded-lg bg-black/[0.06] border border-white/5 space-y-3 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-zinc-300 font-medium">Financed via Bank Lease?</span>
+                <input
+                  type="checkbox"
+                  checked={Boolean(v.emiQuote?.enabled)}
+                  onChange={(e) => updateEmiQuote(v.id, { enabled: e.target.checked })}
+                  className="accent-amber-400 w-4 h-4 cursor-pointer"
+                />
+              </div>
+
+              {v.emiQuote?.enabled && (
+                <div className="space-y-2 pt-1 border-t border-white/5">
+                  {isQuoteIncomplete && (
+                    <div className="p-2 rounded bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-300 flex items-start gap-1">
+                      <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" />
+                      <span>Quote incomplete: Down payment or monthly installment missing.</span>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="text-[10px] text-zinc-400 flex items-center gap-1 mb-0.5">
+                      Down Payment (PKR) <FieldInfo {...INFO.emiDown} />
+                    </label>
+                    <input
+                      type="number"
+                      step={50000}
+                      placeholder="e.g. 500000"
+                      value={v.emiQuote?.downPaymentPkr ?? ''}
+                      onChange={(e) =>
+                        updateEmiQuote(v.id, {
+                          downPaymentPkr: e.target.value === '' ? 0 : Number(e.target.value),
+                        })
+                      }
+                      className="w-full px-2 py-1 rounded bg-black border border-white/10 font-mono text-white text-xs"
+                    />
+                    <AmountWords value={v.emiQuote?.downPaymentPkr ?? 0} />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-zinc-400 flex items-center gap-1 mb-0.5">
+                        Monthly Installment <FieldInfo {...INFO.emiInstallment} />
+                      </label>
+                      <input
+                        type="number"
+                        step={5000}
+                        placeholder="e.g. 45000"
+                        value={v.emiQuote?.monthlyInstallmentPkr ?? ''}
+                        onChange={(e) =>
+                          updateEmiQuote(v.id, {
+                            monthlyInstallmentPkr: e.target.value === '' ? 0 : Number(e.target.value),
+                          })
+                        }
+                        className="w-full px-2 py-1 rounded bg-black border border-white/10 font-mono text-white text-xs"
+                      />
+                      <AmountWords value={v.emiQuote?.monthlyInstallmentPkr ?? 0} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-zinc-400 block mb-0.5">
+                        Tenure (Months)
+                      </label>
+                      <select
+                        value={v.emiQuote?.tenureMonths ?? 36}
+                        onChange={(e) =>
+                          updateEmiQuote(v.id, { tenureMonths: Number(e.target.value) })
+                        }
+                        className="w-full px-2 py-1 rounded bg-black border border-white/10 text-white text-xs"
+                      >
+                        <option value={12}>12 Mos (1 Yr)</option>
+                        <option value={24}>24 Mos (2 Yrs)</option>
+                        <option value={36}>36 Mos (3 Yrs)</option>
+                        <option value={48}>48 Mos (4 Yrs)</option>
+                        <option value={60}>60 Mos (5 Yrs)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
-  const { formatPkrMasked } = useProfile();
+  const { formatPkrMasked, showToast } = useProfile();
   const [openEmiId, setOpenEmiId] = useState<string | null>(null);
 
   const toggleEmi = (id: string) => {
@@ -99,7 +529,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
   const updateEmiQuote = (id: string, emiUpdates: Partial<BankEmiQuote>) => {
     const updated = vehicles.map((v) => {
       if (v.id !== id) return v;
-      const currentQuote: BankEmiQuote = v.emiQuote || {
+      const currentQuote: BankEmiQuote = v.emiQuote ?? {
         enabled: false,
         downPaymentPkr: 0,
         monthlyInstallmentPkr: 0,
@@ -126,20 +556,25 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
 
   const aiFillVehicle = async (v: VehicleCandidate) => {
     setFillingId(v.id);
-    const [dep, maint, eff] = await Promise.all([
-      predict('car-depreciation', { name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }),
-      predict('car-maintenance', { name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }),
-      predict('car-efficiency', { name: v.name, fuelType: v.fuelType }),
-    ]);
-    const updates: Partial<VehicleCandidate> = {};
-    if (dep) updates.fiveYearDepreciationPct = dep.value;
-    if (maint) updates.annualMaintenancePkr = maint.value;
-    if (eff) {
-      if (v.fuelType === 'petrol') updates.kmPerLitre = eff.value;
-      else updates.kwhPer100Km = eff.value;
+    try {
+      const [dep, maint, eff] = await Promise.all([
+        predict('car-depreciation', { name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }),
+        predict('car-maintenance', { name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }),
+        predict('car-efficiency', { name: v.name, fuelType: v.fuelType }),
+      ]);
+      const updates: Partial<VehicleCandidate> = {};
+      if (dep) updates.fiveYearDepreciationPct = dep.value;
+      if (maint) updates.annualMaintenancePkr = maint.value;
+      if (eff) {
+        if (v.fuelType === 'petrol') updates.kmPerLitre = eff.value;
+        else updates.kwhPer100Km = eff.value;
+      }
+      if (Object.keys(updates).length > 0) updateVehicle(v.id, updates);
+    } catch (err) {
+      showToast('Could not complete AI autofill for vehicle');
+    } finally {
+      setFillingId(null);
     }
-    if (Object.keys(updates).length > 0) updateVehicle(v.id, updates);
-    setFillingId(null);
   };
 
   // ---- Add vehicle (NOTES #24) ----
@@ -357,323 +792,64 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {vehicles.map((v) => {
-          const isBike = v.fuelType === 'e-scooty';
-          const isEv = v.fuelType === 'ev';
-          const isEmiOpen = openEmiId === v.id;
-          const hasEmi = v.emiQuote && v.emiQuote.enabled;
-          const isQuoteIncomplete =
-            hasEmi &&
-            (!v.emiQuote?.downPaymentPkr ||
-              !v.emiQuote?.monthlyInstallmentPkr ||
-              !v.emiQuote?.tenureMonths ||
-              v.emiQuote.downPaymentPkr <= 0 ||
-              v.emiQuote.monthlyInstallmentPkr <= 0);
-
-          return (
-            <div
-              key={v.id}
-              className={`rounded-xl bg-[#0C0C0F] border p-4 flex flex-col justify-between space-y-4 transition-all ${
-                v.isCurrentVehicle
-                  ? 'border-amber-400/50 ring-1 ring-amber-400/30'
-                  : 'border-white/[0.08] hover:border-white/15'
-              }`}
+      {vehicles.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-white/10 p-8 text-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto text-zinc-400">
+            <Car className="w-6 h-6" />
+          </div>
+          <div>
+            <h4 className="text-white font-bold text-sm">No vehicles yet — add your first</h4>
+            <p className="text-zinc-500 text-xs mt-1 max-w-sm mx-auto">
+              Compare petrol, electric, and e-scooties with full TCO, fuel savings, and bank EMI modeling.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+            <button
+              onClick={() => setShowAdd(true)}
+              className="px-3 py-1.5 rounded-lg bg-amber-400 text-black font-semibold text-xs hover:bg-amber-300 transition-colors"
             >
-              <div className="space-y-3">
-                {/* Header */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                        isEv
-                          ? 'bg-emerald-500/15 text-emerald-400'
-                          : isBike
-                          ? 'bg-amber-500/15 text-amber-400'
-                          : 'bg-blue-500/15 text-blue-400'
-                      }`}
-                    >
-                      {isBike ? <Bike className="w-4 h-4" /> : isEv ? <Zap className="w-4 h-4" /> : <Car className="w-4 h-4" />}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-sm text-white">{v.name}</h4>
-                      <select
-                        value={v.fuelType}
-                        onChange={(e) => changeFuelType(v.id, e.target.value as FuelChoice)}
-                        className="bg-transparent text-[10px] text-zinc-400 font-mono uppercase focus:outline-none cursor-pointer"
-                        title="Change vehicle type"
-                      >
-                        <option value="petrol" className="bg-zinc-900">Petrol</option>
-                        <option value="ev" className="bg-zinc-900">Electric (EV)</option>
-                        <option value="e-scooty" className="bg-zinc-900">E-Scooty</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    {aiOn && (
-                      <button
-                        onClick={() => aiFillVehicle(v)}
-                        disabled={fillingId === v.id}
-                        className="flex items-center gap-1 px-1.5 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/25 text-[9px] font-bold transition-all disabled:opacity-60"
-                        title="AI Fill: predict depreciation, maintenance and efficiency for this vehicle"
-                      >
-                        {fillingId === v.id ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <Sparkles className="w-3 h-3" />
-                        )}
-                        <span>AI Fill</span>
-                      </button>
-                    )}
-                    <button
-                      onClick={() => removeVehicle(v.id)}
-                      className="p-1 rounded text-zinc-500 hover:text-rose-400 transition-colors"
-                      title="Remove vehicle"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Ownership (NOTES #33): independent checkbox per card —
-                    more than one vehicle can be yours. */}
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={!!v.isCurrentVehicle}
-                    onChange={(e) => updateVehicle(v.id, { isCurrentVehicle: e.target.checked })}
-                    className="accent-amber-400 w-3.5 h-3.5"
-                  />
-                  <span className={`text-[11px] font-semibold ${v.isCurrentVehicle ? 'text-amber-300' : 'text-zinc-400'}`}>
-                    I own this vehicle
-                  </span>
-                  {v.isCurrentVehicle && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono font-bold">
-                      YOUR VEHICLE
-                    </span>
-                  )}
-                </label>
-
-                {/* Price and Efficiency Inputs */}
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-[10px] text-zinc-400 flex items-center gap-1">Price / Resale (PKR) <FieldInfo {...INFO.price} /></label>
-                      <AiButton
-                        type="car-price"
-                        context={{ name: v.name, fuelType: v.fuelType }}
-                        currentValue={v.pricePkr}
-                        onAccept={(val) => updateVehicle(v.id, { pricePkr: val })}
-                        formatValue={(x) => formatCompactPkr(x)}
-                      />
-                    </div>
-                    <input
-                      type="number"
-                      step={50000}
-                      value={v.pricePkr}
-                      onChange={(e) => updateVehicle(v.id, { pricePkr: Number(e.target.value) })}
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
-                    />
-                    <AmountWords value={v.pricePkr} />
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-[10px] text-zinc-400 flex items-center gap-1">
-                        {v.fuelType === 'petrol' ? 'Mileage (km/L)' : 'kWh / 100km'}
-                        <FieldInfo {...(v.fuelType === 'petrol' ? INFO.effPetrol : INFO.effEv)} />
-                      </label>
-                      <AiButton
-                        type="car-efficiency"
-                        context={{ name: v.name, fuelType: v.fuelType }}
-                        currentValue={v.fuelType === 'petrol' ? v.kmPerLitre : v.kwhPer100Km}
-                        onAccept={(val) =>
-                          updateVehicle(
-                            v.id,
-                            v.fuelType === 'petrol' ? { kmPerLitre: val } : { kwhPer100Km: val }
-                          )
-                        }
-                        formatValue={(x) =>
-                          v.fuelType === 'petrol' ? `${x} km/L` : `${x} kWh/100km`
-                        }
-                      />
-                    </div>
-                    {v.fuelType === 'petrol' ? (
-                      <input
-                        type="number"
-                        step={0.5}
-                        value={v.kmPerLitre || 14}
-                        onChange={(e) =>
-                          updateVehicle(v.id, { kmPerLitre: Number(e.target.value) })
-                        }
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
-                      />
-                    ) : (
-                      <input
-                        type="number"
-                        step={0.5}
-                        value={v.kwhPer100Km || (isBike ? 3.5 : 14)}
-                        onChange={(e) =>
-                          updateVehicle(v.id, { kwhPer100Km: Number(e.target.value) })
-                        }
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
-                      />
-                    )}
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-[10px] text-zinc-400 flex items-center gap-1">5-Yr Deprec. (%) <FieldInfo {...INFO.depreciation} /></label>
-                      <AiButton
-                        type="car-depreciation"
-                        context={{ name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }}
-                        currentValue={v.fiveYearDepreciationPct}
-                        onAccept={(val) => updateVehicle(v.id, { fiveYearDepreciationPct: val })}
-                        formatValue={(x) => `${x}%`}
-                      />
-                    </div>
-                    <input
-                      type="number"
-                      step={5}
-                      min={0}
-                      max={100}
-                      value={v.fiveYearDepreciationPct}
-                      onChange={(e) =>
-                        updateVehicle(v.id, { fiveYearDepreciationPct: Number(e.target.value) })
-                      }
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-[10px] text-zinc-400 flex items-center gap-1">Maint / Year (PKR) <FieldInfo {...INFO.maintenance} /></label>
-                      <AiButton
-                        type="car-maintenance"
-                        context={{ name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }}
-                        currentValue={v.annualMaintenancePkr}
-                        onAccept={(val) => updateVehicle(v.id, { annualMaintenancePkr: val })}
-                        formatValue={(x) => formatCompactPkr(x)}
-                      />
-                    </div>
-                    <input
-                      type="number"
-                      step={5000}
-                      value={v.annualMaintenancePkr}
-                      onChange={(e) =>
-                        updateVehicle(v.id, { annualMaintenancePkr: Number(e.target.value) })
-                      }
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-[#0C0C0F] border border-white/10 font-mono text-white text-xs"
-                    />
-                    <AmountWords value={v.annualMaintenancePkr} />
-                  </div>
-                </div>
-
-                {/* Bank EMI Financing Quote Accordion */}
-                <div className="pt-2 border-t border-white/5">
-                  <button
-                    onClick={() => toggleEmi(v.id)}
-                    className="w-full flex items-center justify-between text-xs text-zinc-400 hover:text-white py-1"
-                  >
-                    <span className="flex items-center gap-1.5 font-semibold text-[11px]">
-                      <Landmark className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Bank Financing / EMI Quote</span>
-                      {hasEmi && (
-                        <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[9px] font-mono">
-                          Active
-                        </span>
-                      )}
-                    </span>
-                    {isEmiOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                  </button>
-
-                  {isEmiOpen && (
-                    <div className="mt-2 p-3 rounded-lg bg-black/[0.05] border border-white/10 space-y-2 text-xs">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[10px] text-zinc-300">Enable Bank EMI Quote</label>
-                        <input
-                          type="checkbox"
-                          checked={v.emiQuote?.enabled || false}
-                          onChange={(e) => updateEmiQuote(v.id, { enabled: e.target.checked })}
-                          className="accent-emerald-400 rounded"
-                        />
-                      </div>
-
-                      {v.emiQuote?.enabled && (
-                        <div className="space-y-2 pt-1 border-t border-white/5">
-                          {isQuoteIncomplete && (
-                            <div className="p-2 rounded bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-300 flex items-start gap-1">
-                              <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" />
-                              <span>Quote incomplete: Down payment or monthly installment missing.</span>
-                            </div>
-                          )}
-
-                          <div>
-                            <label className="text-[10px] text-zinc-400 flex items-center gap-1 mb-0.5">
-                              Down Payment (PKR) <FieldInfo {...INFO.emiDown} />
-                            </label>
-                            <input
-                              type="number"
-                              step={50000}
-                              placeholder="e.g. 500000"
-                              value={v.emiQuote?.downPaymentPkr || ''}
-                              onChange={(e) =>
-                                updateEmiQuote(v.id, { downPaymentPkr: Number(e.target.value) })
-                              }
-                              className="w-full px-2 py-1 rounded bg-black border border-white/10 font-mono text-white text-xs"
-                            />
-                            <AmountWords value={v.emiQuote?.downPaymentPkr || 0} />
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <label className="text-[10px] text-zinc-400 flex items-center gap-1 mb-0.5">
-                                Monthly Installment <FieldInfo {...INFO.emiInstallment} />
-                              </label>
-                              <input
-                                type="number"
-                                step={5000}
-                                placeholder="e.g. 45000"
-                                value={v.emiQuote?.monthlyInstallmentPkr || ''}
-                                onChange={(e) =>
-                                  updateEmiQuote(v.id, {
-                                    monthlyInstallmentPkr: Number(e.target.value),
-                                  })
-                                }
-                                className="w-full px-2 py-1 rounded bg-black border border-white/10 font-mono text-white text-xs"
-                              />
-                              <AmountWords value={v.emiQuote?.monthlyInstallmentPkr || 0} />
-                            </div>
-                            <div>
-                              <label className="text-[10px] text-zinc-400 block mb-0.5">
-                                Tenure (Months)
-                              </label>
-                              <select
-                                value={v.emiQuote?.tenureMonths || 36}
-                                onChange={(e) =>
-                                  updateEmiQuote(v.id, { tenureMonths: Number(e.target.value) })
-                                }
-                                className="w-full px-2 py-1 rounded bg-black border border-white/10 text-white text-xs"
-                              >
-                                <option value={12}>12 Mos (1 Yr)</option>
-                                <option value={24}>24 Mos (2 Yrs)</option>
-                                <option value={36}>36 Mos (3 Yrs)</option>
-                                <option value={48}>48 Mos (4 Yrs)</option>
-                                <option value={60}>60 Mos (5 Yrs)</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+              + Add Custom Vehicle
+            </button>
+            <button
+              onClick={() => onChange([PRESET_VEHICLES['yadea-m3']])}
+              className="px-3 py-1.5 rounded-lg bg-white/[0.05] border border-white/10 text-white font-medium text-xs hover:bg-white/10 transition-colors"
+            >
+              + Add E-Scooty
+            </button>
+            <button
+              onClick={() => onChange([PRESET_VEHICLES['byd-atto3']])}
+              className="px-3 py-1.5 rounded-lg bg-white/[0.05] border border-white/10 text-white font-medium text-xs hover:bg-white/10 transition-colors"
+            >
+              + Add EV
+            </button>
+            <button
+              onClick={() => onChange(DEFAULT_FLEET)}
+              className="px-3 py-1.5 rounded-lg bg-white/[0.05] border border-white/10 text-zinc-400 font-medium text-xs hover:bg-white/10 transition-colors"
+            >
+              Reset Default Fleet
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {vehicles.map((v) => (
+            <VehicleCardItem
+              key={v.id}
+              vehicle={v}
+              updateVehicle={updateVehicle}
+              updateEmiQuote={updateEmiQuote}
+              removeVehicle={removeVehicle}
+              changeFuelType={changeFuelType}
+              aiFillVehicle={aiFillVehicle}
+              fillingId={fillingId}
+              aiOn={aiOn}
+              openEmiId={openEmiId}
+              toggleEmi={toggleEmi}
+              formatPkrMasked={formatPkrMasked}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

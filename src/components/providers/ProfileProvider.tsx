@@ -15,6 +15,7 @@ import { api, ApiUser } from '@/lib/api';
 import { migrateStaleSeedValues } from '@/lib/marketRates';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { OnboardingWizardModal } from '@/components/onboarding/OnboardingWizardModal';
+import { AiAssistProvider } from '@/components/providers/AiAssistProvider';
 
 export interface AuthActionResult {
   success: boolean;
@@ -37,6 +38,7 @@ interface ProfileContextType {
   sharePlan: () => Promise<string>;
   formatPkrMasked: (n: number, options?: FormatPkrOptions) => string;
   formatCompactPkrMasked: (n: number) => string;
+  hasLoaded: boolean;
 
   // Server-backed accounts (same data on every device)
   currentUser: ApiUser | null;
@@ -84,6 +86,10 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   // hydrating or switching portfolios never echoes back as a save.
   const lastSyncedRef = useRef<string>('');
 
+  // Pending debounced save ref (FIX-2.1) to preserve edits across fast switches & beforeunload
+  const pendingSaveRef = useRef<{ portfolioId: string; profile: UserProfile } | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   // Modals state
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup' | 'portfolios'>('signin');
@@ -95,6 +101,58 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => {
       setToast(null);
     }, 3500);
+  }, []);
+
+  const flushPendingSync = useCallback(async (): Promise<void> => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    const pending = pendingSaveRef.current;
+    if (!pending) return;
+    pendingSaveRef.current = null;
+
+    try {
+      const res = await api.updatePortfolio(pending.portfolioId, { profile: pending.profile });
+      lastSyncedRef.current = JSON.stringify(res.portfolio.profile);
+      setUserPortfolios((prev) => prev.map((p) => (p.id === res.portfolio.id ? res.portfolio : p)));
+    } catch {
+      showToast('Could not sync your portfolio to the server — it will retry on the next change.');
+    }
+  }, [showToast]);
+
+  // Flush on page unload (FIX-2.1)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (pendingSaveRef.current) {
+        const pending = pendingSaveRef.current;
+        pendingSaveRef.current = null;
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+          debounceTimerRef.current = null;
+        }
+        try {
+          void api.updatePortfolio(pending.portfolioId, { profile: pending.profile }).catch(() => {});
+        } catch {}
+        try {
+          if (typeof fetch !== 'undefined') {
+            fetch(`/api/portfolios/${pending.portfolioId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ profile: pending.profile }),
+              keepalive: true,
+            }).catch(() => {});
+          }
+        } catch {}
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      return () => {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+      };
+    }
   }, []);
 
   const applyServerState = useCallback((user: ApiUser, portfolios: PortfolioRecord[]) => {
@@ -147,7 +205,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     [showToast]
   );
 
-  // Hydrate: privacy/theme, then server session, then anonymous fallbacks
+  // Hydrate: privacy/theme, then fast local profile to prevent hydration flash (BUG-AUTH-01), then server session
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -166,6 +224,16 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
+    // Fast initial load from localStorage / URL hash to eliminate signed-out hydration flash (BUG-AUTH-01)
+    const initialHash = window.location.hash;
+    const initialHashProfile = decodeProfileFromHash(initialHash, defaultProfile);
+    if (initialHashProfile) {
+      setProfileState(migrateStaleSeedValues(initialHashProfile));
+    } else {
+      const stored = loadProfileFromStorage(defaultProfile);
+      setProfileState(migrateStaleSeedValues(stored));
+    }
+
     (async () => {
       let signedIn = false;
       try {
@@ -178,18 +246,24 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         applyServerState(user, finalPortfolios);
         signedIn = true;
       } catch {
-        signedIn = false; // no server session — anonymous mode below
+        signedIn = false; // no server session — anonymous mode
       }
 
-      if (!signedIn) {
-        const hash = window.location.hash;
-        const decodedFromHash = decodeProfileFromHash(hash, defaultProfile);
+      if (signedIn) {
+        // FIX-2.2: Decode window.location.hash shared plans for signed-in users too—
+        // load as current view without overwriting saved portfolios, toast
+        // "Loaded shared plan — it isn't saved to your account", and only persist if edited/explicitly saved.
+        const currentHash = window.location.hash;
+        const decodedFromHash = decodeProfileFromHash(currentHash, defaultProfile);
         if (decodedFromHash) {
-          setProfileState(migrateStaleSeedValues(decodedFromHash));
+          const healed = migrateStaleSeedValues(decodedFromHash);
+          lastSyncedRef.current = JSON.stringify(healed);
+          setProfileState(healed);
+          showToast("Loaded shared plan — it isn't saved to your account");
+        }
+      } else {
+        if (initialHashProfile) {
           showToast('Loaded shared plan from URL!');
-        } else {
-          const stored = loadProfileFromStorage(defaultProfile);
-          setProfileState(migrateStaleSeedValues(stored));
         }
       }
 
@@ -198,27 +272,32 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Persist: anonymous mirror locally; signed-in profile syncs to the server
+  // Persist: anonymous mirror locally; signed-in profile syncs to the server with debouncing (FIX-2.1)
   useEffect(() => {
     if (!hasLoaded) return;
     saveProfileToStorage(profile);
     if (!currentUser || !activePortfolioId) return;
     const json = JSON.stringify(profile);
     if (json === lastSyncedRef.current) return;
-    const targetId = activePortfolioId;
-    const timer = setTimeout(() => {
-      api
-        .updatePortfolio(targetId, { profile })
-        .then((res) => {
-          lastSyncedRef.current = JSON.stringify(res.portfolio.profile);
-          setUserPortfolios((prev) => prev.map((p) => (p.id === res.portfolio.id ? res.portfolio : p)));
-        })
-        .catch(() => {
-          showToast('Could not sync your portfolio to the server — it will retry on the next change.');
-        });
+
+    pendingSaveRef.current = { portfolioId: activePortfolioId, profile };
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      debounceTimerRef.current = null;
+      void flushPendingSync();
     }, 900);
-    return () => clearTimeout(timer);
-  }, [profile, hasLoaded, currentUser, activePortfolioId, showToast]);
+
+    return () => {
+      // Clear timeout but keep pendingSaveRef intact so switchActivePortfolio can flush it immediately
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+    };
+  }, [profile, hasLoaded, currentUser, activePortfolioId, flushPendingSync]);
 
   const updateProfile = useCallback((updated: Partial<UserProfile>) => {
     setProfileState((prev) => ({
@@ -379,8 +458,13 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
   const switchActivePortfolio = useCallback(
     async (portfolioId: string) => {
+      if (portfolioId === activePortfolioId) return;
       const target = userPortfolios.find((p) => p.id === portfolioId);
       if (!target || !currentUser) return;
+
+      // FIX-2.1: Flush immediately with the outgoing portfolio ID before any portfolio switch
+      await flushPendingSync();
+
       try {
         await api.setActive(portfolioId);
       } catch {
@@ -388,31 +472,46 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       setActivePortfolioId(portfolioId);
-      setCurrentUser({ ...currentUser, activePortfolioId: portfolioId });
+      setCurrentUser((prev) => (prev ? { ...prev, activePortfolioId: portfolioId } : null));
       const healed = migrateStaleSeedValues(target.profile);
       lastSyncedRef.current = JSON.stringify(healed);
       setProfileState(healed);
     },
-    [currentUser, userPortfolios, showToast]
+    [activePortfolioId, currentUser, userPortfolios, flushPendingSync, showToast]
   );
 
   const createNewPortfolio = useCallback(
     async (name: string, baseProfile?: UserProfile): Promise<{ success: boolean; portfolio?: PortfolioRecord }> => {
       if (!currentUser) return { success: false };
+      const trimmed = name.trim();
+      if (!trimmed) {
+        showToast('Portfolio name cannot be empty.');
+        return { success: false };
+      }
+      const duplicate = userPortfolios.some(
+        (p) => p.name.trim().toLowerCase() === trimmed.toLowerCase()
+      );
+      if (duplicate) {
+        showToast(`A portfolio named "${trimmed}" already exists.`);
+        return { success: false };
+      }
+
+      await flushPendingSync();
+
       try {
-        const res = await api.createPortfolio(name, baseProfile || profile);
+        const res = await api.createPortfolio(trimmed, baseProfile || profile);
         setUserPortfolios((prev) => [...prev, res.portfolio]);
         setActivePortfolioId(res.portfolio.id);
         setCurrentUser({ ...currentUser, activePortfolioId: res.portfolio.id });
         lastSyncedRef.current = JSON.stringify(res.portfolio.profile);
         setProfileState(res.portfolio.profile);
         return { success: true, portfolio: res.portfolio };
-      } catch {
-        showToast('Could not create the portfolio on the server.');
+      } catch (err: any) {
+        showToast(err?.message || 'Could not create the portfolio on the server.');
         return { success: false };
       }
     },
-    [currentUser, profile, showToast]
+    [currentUser, userPortfolios, profile, flushPendingSync, showToast]
   );
   const createNewPortfolioRef = useRef(createNewPortfolio);
   createNewPortfolioRef.current = createNewPortfolio;
@@ -449,16 +548,28 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const renameUserPortfolio = useCallback(
     async (portfolioId: string, name: string): Promise<{ success: boolean }> => {
       if (!currentUser) return { success: false };
+      const trimmed = name.trim();
+      if (!trimmed) {
+        showToast('Portfolio name cannot be empty.');
+        return { success: false };
+      }
+      const duplicate = userPortfolios.some(
+        (p) => p.id !== portfolioId && p.name.trim().toLowerCase() === trimmed.toLowerCase()
+      );
+      if (duplicate) {
+        showToast(`A portfolio named "${trimmed}" already exists.`);
+        return { success: false };
+      }
       try {
-        const res = await api.updatePortfolio(portfolioId, { name });
+        const res = await api.updatePortfolio(portfolioId, { name: trimmed });
         setUserPortfolios((prev) => prev.map((p) => (p.id === res.portfolio.id ? res.portfolio : p)));
         return { success: true };
-      } catch {
-        showToast('Could not rename the portfolio.');
+      } catch (err: any) {
+        showToast(err?.message || 'Could not rename the portfolio.');
         return { success: false };
       }
     },
-    [currentUser, showToast]
+    [currentUser, userPortfolios, showToast]
   );
 
   const openAuthModal = useCallback((mode: 'signin' | 'signup' | 'portfolios' = 'signin') => {
@@ -487,6 +598,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         sharePlan,
         formatPkrMasked,
         formatCompactPkrMasked,
+        hasLoaded,
         currentUser,
         userPortfolios,
         activePortfolioId,
@@ -516,11 +628,13 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
           its draft form re-initializes from the current profile every time
           (a permanently mounted wizard kept stale first-mount values). */}
       {onboardingModalOpen && (
-        <OnboardingWizardModal
-          isOpen={onboardingModalOpen}
-          mode={onboardingMode}
-          onClose={() => setOnboardingModalOpen(false)}
-        />
+        <AiAssistProvider>
+          <OnboardingWizardModal
+            isOpen={onboardingModalOpen}
+            mode={onboardingMode}
+            onClose={() => setOnboardingModalOpen(false)}
+          />
+        </AiAssistProvider>
       )}
 
       {/* Floating Toast notification */}

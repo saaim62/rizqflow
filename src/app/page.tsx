@@ -85,7 +85,7 @@ export default function HomePage() {
 
                 <button
                   onClick={() => openGuide()}
-                  className="flex items-center gap-2 px-4 py-3 rounded-xl text-zinc-500 hover:text-zinc-800 text-sm font-medium transition-all"
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl text-zinc-400 hover:text-white text-sm font-medium transition-all"
                 >
                   <BookOpen className="w-4 h-4 text-emerald-400" />
                   <span>Beginner Guide</span>
@@ -114,7 +114,11 @@ export default function HomePage() {
               <div className="font-mono font-bold text-white text-sm mt-0.5">
                 Rs {snap.rates.goldPerTolaPkr.toLocaleString('en-PK')}
               </div>
-              <span className="text-rose-400 font-mono text-[10px]">▼ 5d Dip Zone (-12.8%)</span>
+              <span className={`${gold.streak.currentStreak < 0 ? 'text-rose-400' : 'text-emerald-400'} font-mono text-[10px]`}>
+                {gold.streak.currentStreak < 0
+                  ? `▼ ${Math.abs(gold.streak.currentStreak)}d Dip Zone (-${gold.streak.drawdownFromPeakPct.toFixed(1)}%)`
+                  : `▲ +${gold.streak.currentStreak}d Momentum`}
+              </span>
             </div>
 
             {/* Silver */}
@@ -123,7 +127,11 @@ export default function HomePage() {
               <div className="font-mono font-bold text-white text-sm mt-0.5">
                 Rs {snap.silverPerTolaPkr.toLocaleString('en-PK')}
               </div>
-              <span className="text-rose-400 font-mono text-[10px]">▼ 3d Losing Streak</span>
+              <span className={`${silver.streak.currentStreak < 0 ? 'text-rose-400' : 'text-emerald-400'} font-mono text-[10px]`}>
+                {silver.streak.currentStreak < 0
+                  ? `▼ ${Math.abs(silver.streak.currentStreak)}d Streak`
+                  : `▲ +${silver.streak.currentStreak}d Momentum`}
+              </span>
             </div>
 
             {/* USD / PKR */}

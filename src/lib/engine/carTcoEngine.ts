@@ -55,18 +55,31 @@ function computeSingleVehicleTco(
 
   if (vehicle.emiQuote && vehicle.emiQuote.enabled) {
     const quote = vehicle.emiQuote;
-    if (
-      !quote.downPaymentPkr ||
-      !quote.monthlyInstallmentPkr ||
-      !quote.tenureMonths ||
-      quote.downPaymentPkr <= 0 ||
-      quote.monthlyInstallmentPkr <= 0 ||
-      quote.tenureMonths <= 0
-    ) {
+    const isDownPaymentInvalid =
+      quote.downPaymentPkr === null ||
+      quote.downPaymentPkr === undefined ||
+      quote.downPaymentPkr < 0;
+    const isInstallmentInvalid =
+      quote.monthlyInstallmentPkr === null ||
+      quote.monthlyInstallmentPkr === undefined ||
+      quote.monthlyInstallmentPkr <= 0;
+    const isTenureInvalid =
+      quote.tenureMonths === null ||
+      quote.tenureMonths === undefined ||
+      quote.tenureMonths <= 0;
+
+    if (isDownPaymentInvalid || isInstallmentInvalid || isTenureInvalid) {
       isQuoteIncomplete = true;
     } else {
       const totalPaid = quote.downPaymentPkr + quote.monthlyInstallmentPkr * quote.tenureMonths;
-      fiveYearBankInterestPkr = Math.max(0, totalPaid - vehicle.pricePkr);
+      const totalInterest = Math.max(0, totalPaid - vehicle.pricePkr);
+      // FIX-2.7: For tenures > 60 months, prorate bank markup over the 5-year evaluation window.
+      // Linear-proration simplification: totalInterest * Math.min(tenure, 60) / tenure
+      fiveYearBankInterestPkr =
+        quote.tenureMonths > 60
+          ? (totalInterest * Math.min(quote.tenureMonths, 60)) / quote.tenureMonths
+          : totalInterest;
+      // 100% financing (downPaymentPkr === 0) is valid; equity tied up is 0
       equityTiedUp = quote.downPaymentPkr;
     }
   }

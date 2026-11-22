@@ -155,7 +155,7 @@ export function CompoundingChart({
           Includes annual salary raises, multi-asset monthly splits, and dated goal lump sum deductions.
         </span>
         <span className="text-emerald-400 font-mono">
-          Final Real Wealth @ Age {retirementAge}: {formatCompactPkrMasked(timeline[timeline.length - 1]?.realTodaysPkr || 0)}
+          Final Real Wealth @ Age {retirementAge}: {formatCompactPkrMasked(timeline[timeline.length - 1]?.realTodaysPkr ?? 0)}
         </span>
       </div>
     </div>

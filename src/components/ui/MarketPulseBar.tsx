@@ -1,16 +1,33 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import { DEFAULT_MARKET_RATES, saveCustomMarketRates } from '@/lib/marketRates';
 import { AmountWords } from '@/components/ui/AmountWords';
 import { useMarketSnapshot } from '@/lib/useMarketSnapshot';
+import { METAL_ASSETS } from '@/data/marketData';
 import { SlidersHorizontal, X, RotateCcw, Check, Sun, Fuel, DollarSign, Coins } from 'lucide-react';
 
 export function MarketPulseBar() {
   const { profile, updateProfile, showToast, hideAmounts } = useProfile();
   const snap = useMarketSnapshot();
   const [isOpen, setIsOpen] = useState(false);
+
+  // Derive gold and silver streaks from snapshot history
+  const goldAsset = METAL_ASSETS.find((m) => m.id === 'gold-24k');
+  const silverAsset = METAL_ASSETS.find((m) => m.id === 'silver-24k');
+  const goldStreak = goldAsset?.streak?.currentStreak ?? 0;
+  const silverStreak = silverAsset?.streak?.currentStreak ?? 0;
+
+  // Escape key closes modal
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
 
   // Temporary local edit state for modal
   const [goldRate, setGoldRate] = useState<number>(profile.goldPerTolaPkr || DEFAULT_MARKET_RATES.goldPerTolaPkr);
@@ -28,17 +45,32 @@ export function MarketPulseBar() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    const g = Number(goldRate);
+    const u = Number(usdRate);
+    const p = Number(petrolRate);
+    const gr = Number(gridRate);
+
+    if (
+      !Number.isFinite(g) || g <= 0 ||
+      !Number.isFinite(u) || u <= 0 ||
+      !Number.isFinite(p) || p <= 0 ||
+      !Number.isFinite(gr) || gr <= 0
+    ) {
+      showToast('All rates must be positive finite numbers.');
+      return;
+    }
+
     updateProfile({
-      goldPerTolaPkr: Number(goldRate),
-      usdToPkr: Number(usdRate),
-      petrolPricePerLitre: Number(petrolRate),
-      gridRatePerKwh: Number(gridRate),
+      goldPerTolaPkr: g,
+      usdToPkr: u,
+      petrolPricePerLitre: p,
+      gridRatePerKwh: gr,
     });
     saveCustomMarketRates({
-      goldPerTolaPkr: Number(goldRate),
-      usdToPkr: Number(usdRate),
-      petrolPricePerLitre: Number(petrolRate),
-      gridRatePerKwh: Number(gridRate),
+      goldPerTolaPkr: g,
+      usdToPkr: u,
+      petrolPricePerLitre: p,
+      gridRatePerKwh: gr,
     });
     snap.refresh();
     setIsOpen(false);
@@ -70,7 +102,11 @@ export function MarketPulseBar() {
               <span className="font-bold text-amber-300">
                 {hideAmounts ? '•••••' : `Rs ${snap.rates.goldPerTolaPkr.toLocaleString('en-PK')}`}
               </span>
-              <span className="text-rose-400 text-[10px]">▼ 5d</span>
+              {goldStreak !== 0 && (
+                <span className={`${goldStreak < 0 ? 'text-rose-400' : 'text-emerald-400'} text-[10px]`}>
+                  {goldStreak < 0 ? `▼ ${Math.abs(goldStreak)}d` : `▲ ${goldStreak}d`}
+                </span>
+              )}
             </div>
 
             {/* Silver */}
@@ -79,7 +115,11 @@ export function MarketPulseBar() {
               <span className="font-bold text-slate-300">
                 {hideAmounts ? '•••••' : `Rs ${snap.silverPerTolaPkr.toLocaleString('en-PK')}`}
               </span>
-              <span className="text-rose-400 text-[10px]">▼ 3d</span>
+              {silverStreak !== 0 && (
+                <span className={`${silverStreak < 0 ? 'text-rose-400' : 'text-emerald-400'} text-[10px]`}>
+                  {silverStreak < 0 ? `▼ ${Math.abs(silverStreak)}d` : `▲ ${silverStreak}d`}
+                </span>
+              )}
             </div>
 
             {/* USD */}
@@ -131,11 +171,16 @@ export function MarketPulseBar() {
       {/* Adjust Rates Modal */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md bg-[#0C0C0F] border border-white/10 rounded-2xl shadow-2xl p-6 space-y-5">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="market-rates-title"
+            className="relative w-full max-w-md bg-[#0C0C0F] border border-white/10 rounded-2xl shadow-2xl p-6 space-y-5"
+          >
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="w-4 h-4 text-amber-400" />
-                <h3 className="font-bold text-base text-white">Adjust Market Benchmark Rates</h3>
+                <h3 id="market-rates-title" className="font-bold text-base text-white">Adjust Market Benchmark Rates</h3>
               </div>
               <button
                 onClick={() => setIsOpen(false)}

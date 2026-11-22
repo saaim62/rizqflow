@@ -19,9 +19,13 @@ swap, and see what your money actually does — in today's rupees.
   the export rate you give up (legacy net metering Rs 26/kWh, 2026 net
   billing Rs 11/kWh, or grid Rs 55/kWh) and a km/day crossover chart.
 - **Accounts & portfolios** — sign up / sign in with multiple portfolios per
-  user. **Local only:** accounts live in your browser's localStorage on your
-  device; nothing is sent to a server, and clearing browser data deletes
-  them. There are no seeded or demo accounts.
+  user. **Server accounts & portfolios (Gate 6 Amendment 2):** user accounts
+  and portfolios live securely on the owner's PostgreSQL server database via
+  same-origin APIs (`/api/auth/*`, `/api/me`, `/api/portfolios/*`), authenticated
+  with scrypt password hashes and httpOnly session cookies. Sign in on any
+  device to access the exact same portfolios and financial plans. Anonymous usage
+  remains local-only in your browser's localStorage. Zero third-party network
+  calls, no analytics, no external tracking, and no seeded or demo accounts.
 - **Onboarding wizard** — 6 steps (persona & household, tax & Shariah,
   income, expenses, commute/vehicle/solar, life goals) that calibrate the
   whole app; recalibrating updates your active portfolio in place.

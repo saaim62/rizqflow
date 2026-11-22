@@ -38,6 +38,7 @@ function PlannerContent() {
   const tickerParam = searchParams.get('ticker');
   const [activeVisualTab, setActiveVisualTab] = useState<'compounding' | 'calendar'>('compounding');
   const [showSnapshotModal, setShowSnapshotModal] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Compute live multi-asset life plan
   const plan = useMemo(() => {
@@ -83,7 +84,7 @@ function PlannerContent() {
           </button>
 
           <button
-            onClick={() => resetToPreset('junior-engineer')}
+            onClick={() => setShowResetConfirm(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/5 text-xs font-semibold transition-all"
           >
             <RotateCcw className="w-3.5 h-3.5 text-zinc-400" />
@@ -203,7 +204,7 @@ function PlannerContent() {
               <CompoundingChart
                 timeline={plan.timeline}
                 startAge={profile.age}
-                retirementAge={profile.retirementAge || 60}
+                retirementAge={profile.retirementAge ?? 60}
               />
             ) : (
               <PayoutCalendarChart monthlyPayoutCalendar={plan.monthlyPayoutCalendar} />
@@ -226,6 +227,52 @@ function PlannerContent() {
           <WhatThisCantTellYou />
         </div>
       </div>
+
+      {/* Reset Confirmation Modal */}
+      {showResetConfirm && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reset-modal-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+        >
+          <div className="w-full max-w-md rounded-2xl bg-[#0C0C0F] border border-white/10 p-6 space-y-4 shadow-2xl text-zinc-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+                <RotateCcw className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 id="reset-modal-title" className="font-bold text-base text-white">Reset Plan to Default?</h3>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Reset to Junior Software Engineer baseline preset
+                </p>
+              </div>
+            </div>
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              This will replace your current financial plan, living expenses, and asset allocations with the default starter preset. Any unsaved custom modifications will be lost.
+            </p>
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(false)}
+                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 text-xs font-semibold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowResetConfirm(false);
+                  resetToPreset('junior-engineer');
+                }}
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-colors shadow-md shadow-amber-500/20"
+              >
+                Reset Plan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cinematic Freedom Snapshot Modal */}
       <ShareSnapshotModal

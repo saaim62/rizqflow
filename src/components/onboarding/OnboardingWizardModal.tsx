@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserProfile, UserRole, TaxStatus, SolarTariffMode } from '@/types';
 import { AmountWords } from '@/components/ui/AmountWords';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import { formatPkr } from '@/lib/format';
 import { formatCompactPkr } from '@/lib/format';
+import { AiAssistProvider } from '@/components/providers/AiAssistProvider';
 import { AiButton } from '@/components/ui/AiButton';
 import { FieldInfo } from '@/components/ui/FieldInfo';
 import { 
@@ -43,41 +44,42 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
   const totalSteps = 6;
 
   // Local draft state initialized with current profile
-  const [name, setName] = useState<string>(currentUser?.name || '');
+  const [name, setName] = useState<string>(currentUser?.name ?? '');
   const [portfolioName, setPortfolioName] = useState<string>('My Freedom Portfolio');
-  const [age, setAge] = useState<number>(profile.age || 28);
-  const [retirementAge, setRetirementAge] = useState<number>(profile.retirementAge || 55);
-  const [role, setRole] = useState<UserRole>(profile.role || 'salaried');
-  const [gender, setGender] = useState<'male' | 'female'>(profile.gender || 'male');
+  const [age, setAge] = useState<number>(profile.age ?? 28);
+  const [retirementAge, setRetirementAge] = useState<number>(profile.retirementAge ?? 55);
+  const [rawRetirementAge, setRawRetirementAge] = useState<string>(String(profile.retirementAge ?? 55));
+  const [role, setRole] = useState<UserRole>(profile.role ?? 'salaried');
+  const [gender, setGender] = useState<'male' | 'female'>(profile.gender ?? 'male');
   const [isBreadwinner, setIsBreadwinner] = useState<boolean>(profile.isBreadwinner ?? true);
-  const [maritalStatus, setMaritalStatus] = useState<'unmarried' | 'married'>(profile.maritalStatus || 'unmarried');
-  const [familyMembers, setFamilyMembers] = useState<number>(profile.familyMembers || 1);
+  const [maritalStatus, setMaritalStatus] = useState<'unmarried' | 'married'>(profile.maritalStatus ?? 'unmarried');
+  const [familyMembers, setFamilyMembers] = useState<number>(profile.familyMembers ?? 1);
 
   // Step 2: Tax & Shariah
-  const [taxStatus, setTaxStatus] = useState<TaxStatus>(profile.taxStatus || 'filer');
+  const [taxStatus, setTaxStatus] = useState<TaxStatus>(profile.taxStatus ?? 'filer');
   const [shariahOnly, setShariahOnly] = useState<boolean>(profile.shariahOnly ?? true);
-  const [includeZakat, setIncludeZakat] = useState<boolean>(profile.includeZakat || false);
+  const [includeZakat, setIncludeZakat] = useState<boolean>(profile.includeZakat ?? false);
 
   // Step 3: Income & Investments
-  const [monthlyIncomePkr, setMonthlyIncomePkr] = useState<number>(profile.monthlyIncomePkr || 250000);
-  const [monthlyInvestPkr, setMonthlyInvestPkr] = useState<number>(profile.monthlyInvestPkr || 100000);
-  const [annualSalaryRaisePct, setAnnualSalaryRaisePct] = useState<number>(profile.annualSalaryRaisePct || 10);
-  const [lumpSumPkr, setLumpSumPkr] = useState<number>(profile.lumpSumPkr || 1500000);
-  const [currentCashReservePkr, setCurrentCashReservePkr] = useState<number>(profile.currentCashReservePkr || 400000);
+  const [monthlyIncomePkr, setMonthlyIncomePkr] = useState<number>(profile.monthlyIncomePkr ?? 250000);
+  const [monthlyInvestPkr, setMonthlyInvestPkr] = useState<number>(profile.monthlyInvestPkr ?? 100000);
+  const [annualSalaryRaisePct, setAnnualSalaryRaisePct] = useState<number>(profile.annualSalaryRaisePct ?? 10);
+  const [lumpSumPkr, setLumpSumPkr] = useState<number>(profile.lumpSumPkr ?? 1500000);
+  const [currentCashReservePkr, setCurrentCashReservePkr] = useState<number>(profile.currentCashReservePkr ?? 400000);
 
   // Step 4: Expenses
-  const [fuelAndCommute, setFuelAndCommute] = useState<number>(profile.expenses.fuelAndCommute || 20000);
-  const [utilitiesAndInternet, setUtilitiesAndInternet] = useState<number>(profile.expenses.utilitiesAndInternet || 25000);
-  const [groceriesAndFood, setGroceriesAndFood] = useState<number>(profile.expenses.groceriesAndFood || 35000);
-  const [rentOrHousing, setRentOrHousing] = useState<number>(profile.expenses.rentOrHousing || 20000);
-  const [familyAndOther, setFamilyAndOther] = useState<number>(profile.expenses.familyAndOther || 15000);
+  const [fuelAndCommute, setFuelAndCommute] = useState<number>(profile.expenses?.fuelAndCommute ?? 20000);
+  const [utilitiesAndInternet, setUtilitiesAndInternet] = useState<number>(profile.expenses?.utilitiesAndInternet ?? 25000);
+  const [groceriesAndFood, setGroceriesAndFood] = useState<number>(profile.expenses?.groceriesAndFood ?? 35000);
+  const [rentOrHousing, setRentOrHousing] = useState<number>(profile.expenses?.rentOrHousing ?? 20000);
+  const [familyAndOther, setFamilyAndOther] = useState<number>(profile.expenses?.familyAndOther ?? 15000);
 
   // Step 5: Vehicle & Solar
-  const [dailyCommuteKm, setDailyCommuteKm] = useState<number>(profile.dailyCommuteKm || 35);
+  const [dailyCommuteKm, setDailyCommuteKm] = useState<number>(profile.dailyCommuteKm ?? 35);
   const [currentVehicleType, setCurrentVehicleType] = useState<'none' | 'petrol-bike' | 'petrol-car' | 'ev-car'>('petrol-car');
   const [currentVehicleResalePkr, setCurrentVehicleResalePkr] = useState<number>(2800000);
-  const [solarKw, setSolarKw] = useState<number>(profile.solarKw || 10);
-  const [solarTariffMode, setSolarTariffMode] = useState<SolarTariffMode>(profile.solarTariffMode || 'net-metering-legacy');
+  const [solarKw, setSolarKw] = useState<number>(profile.solarKw ?? 10);
+  const [solarTariffMode, setSolarTariffMode] = useState<SolarTariffMode>(profile.solarTariffMode ?? 'net-metering-legacy');
 
   // Step 6: Life Goals
   const [weddingAge, setWeddingAge] = useState<number>(maritalStatus === 'unmarried' ? 29 : 0);
@@ -184,8 +186,8 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     pricePkr: currentVehicleResalePkr,
                     fuelType: (currentVehicleType === 'ev-car' ? 'ev' : 'petrol') as 'ev' | 'petrol',
                     ...(currentVehicleType === 'ev-car'
-                      ? { kwhPer100Km: v.kwhPer100Km || 16.5, kmPerLitre: undefined }
-                      : { kmPerLitre: v.kmPerLitre || (currentVehicleType === 'petrol-bike' ? 45 : 13), kwhPer100Km: undefined }),
+                      ? { kwhPer100Km: v.kwhPer100Km ?? 16.5, kmPerLitre: undefined }
+                      : { kmPerLitre: v.kmPerLitre ?? (currentVehicleType === 'petrol-bike' ? 45 : 13), kwhPer100Km: undefined }),
                     isCurrentVehicle: true,
                   }
                 : { ...v, isCurrentVehicle: false }
@@ -265,8 +267,25 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
     }
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+    <AiAssistProvider>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wizard-modal-title"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto"
+      >
       <div className="relative w-full max-w-3xl my-8 rounded-2xl bg-[#0C0C0F] border border-white/10 shadow-2xl shadow-emerald-500/10 flex flex-col overflow-hidden text-zinc-100">
         
         {/* Header Strip */}
@@ -278,7 +297,7 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
               </span>
               <span className="text-xs text-zinc-400 font-medium">PSX Stock Broker & Wealth Calibration</span>
             </div>
-            <h2 className="text-xl font-extrabold text-white tracking-tight">
+            <h2 id="wizard-modal-title" className="text-xl font-extrabold text-white tracking-tight">
               {step === 1 && '1. Investor Persona & Household Setup'}
               {step === 2 && '2. FBR Tax Status & Halal Compliance'}
               {step === 3 && '3. Income & Savings Firepower (SIP)'}
@@ -356,8 +375,13 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                   <label className="text-xs font-semibold text-zinc-300">Target Freedom / Retirement Age</label>
                   <input
                     type="number"
-                    value={retirementAge}
-                    onChange={(e) => setRetirementAge(Number(e.target.value))}
+                    value={rawRetirementAge}
+                    onChange={(e) => {
+                      setRawRetirementAge(e.target.value);
+                      if (e.target.value !== '') {
+                        setRetirementAge(Number(e.target.value));
+                      }
+                    }}
                     min={age + 1}
                     max={80}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#0C0C0F] border border-white/10 text-white text-sm font-mono focus:border-emerald-500 focus:outline-none"
@@ -518,6 +542,46 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
                     </div>
                     <p className="text-xs text-zinc-400 mt-2">
                       Includes high-yielding conventional commercial banks (MCB 8.8%, UBL 8.4%) alongside top dividend equities.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Zakat Deduction */}
+              <div className="space-y-2 pt-2">
+                <label className="text-xs font-semibold text-zinc-300">Zakat Deduction (CZ-50 Exemption)</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div
+                    onClick={() => setIncludeZakat(true)}
+                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                      includeZakat
+                        ? 'bg-amber-500/15 border-amber-500 shadow-md shadow-amber-500/10'
+                        : 'bg-white/[0.02] border-white/10 hover:border-white/20'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm text-white">Deduct Zakat</span>
+                      <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono text-xs font-bold">2.5% / year</span>
+                    </div>
+                    <p className="text-xs text-zinc-400 mt-2">
+                      2.5% of portfolio value, yearly. Deducted automatically once per year across asset sleeves.
+                    </p>
+                  </div>
+
+                  <div
+                    onClick={() => setIncludeZakat(false)}
+                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                      !includeZakat
+                        ? 'bg-emerald-500/15 border-emerald-500 shadow-md shadow-emerald-500/10'
+                        : 'bg-white/[0.02] border-white/10 hover:border-white/20'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm text-white">Exempt (CZ-50 Form Filed)</span>
+                      <span className="px-2 py-0.5 rounded bg-white/5 text-zinc-400 font-mono text-xs">Self-Disbursed</span>
+                    </div>
+                    <p className="text-xs text-zinc-400 mt-2">
+                      You file CZ-50 with your broker to disburse your own Zakat directly. No portfolio deduction.
                     </p>
                   </div>
                 </div>
@@ -916,5 +980,6 @@ The plan compares keeping it versus switching, starting from this value.`}
         </div>
       </div>
     </div>
+    </AiAssistProvider>
   );
 }

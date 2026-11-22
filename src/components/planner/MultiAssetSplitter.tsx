@@ -6,6 +6,7 @@ import { Layers, PieChart, Coins, Home, Landmark, Wallet, Wand2, Sparkles, Loade
 import { AiButton } from '@/components/ui/AiButton';
 import { FieldInfo } from '@/components/ui/FieldInfo';
 import { useAiAssist } from '@/components/providers/AiAssistProvider';
+import { useProfile } from '@/components/providers/ProfileProvider';
 
 interface MultiAssetSplitterProps {
   assetBuckets: AssetBucket[];
@@ -26,10 +27,53 @@ const BUCKET_ICONS: Record<string, React.ElementType> = {
 const round1 = (n: number) => Math.round(n * 10) / 10;
 const fmtPct = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1));
 
+export function autoBalanceBuckets<T extends { id: string; monthlySplitPct: number }>(
+  buckets: T[]
+): T[] {
+  const total = buckets.reduce((acc, b) => acc + (b.monthlySplitPct ?? 0), 0);
+  if (total === 0) {
+    const def = [
+      { id: 'psx-dividends', pct: 40 },
+      { id: 'gold', pct: 20 },
+      { id: 'real-estate', pct: 20 },
+      { id: 'money-market', pct: 15 },
+      { id: 'cash', pct: 5 },
+    ];
+    return buckets.map((b) => {
+      const found = def.find((d) => d.id === b.id);
+      return { ...b, monthlySplitPct: found ? found.pct : 20 };
+    });
+  }
+
+  // Calculate rounded 0.1% shares
+  const rawShares = buckets.map((b) => round1(((b.monthlySplitPct ?? 0) / total) * 100));
+  const sum = round1(rawShares.reduce((acc, v) => acc + v, 0));
+  const remainder = round1(100.0 - sum);
+
+  if (remainder !== 0 && rawShares.length > 0) {
+    // Find index of largest bucket to absorb rounding remainder
+    let largestIdx = 0;
+    let maxVal = rawShares[0];
+    for (let i = 1; i < rawShares.length; i++) {
+      if (rawShares[i] > maxVal) {
+        maxVal = rawShares[i];
+        largestIdx = i;
+      }
+    }
+    rawShares[largestIdx] = round1(rawShares[largestIdx] + remainder);
+  }
+
+  return buckets.map((b, i) => ({
+    ...b,
+    monthlySplitPct: rawShares[i],
+  }));
+}
+
 export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitterProps) {
   const { aiOn, predict } = useAiAssist();
+  const { showToast } = useProfile();
   const [fillingReturns, setFillingReturns] = useState(false);
-  const totalSplit = assetBuckets.reduce((acc, b) => acc + (b.monthlySplitPct || 0), 0);
+  const totalSplit = assetBuckets.reduce((acc, b) => acc + (b.monthlySplitPct ?? 0), 0);
   const totalRounded = round1(totalSplit);
 
   const updateReturn = (id: string, newReturn: number) => {
@@ -45,18 +89,23 @@ export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitte
   /** AI Fill: predict every bucket's expected return in parallel, apply at once. */
   const aiFillReturns = async () => {
     setFillingReturns(true);
-    const results = await Promise.all(
-      assetBuckets.map((b) =>
-        predict('bucket-return', { bucketId: b.id, bucketLabel: b.label, currentReturnPct: b.expectedAnnualReturnPct })
-      )
-    );
-    onChange(
-      assetBuckets.map((b, i) => {
-        const r = results[i];
-        return r ? { ...b, expectedAnnualReturnPct: r.value } : b;
-      })
-    );
-    setFillingReturns(false);
+    try {
+      const results = await Promise.all(
+        assetBuckets.map((b) =>
+          predict('bucket-return', { bucketId: b.id, bucketLabel: b.label, currentReturnPct: b.expectedAnnualReturnPct })
+        )
+      );
+      onChange(
+        assetBuckets.map((b, i) => {
+          const r = results[i];
+          return r ? { ...b, expectedAnnualReturnPct: r.value } : b;
+        })
+      );
+    } catch (err) {
+      showToast('Could not complete AI autofill for returns');
+    } finally {
+      setFillingReturns(false);
+    }
   };
 
   const updateSplit = (id: string, newSplit: number) => {
@@ -67,35 +116,7 @@ export function MultiAssetSplitter({ assetBuckets, onChange }: MultiAssetSplitte
   };
 
   const handleAutoBalance = () => {
-    if (totalSplit === 0) {
-      // Default balanced split
-      const def = [
-        { id: 'psx-dividends', pct: 40 },
-        { id: 'gold', pct: 20 },
-        { id: 'real-estate', pct: 20 },
-        { id: 'money-market', pct: 15 },
-        { id: 'cash', pct: 5 },
-      ];
-      const balanced = assetBuckets.map((b) => {
-        const found = def.find((d) => d.id === b.id);
-        return { ...b, monthlySplitPct: found ? found.pct : 20 };
-      });
-      onChange(balanced);
-      return;
-    }
-
-    // Pro-rata normalization at 0.1 precision (was integer rounding)
-    let runningSum = 0;
-    const normalized = assetBuckets.map((b, idx) => {
-      if (idx === assetBuckets.length - 1) {
-        return { ...b, monthlySplitPct: Math.max(0, round1(100 - runningSum)) };
-      }
-      const p = round1((b.monthlySplitPct / totalSplit) * 100);
-      runningSum = round1(runningSum + p);
-      return { ...b, monthlySplitPct: p };
-    });
-
-    onChange(normalized);
+    onChange(autoBalanceBuckets(assetBuckets));
   };
 
   return (
@@ -206,7 +227,7 @@ It is a planning assumption, not a promise: the plan grows your savings at this 
                 step={0.1}
                 value={bucket.monthlySplitPct}
                 onChange={(e) => updateSplit(bucket.id, Number(e.target.value))}
-                className="w-full h-1.5 bg-black/[0.05] rounded-lg appearance-none cursor-pointer accent-emerald-400"
+                className="w-full h-1.5 bg-white/15 rounded-lg appearance-none cursor-pointer accent-emerald-400"
               />
             </div>
           );

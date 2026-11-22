@@ -46,21 +46,55 @@ export function getAiConfig(): AiConfig | null {
   };
 }
 
+export const MAX_CACHE_ENTRIES = 500;
+export const MAX_DAILY_ENTRIES = 500;
+
 const cache = new Map<string, { at: number; result: PredictionResult & { model: string } }>();
 const dailyCounts = new Map<string, { day: string; count: number }>();
+let lastDayString = new Date().toISOString().slice(0, 10);
 
-function cacheKey(type: PredictionType, context: Record<string, unknown>): string {
-  const stable = Object.keys(context)
-    .sort()
-    .map((k) => `${k}=${String(context[k])}`)
-    .join('|');
-  return `${type}::${stable}`;
+export function stableStringify(val: unknown): string {
+  if (val === null || typeof val !== 'object') {
+    return JSON.stringify(val);
+  }
+  if (Array.isArray(val)) {
+    return '[' + val.map(stableStringify).join(',') + ']';
+  }
+  const keys = Object.keys(val as Record<string, unknown>).sort();
+  return '{' + keys.map((k) => `${JSON.stringify(k)}:${stableStringify((val as Record<string, unknown>)[k])}`).join(',') + '}';
 }
 
-function underCap(ip: string): boolean {
-  const day = new Date().toISOString().slice(0, 10);
+export function cacheKey(type: PredictionType, context: Record<string, unknown>): string {
+  return `${type}::${stableStringify(context)}`;
+}
+
+function setBoundedEntry<T>(map: Map<string, T>, key: string, value: T, max = MAX_CACHE_ENTRIES): void {
+  if (map.has(key)) {
+    map.delete(key);
+  } else if (map.size >= max) {
+    const oldest = map.keys().next().value;
+    if (oldest !== undefined) map.delete(oldest);
+  }
+  map.set(key, value);
+}
+
+function checkDayRollover(overrideToday?: string): void {
+  const today = overrideToday || new Date().toISOString().slice(0, 10);
+  if (today !== lastDayString) {
+    dailyCounts.clear();
+    lastDayString = today;
+  }
+}
+
+function underCap(ip: string, overrideDate?: string): boolean {
+  checkDayRollover(overrideDate);
+  const day = lastDayString;
   const entry = dailyCounts.get(ip);
   if (!entry || entry.day !== day) {
+    if (dailyCounts.size >= MAX_DAILY_ENTRIES) {
+      const oldest = dailyCounts.keys().next().value;
+      if (oldest !== undefined) dailyCounts.delete(oldest);
+    }
     dailyCounts.set(ip, { day, count: 1 });
     return true;
   }
@@ -125,6 +159,8 @@ export async function predictWithAi(
   const key = cacheKey(type, context);
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
+    cache.delete(key);
+    cache.set(key, hit);
     return { ok: true, result: hit.result, cached: true };
   }
 
@@ -134,7 +170,7 @@ export async function predictWithAi(
   const result = primary ?? (await callGroq(cfg, cfg.fallbackModel, type, context));
   if (!result) return { ok: false, reason: 'unavailable' };
 
-  cache.set(key, { at: Date.now(), result });
+  setBoundedEntry(cache, key, { at: Date.now(), result });
   return { ok: true, result, cached: false };
 }
 
@@ -249,6 +285,8 @@ export async function mapPortfolioWithAi(
   const key = mappingCacheKey(foreignPayload);
   const hit = mappingCache.get(key);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
+    mappingCache.delete(key);
+    mappingCache.set(key, hit);
     return { ok: true, result: hit.result, cached: true };
   }
 
@@ -258,7 +296,38 @@ export async function mapPortfolioWithAi(
   const result = primary ?? (await callGroqForMapping(cfg, cfg.fallbackModel, foreignPayload));
   if (!result) return { ok: false, reason: 'unavailable' };
 
-  mappingCache.set(key, { at: Date.now(), result });
+  setBoundedEntry(mappingCache, key, { at: Date.now(), result });
   return { ok: true, result, cached: false };
+}
+
+export function _resetAiStateForTesting(): void {
+  cache.clear();
+  mappingCache.clear();
+  dailyCounts.clear();
+  lastDayString = new Date().toISOString().slice(0, 10);
+}
+
+export function _getAiCacheSizeForTesting(): number {
+  return cache.size;
+}
+
+export function _getMappingCacheSizeForTesting(): number {
+  return mappingCache.size;
+}
+
+export function _getDailyCountsSizeForTesting(): number {
+  return dailyCounts.size;
+}
+
+export function _triggerDayRolloverForTesting(nextDay: string): void {
+  checkDayRollover(nextDay);
+}
+
+export function _insertCacheForTesting(key: string, result: any): void {
+  setBoundedEntry(cache, key, { at: Date.now(), result });
+}
+
+export function _testUnderCap(ip: string, overrideDate?: string): boolean {
+  return underCap(ip, overrideDate);
 }
 

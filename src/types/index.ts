@@ -173,6 +173,9 @@ export interface UserProfile {
   // bank balances, stock holdings, and debts (e.g. a Splitwise balance).
   holdings?: HoldingItem[];
   liabilities?: LiabilityItem[];
+  appliedCarSwapKey?: string;
+  currentVehicleType?: string;
+  currentVehicleResalePkr?: number;
 }
 
 export type HoldingKind = 'gold' | 'fund' | 'real-estate' | 'bank' | 'stock' | 'other';

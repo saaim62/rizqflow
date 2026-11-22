@@ -26,6 +26,11 @@ import {
 } from 'lucide-react';
 import { useBeginnerGuide } from '@/components/ui/BeginnerDrawer';
 
+const MONTH_NAMES = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
 function MarketsTerminal() {
   const searchParams = useSearchParams();
   const initialTicker = searchParams.get('ticker') || undefined;
@@ -42,16 +47,33 @@ function MarketsTerminal() {
   const silver = METAL_ASSETS.find((m) => m.id === 'silver-24k') || METAL_ASSETS[1];
   const activeMetal = activeMetalId === 'gold-24k' ? gold : silver;
 
-  // Format active metal history for Recharts
+  // Format active metal history for Recharts with dynamic 12-month calendar mapping
   const chartData = activeMetal.history.map((pt) => {
     const parts = pt.date.split('-');
-    const month = parts[1] === '11' ? 'Nov' : 'Oct';
+    const year = parts[0];
+    const monthIdx = parseInt(parts[1], 10) - 1;
+    const month = MONTH_NAMES[monthIdx] || parts[1];
+    const day = parseInt(parts[2], 10);
     return {
       date: pt.date,
-      displayDate: `${month} ${parseInt(parts[2], 10)}`,
+      displayDate: `${month} ${day}`,
+      fullDate: `${month} ${day}, ${year}`,
       price: pt.price,
     };
   });
+
+  const isPositive = activeMetal.streak.changeToday > 0;
+  const isNegative = activeMetal.streak.changeToday < 0;
+  const changeTodayColor = isPositive
+    ? 'text-emerald-400'
+    : isNegative
+      ? 'text-rose-400'
+      : 'text-zinc-400';
+  const changeBadgeBg = isPositive
+    ? 'bg-emerald-500/10 border-emerald-500/20'
+    : isNegative
+      ? 'bg-rose-500/10 border-rose-500/20'
+      : 'bg-zinc-500/10 border-zinc-500/20';
 
   const minPrice = Math.min(...activeMetal.history.map((d) => d.price));
   const maxPrice = Math.max(...activeMetal.history.map((d) => d.price));
@@ -139,8 +161,8 @@ function MarketsTerminal() {
 
                 <div className="flex items-center gap-2 mt-3 flex-wrap">
                   <StreakBadge streak={activeMetal.streak} showSipDipGlow={true} />
-                  <span className="text-xs font-mono text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
-                    {formatPct(activeMetal.streak.changeTodayPct)} today
+                  <span className={`text-xs font-mono ${changeTodayColor} ${changeBadgeBg} px-2 py-0.5 rounded border`}>
+                    {isPositive ? `+${formatPct(activeMetal.streak.changeTodayPct)}` : formatPct(activeMetal.streak.changeTodayPct)} today
                   </span>
                 </div>
               </div>
@@ -156,8 +178,8 @@ function MarketsTerminal() {
 
                 <div className="p-3 rounded-xl bg-[#0C0C0F] border border-white/5">
                   <span className="text-zinc-500 block text-[10px] uppercase">Today's Price Delta</span>
-                  <span className="text-rose-400 font-bold text-sm">
-                    {formatPkr(activeMetal.streak.changeToday)}
+                  <span className={`${changeTodayColor} font-bold text-sm`}>
+                    {isPositive ? `+${formatPkr(activeMetal.streak.changeToday)}` : formatPkr(activeMetal.streak.changeToday)}
                   </span>
                 </div>
 
@@ -228,7 +250,10 @@ function MarketsTerminal() {
                         padding: '10px 14px',
                       }}
                       formatter={(val) => [`Rs ${Number(val).toLocaleString('en-PK')} / tola`, 'Price']}
-                      labelFormatter={(label) => `Date: ${label}, 2026`}
+                      labelFormatter={(label, payload) => {
+                        const full = (payload?.[0]?.payload as { fullDate?: string } | undefined)?.fullDate;
+                        return full ? `Date: ${full}` : `Date: ${label}`;
+                      }}
                     />
                     <Area
                       type="monotone"

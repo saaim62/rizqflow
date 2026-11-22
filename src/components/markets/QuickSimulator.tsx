@@ -107,14 +107,19 @@ export function QuickSimulator() {
               step={250000}
               value={lumpSum}
               onChange={(e) => setLumpSum(Number(e.target.value))}
-              className="w-full h-2.5 bg-black/[0.05] rounded-lg appearance-none cursor-pointer accent-emerald-400 border border-white/10"
+              className="w-full h-2.5 bg-white/15 rounded-lg appearance-none cursor-pointer accent-emerald-400 border border-white/10"
             />
 
-            <div className="flex justify-between text-[11px] font-mono text-zinc-400 mt-2">
-              <span>Rs 5 Lac</span>
-              <span className="text-amber-400 font-semibold">Rs 30 Lac (Benchmark)</span>
-              <span>Rs 60 Lac</span>
-              <span>Rs 1 Crore</span>
+            {/* Tick labels aligned by true percentage offset: min 5 Lac (0%), 30 Lac (26.3%), 60 Lac (57.9%), max 1 Cr (100%) */}
+            <div className="relative w-full h-5 text-[11px] font-mono text-zinc-400 mt-2">
+              <span className="absolute left-0">Rs 5 Lac</span>
+              <span className="absolute left-[26.3%] -translate-x-1/2 text-amber-400 font-semibold whitespace-nowrap">
+                Rs 30 Lac (Benchmark)
+              </span>
+              <span className="absolute left-[57.9%] -translate-x-1/2 whitespace-nowrap">
+                Rs 60 Lac
+              </span>
+              <span className="absolute right-0">Rs 1 Crore</span>
             </div>
           </div>
 
@@ -167,7 +172,7 @@ export function QuickSimulator() {
                 <span className="text-sm font-normal text-zinc-400 ml-1.5">/ month</span>
               </div>
               <p className="text-xs text-zinc-400 mt-1">
-                Net of 15% Filer WHT tax. Deposited directly via CDC e-dividend.
+                Net of {(taxRate * 100).toFixed(0)}% {isFiler ? 'Filer' : 'Non-Filer'} WHT tax. Deposited directly via CDC e-dividend.
               </p>
             </div>
 
