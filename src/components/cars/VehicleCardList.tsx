@@ -84,7 +84,8 @@ Take this figure from the bank's lease quote for the same vehicle and the same p
 };
 
 export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
-  const { formatPkrMasked } = useProfile();
+  const { formatPkrMasked, profile } = useProfile();
+  const annualKm = Math.max(0, (profile.dailyCommuteKm || 0) * 365);
   const [openEmiId, setOpenEmiId] = useState<string | null>(null);
 
   const toggleEmi = (id: string) => {
@@ -128,7 +129,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
     setFillingId(v.id);
     const [dep, maint, eff] = await Promise.all([
       predict('car-depreciation', { name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }),
-      predict('car-maintenance', { name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }),
+      predict('car-maintenance', { name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr, annualKm }),
       predict('car-efficiency', { name: v.name, fuelType: v.fuelType }),
     ]);
     const updates: Partial<VehicleCandidate> = {};
@@ -303,7 +304,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                 <label className="text-[10px] text-zinc-400 flex items-center gap-1">5-Yr Deprec. (%) <FieldInfo {...INFO.depreciation} /></label>
                 <AiButton
                   type="car-depreciation"
-                  context={{ name: draft.name, fuelType: draft.fuelType, pricePkr: draft.pricePkr }}
+                  context={{ name: draft.name, fuelType: draft.fuelType, pricePkr: draft.pricePkr, annualKm }}
                   currentValue={draft.fiveYearDepreciationPct}
                   onAccept={(val) => setDraft({ ...draft, fiveYearDepreciationPct: val })}
                   formatValue={(x) => `${x}%`}
@@ -324,7 +325,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                 <label className="text-[10px] text-zinc-400 flex items-center gap-1">Maint / Year (PKR) <FieldInfo {...INFO.maintenance} /></label>
                 <AiButton
                   type="car-maintenance"
-                  context={{ name: draft.name, fuelType: draft.fuelType, pricePkr: draft.pricePkr }}
+                  context={{ name: draft.name, fuelType: draft.fuelType, pricePkr: draft.pricePkr, annualKm }}
                   currentValue={draft.annualMaintenancePkr}
                   onAccept={(val) => setDraft({ ...draft, annualMaintenancePkr: val })}
                   formatValue={(x) => formatCompactPkr(x)}
@@ -527,7 +528,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                       <label className="text-[10px] text-zinc-400 flex items-center gap-1">5-Yr Deprec. (%) <FieldInfo {...INFO.depreciation} /></label>
                       <AiButton
                         type="car-depreciation"
-                        context={{ name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }}
+                        context={{ name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr, annualKm }}
                         currentValue={v.fiveYearDepreciationPct}
                         onAccept={(val) => updateVehicle(v.id, { fiveYearDepreciationPct: val })}
                         formatValue={(x) => `${x}%`}
@@ -551,7 +552,7 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                       <label className="text-[10px] text-zinc-400 flex items-center gap-1">Maint / Year (PKR) <FieldInfo {...INFO.maintenance} /></label>
                       <AiButton
                         type="car-maintenance"
-                        context={{ name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }}
+                        context={{ name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr, annualKm }}
                         currentValue={v.annualMaintenancePkr}
                         onAccept={(val) => updateVehicle(v.id, { annualMaintenancePkr: val })}
                         formatValue={(x) => formatCompactPkr(x)}
