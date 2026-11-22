@@ -57,11 +57,14 @@ export const AI_SYSTEM_PROMPT =
  * fails, the chain falls back to the plain model, then the fallback
  * model. All other types stay ungrounded (stable knowledge, and the
  * bucket/expense types are deliberately anchored to app baselines).
+ * Live evidence (NOTES #43): grounding was initially enabled for
+ * car-maintenance and car-depreciation too, but their searches ran
+ * into the 60s timeout and fell back anyway — price is the volatile
+ * figure that needs the web; the other two keep their improved
+ * prompts (mileage scaling, cross-year comparison) ungrounded.
  */
 export const GROUNDED_PREDICTION_TYPES: ReadonlySet<PredictionType> = new Set([
   'car-price',
-  'car-maintenance',
-  'car-depreciation',
 ]);
 
 export function isGroundedPrediction(type: PredictionType): boolean {
@@ -86,7 +89,7 @@ export const PREDICTIONS: Record<PredictionType, PredictionSpec> = {
     max: 90,
     decimals: 0,
     buildPrompt: (c) =>
-      `Use web search first: compare current asking prices for this vehicle across model years on Pakistani listings (pakwheels.com, olx.com.pk) to judge how fast it loses value. ` +
+      `Judge from how this model's asking prices fall across model years in Pakistan's used market (PakWheels-style listings) how fast it loses value. ` +
       `Vehicle: name "${s(c.name)}", type ${s(c.fuelType)}, current price Rs ${n(c.pricePkr)}. ` +
       `value = the % of today's price the car will LOSE over 5 years (50 means it will sell for half). ` +
       `Consider brand resale strength in Pakistan (Toyota/Honda/Suzuki hold value; Chinese EVs and slow-selling models lose more). ` +

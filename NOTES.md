@@ -759,3 +759,8 @@ Audit Round 2 UI, accessibility, and zero-value preservation across Onboarding, 
 (6) Unit Testing (tests/ui-planner-cars.test.ts):
     - Added 11 unit tests covering MultiAssetSplitter auto-balance remainder, wizard zero-value drafts, holding zero-value resets, car swap decision signature persistence, empty fleet safety, and AI fill rejected promise handling.
     - Verified full test suite (172/172 tests green) and Next.js production build (`npm run build`).
+
+## #43 — Grounding narrowed to car-price after live evidence (Nov 23, 2026)
+- Deployed #38–#42 and live-tested `/api/ai/predict`: **car-price grounding works** — Changan Alsvin 1.3L returned **Rs 3,789,000** via `gpt-oss-120b + browser_search`, reasoning citing a real PakWheels on-road listing (vs the Rs 13.0 Lac ungrounded failure that started #38).
+- But car-maintenance and car-depreciation grounded calls **ran into the 60s timeout** (their searches browse workshop/spec pages interactively) and fell back anyway — first to Qwen (during a short gpt-oss rate-limit window after the search-heavy call), then to the plain primary once the window passed. Net effect of grounding those two: a ~60s wait for the same answer.
+- **Change:** `GROUNDED_PREDICTION_TYPES` is now `{car-price}` only. Maintenance keeps the annual-km scaling prompt; depreciation keeps its cross-year framing (search wording removed since no tool is attached). Fallback chain unchanged. Verified live after redeploy.
