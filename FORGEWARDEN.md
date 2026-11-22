@@ -69,6 +69,16 @@ Before any building starts, the task brief states all five:
    server, and anonymous (signed-out) use keeps working from
    localStorage exactly as before. Any further backend still requires a
    new FORGE brief and explicit owner approval.
+   **Amendment 3 (owner instruction, 22 Nov 2026):** AI Assist — the
+   owner's own server may call the Groq API (models in `GROQ_MODEL` /
+   `GROQ_MODEL_FALLBACK`) from the same-origin `POST /api/ai/predict`
+   route, for field predictions only. Terms: the API key lives only in
+   the server's `.env.server` (never in git, never in the browser);
+   prompts carry only the minimum field context (no account identity,
+   no portfolio export); every AI output is labelled "AI estimate" in
+   the UI, fills input fields only, and never overwrites the stamped
+   market data of Gate 2; the feature is behind a global user toggle
+   and the app remains fully functional with AI off or unavailable.
 7. **Guardian pass.** Before a push, a read-only reviewer (human or agent
    who did not write the code) checks the diff against gates 1–6 and the
    `NOTES.md` catalog. The builder cannot mark its own work verified.

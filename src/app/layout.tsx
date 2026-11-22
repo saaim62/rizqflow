@@ -5,6 +5,7 @@ import { Navbar } from '@/components/ui/Navbar';
 import { MarketPulseBar } from '@/components/ui/MarketPulseBar';
 import { BeginnerGuideProvider } from '@/components/ui/BeginnerDrawer';
 import { ProfileProvider } from '@/components/providers/ProfileProvider';
+import { AiAssistProvider } from '@/components/providers/AiAssistProvider';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -42,6 +43,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-[#121214] text-zinc-100 selection:bg-emerald-500/30 selection:text-emerald-300">
         <ProfileProvider>
+          <AiAssistProvider>
           <BeginnerGuideProvider>
             <MarketPulseBar />
             <Navbar />
@@ -69,6 +71,7 @@ export default function RootLayout({
               </div>
             </footer>
           </BeginnerGuideProvider>
+          </AiAssistProvider>
         </ProfileProvider>
       </body>
     </html>

@@ -411,3 +411,22 @@ chart, so the user read results for a fleet they had not finished
 editing. Per the owner's instruction it now sits directly below
 Economic Parameters & Driving Profile and above the Real Cost a Month
 Leaderboard: parameters → fleet → ranking → chart → disclosures.
+
+#27 — AI Assist Phase 1: prediction core + Cars (owner request, 22 Nov 2026)
+Users cannot sanity-predict fields like a car's 5-year depreciation —
+they have no resale statistics — so the owner ordered an AI assistant:
+a global toggle plus per-field predictions that fill the field and stay
+editable. Phase 1 ships the core: POST /api/ai/predict (server-side
+Groq call, key only in .env.server; primary openai/gpt-oss-120b with
+qwen/qwen3.8-27b fallback — the owner's exact model, verified live
+against his Groq account after an initial wrong guess of
+qwen/qwen3-32b returned model_not_found), a pure prediction registry
+(src/lib/aiPredictions.ts) with per-field prompts and sane-range
+clamping, the AiAssistProvider + AiButton (inline suggestion panel:
+value, reasoning, confidence; gold state marks AI-filled values), the
+navbar toggle placed at the far right behind a divider with the bar's
+spacing opened up (owner: the bar was too cramped), and Cars wiring —
+price, depreciation, maintenance and efficiency predictions on every
+vehicle card and in the add-vehicle form. Recorded as Gate 6
+Amendment 3: AI fills inputs only, never touches stamped market data,
+and the app works unchanged with AI off.

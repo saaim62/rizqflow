@@ -21,6 +21,7 @@ import {
   saveCustomMarketRates,
 } from '@/lib/marketRates';
 import { AssetBucket, PricePoint, UserProfile } from '@/types';
+import { PREDICTIONS, clampPrediction, isPredictionType, parsePrediction } from '@/lib/aiPredictions';
 
 describe('Formatting Utilities (src/lib/format.ts)', () => {
   it('formats Pakistani Rupee with standard commas and Rs prefix', () => {
@@ -768,5 +769,50 @@ describe('NOTES #25: formatPkrWords input hints', () => {
 
   it('marks negatives (a debt entered as a negative reserve)', () => {
     expect(formatPkrWords(-750000)).toBe('−7 Lac 50 Thousand');
+  });
+});
+
+describe('NOTES #27: AI prediction registry (pure)', () => {
+  it('builds prompts that carry the field context', () => {
+    const p = PREDICTIONS['car-depreciation'].buildPrompt({
+      name: 'Nissan Leaf 40kWh EV',
+      fuelType: 'ev',
+      pricePkr: 4800000,
+    });
+    expect(p).toContain('Nissan Leaf');
+    expect(p).toContain('4800000');
+    expect(p).toContain('LOSE');
+  });
+
+  it('clamps predictions into sane ranges', () => {
+    expect(clampPrediction('car-depreciation', 140)).toBe(90);
+    expect(clampPrediction('car-depreciation', -3)).toBe(5);
+    expect(clampPrediction('car-efficiency', 13.37)).toBe(13.4);
+    expect(clampPrediction('bucket-return', 12.34)).toBe(12.3);
+  });
+
+  it('parses model JSON, tolerates fences and swaps a reversed range', () => {
+    const ok = parsePrediction(
+      'car-maintenance',
+      '{"value": 42000, "reasoning": "Leaf has minimal moving parts.", "confidence": "high"}'
+    );
+    expect(ok?.value).toBe(42000);
+    expect(ok?.confidence).toBe('high');
+
+    const range = parsePrediction(
+      'stock-outlook',
+      '```json\n{"value": 700, "valueHigh": 550, "reasoning": "range", "confidence": "low"}\n```'
+    );
+    expect(range?.value).toBe(550);
+    expect(range?.valueHigh).toBe(700);
+
+    expect(parsePrediction('car-price', 'not json at all')).toBeNull();
+    expect(parsePrediction('car-price', '{"value": "abc"}')).toBeNull();
+  });
+
+  it('recognises only registered prediction types', () => {
+    expect(isPredictionType('car-depreciation')).toBe(true);
+    expect(isPredictionType('delete-everything')).toBe(false);
+    expect(isPredictionType(42)).toBe(false);
   });
 });

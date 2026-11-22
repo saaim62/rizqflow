@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { VehicleCandidate, BankEmiQuote } from '@/types';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import { AmountWords } from '@/components/ui/AmountWords';
+import { AiButton } from '@/components/ui/AiButton';
+import { formatCompactPkr } from '@/lib/format';
 import { 
   Car, 
   Bike, 
@@ -175,7 +177,16 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
               />
             </div>
             <div>
-              <label className="text-[10px] text-zinc-400 block mb-1">Price / Resale (PKR)</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[10px] text-zinc-400">Price / Resale (PKR)</label>
+                <AiButton
+                  type="car-price"
+                  context={{ name: draft.name, fuelType: draft.fuelType }}
+                  currentValue={draft.pricePkr}
+                  onAccept={(val) => setDraft({ ...draft, pricePkr: val })}
+                  formatValue={(x) => formatCompactPkr(x)}
+                />
+              </div>
               <input
                 type="number"
                 step={50000}
@@ -186,9 +197,18 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
               <AmountWords value={draft.pricePkr} />
             </div>
             <div>
-              <label className="text-[10px] text-zinc-400 block mb-1">
-                {draft.fuelType === 'petrol' ? 'Mileage (km/L)' : 'kWh / 100km'}
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[10px] text-zinc-400">
+                  {draft.fuelType === 'petrol' ? 'Mileage (km/L)' : 'kWh / 100km'}
+                </label>
+                <AiButton
+                  type="car-efficiency"
+                  context={{ name: draft.name, fuelType: draft.fuelType }}
+                  currentValue={draft.efficiency}
+                  onAccept={(val) => setDraft({ ...draft, efficiency: val })}
+                  formatValue={(x) => (draft.fuelType === 'petrol' ? `${x} km/L` : `${x} kWh/100km`)}
+                />
+              </div>
               <input
                 type="number"
                 step={0.5}
@@ -198,7 +218,16 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
               />
             </div>
             <div>
-              <label className="text-[10px] text-zinc-400 block mb-1">5-Yr Deprec. (%)</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[10px] text-zinc-400">5-Yr Deprec. (%)</label>
+                <AiButton
+                  type="car-depreciation"
+                  context={{ name: draft.name, fuelType: draft.fuelType, pricePkr: draft.pricePkr }}
+                  currentValue={draft.fiveYearDepreciationPct}
+                  onAccept={(val) => setDraft({ ...draft, fiveYearDepreciationPct: val })}
+                  formatValue={(x) => `${x}%`}
+                />
+              </div>
               <input
                 type="number"
                 step={5}
@@ -210,7 +239,16 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
               />
             </div>
             <div>
-              <label className="text-[10px] text-zinc-400 block mb-1">Maint / Year (PKR)</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[10px] text-zinc-400">Maint / Year (PKR)</label>
+                <AiButton
+                  type="car-maintenance"
+                  context={{ name: draft.name, fuelType: draft.fuelType, pricePkr: draft.pricePkr }}
+                  currentValue={draft.annualMaintenancePkr}
+                  onAccept={(val) => setDraft({ ...draft, annualMaintenancePkr: val })}
+                  formatValue={(x) => formatCompactPkr(x)}
+                />
+              </div>
               <input
                 type="number"
                 step={5000}
@@ -299,9 +337,16 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                 {/* Price and Efficiency Inputs */}
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <label className="text-[10px] text-zinc-400 block mb-1">
-                      Price / Resale (PKR)
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] text-zinc-400">Price / Resale (PKR)</label>
+                      <AiButton
+                        type="car-price"
+                        context={{ name: v.name, fuelType: v.fuelType }}
+                        currentValue={v.pricePkr}
+                        onAccept={(val) => updateVehicle(v.id, { pricePkr: val })}
+                        formatValue={(x) => formatCompactPkr(x)}
+                      />
+                    </div>
                     <input
                       type="number"
                       step={50000}
@@ -313,9 +358,25 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                   </div>
 
                   <div>
-                    <label className="text-[10px] text-zinc-400 block mb-1">
-                      {v.fuelType === 'petrol' ? 'Mileage (km/L)' : 'kWh / 100km'}
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] text-zinc-400">
+                        {v.fuelType === 'petrol' ? 'Mileage (km/L)' : 'kWh / 100km'}
+                      </label>
+                      <AiButton
+                        type="car-efficiency"
+                        context={{ name: v.name, fuelType: v.fuelType }}
+                        currentValue={v.fuelType === 'petrol' ? v.kmPerLitre : v.kwhPer100Km}
+                        onAccept={(val) =>
+                          updateVehicle(
+                            v.id,
+                            v.fuelType === 'petrol' ? { kmPerLitre: val } : { kwhPer100Km: val }
+                          )
+                        }
+                        formatValue={(x) =>
+                          v.fuelType === 'petrol' ? `${x} km/L` : `${x} kWh/100km`
+                        }
+                      />
+                    </div>
                     {v.fuelType === 'petrol' ? (
                       <input
                         type="number"
@@ -340,9 +401,16 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                   </div>
 
                   <div>
-                    <label className="text-[10px] text-zinc-400 block mb-1">
-                      5-Yr Deprec. (%)
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] text-zinc-400">5-Yr Deprec. (%)</label>
+                      <AiButton
+                        type="car-depreciation"
+                        context={{ name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }}
+                        currentValue={v.fiveYearDepreciationPct}
+                        onAccept={(val) => updateVehicle(v.id, { fiveYearDepreciationPct: val })}
+                        formatValue={(x) => `${x}%`}
+                      />
+                    </div>
                     <input
                       type="number"
                       step={5}
@@ -357,9 +425,16 @@ export function VehicleCardList({ vehicles, onChange }: VehicleCardListProps) {
                   </div>
 
                   <div>
-                    <label className="text-[10px] text-zinc-400 block mb-1">
-                      Maint / Year (PKR)
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] text-zinc-400">Maint / Year (PKR)</label>
+                      <AiButton
+                        type="car-maintenance"
+                        context={{ name: v.name, fuelType: v.fuelType, pricePkr: v.pricePkr }}
+                        currentValue={v.annualMaintenancePkr}
+                        onAccept={(val) => updateVehicle(v.id, { annualMaintenancePkr: val })}
+                        formatValue={(x) => formatCompactPkr(x)}
+                      />
+                    </div>
                     <input
                       type="number"
                       step={5000}

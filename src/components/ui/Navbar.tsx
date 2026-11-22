@@ -25,6 +25,50 @@ import {
 } from 'lucide-react';
 import { useBeginnerGuide } from './BeginnerDrawer';
 import { useProfile } from '@/components/providers/ProfileProvider';
+import { useAiAssist } from '@/components/providers/AiAssistProvider';
+
+/**
+ * AiAssistToggle — the global AI Assist switch (NOTES #27).
+ * Deliberately NOT one more grey pill in the crowded bar (owner
+ * instruction, 22 Nov 2026): it sits at the far right, behind a
+ * divider, gold-outlined, and fills gold when ON so its state reads
+ * from anywhere. Renders nothing when the server has no AI configured.
+ */
+export function AiAssistToggle({ inMenu = false }: { inMenu?: boolean }) {
+  const { enabled, setEnabled, available } = useAiAssist();
+  if (!available) return null;
+
+  const pill = (
+    <button
+      onClick={() => setEnabled(!enabled)}
+      title={enabled ? 'AI Assist is ON — prediction buttons appear beside fields' : 'Turn AI Assist ON — prediction buttons appear beside fields'}
+      className={`flex items-center gap-2 rounded-lg text-xs font-bold transition-all ${
+        inMenu ? 'w-full justify-center px-3 py-2' : 'px-3 py-1.5'
+      } ${
+        enabled
+          ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-black border border-amber-300 shadow-sm shadow-amber-500/30'
+          : 'bg-amber-500/[0.06] text-amber-400/80 border border-amber-500/40 hover:bg-amber-500/15 hover:text-amber-300'
+      }`}
+    >
+      <Sparkles className="w-3.5 h-3.5" />
+      <span>AI Assist</span>
+      <span
+        className={`relative inline-flex w-7 h-4 rounded-full transition-colors ${
+          enabled ? 'bg-black/30' : 'bg-white/10'
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${
+            enabled ? 'left-3.5 bg-black' : 'left-0.5 bg-zinc-400'
+          }`}
+        />
+      </span>
+    </button>
+  );
+
+  if (inMenu) return pill;
+  return <div className="hidden md:flex items-center pl-3 ml-1 border-l border-white/10">{pill}</div>;
+}
 
 export function Navbar() {
   const pathname = usePathname();
@@ -54,7 +98,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#121214]/85 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-6">
         {/* Brand / Logo */}
         <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center gap-2.5 group">
@@ -86,7 +130,7 @@ export function Navbar() {
         </div>
 
         {/* Desktop Nav Links */}
-        <nav className="hidden lg:flex items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-2.5">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
             const Icon = link.icon;
@@ -94,7 +138,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all ${
                   isActive
                     ? 'bg-white/10 text-white border border-white/15 shadow-sm font-semibold'
                     : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
@@ -113,7 +157,7 @@ export function Navbar() {
         </nav>
 
         {/* Right Action Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {/* Setup Wizard Button */}
           <button
             onClick={() => openOnboardingModal()}
@@ -197,6 +241,9 @@ export function Navbar() {
             <span>Guide</span>
           </button>
 
+          {/* Global AI Assist switch — far right, behind a divider */}
+          <AiAssistToggle />
+
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -238,6 +285,7 @@ export function Navbar() {
             );
           })}
           <div className="pt-2 border-t border-white/5 flex flex-col gap-2">
+            <AiAssistToggle inMenu />
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
