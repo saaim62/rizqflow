@@ -40,9 +40,14 @@ function PlannerContent() {
   const [showSnapshotModal, setShowSnapshotModal] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  // Compute live multi-asset life plan
+  // Compute live multi-asset life plan. The projection start (today) is
+  // passed IN so the pure engine can place balloon due dates in time —
+  // the engine itself never reads the clock (NOTES #45).
   const plan = useMemo(() => {
-    return calculateLifePlan(profile);
+    const now = new Date();
+    return calculateLifePlan(profile, {
+      projectionStart: { year: now.getFullYear(), month: now.getMonth() + 1 },
+    });
   }, [profile]);
 
   return (

@@ -158,7 +158,7 @@ export interface UserProfile {
   dividendGrowthPct: number;
   opportunityCostReturnPct: number; // Default 10% for car TCO
   usdToPkr: number; // Default 276.5
-  goldPerTolaPkr: number; // Default 376336
+  goldPerTolaPkr: number; // Default 379836
   petrolPricePerLitre: number; // Default 322 (OGRA, Nov 2026)
   gridRatePerKwh: number; // Default 55
   solarKw: number;
@@ -192,11 +192,71 @@ export interface HoldingItem {
   details?: string; // plot size & location, bank name, free notes
 }
 
-export interface LiabilityItem {
+export type LiabilityCategory =
+  | 'mortgage'
+  | 'vehicle-loan'
+  | 'education-loan'
+  | 'personal-loan'
+  | 'credit-card'
+  | 'bnpl'
+  | 'medical'
+  | 'tax'
+  | 'family-loan'
+  | 'other';
+
+export type LiabilityKind = 'amortizing' | 'revolving' | 'balloon';
+
+/**
+ * A liability (NOTES #23 simple item, extended NOTES #45 with a real
+ * due-date schedule). The scheduled shape is: `name`, `category`, `kind`,
+ * `balancePkr`, `aprPct` (0 allowed — family loans are often interest-free),
+ * plus the kind-specific field (`monthlyPaymentPkr` for amortizing,
+ * `minPaymentPctOfBalance` for revolving, `dueDateISO` for balloon; an
+ * amortizing `dueDateISO` is an optional term-end note).
+ *
+ * Legacy NOTES #23 items carry only `label` + `amountPkr` and NO schedule
+ * fields: they remain a position (counted in the net liquid position via
+ * `totalLiabilitiesPkr`) but are NOT scheduled by the engine — scheduling
+ * requires an explicit `kind` + `balancePkr`. All schedule fields are
+ * additive-optional so legacy items stay valid without migration.
+ * `label`/`amountPkr` are kept as mirrors of `name`/`balancePkr` (the
+ * sanitizer syncs them) for the legacy consumers that read them.
+ */
+export interface Liability {
   id: string;
-  label: string; // e.g. "Splitwise balance owed", "Credit card"
-  amountPkr: number;
+  name?: string; // e.g. "Family loan — return in 5 years"
+  category?: LiabilityCategory;
+  kind?: LiabilityKind;
+  balancePkr?: number;
+  aprPct?: number; // annual percentage rate; 0 allowed
+  monthlyPaymentPkr?: number; // amortizing
+  minPaymentPctOfBalance?: number; // revolving: % of current balance paid monthly
+  dueDateISO?: string; // balloon due date (YYYY-MM-DD); amortizing: optional term end
+  // Legacy NOTES #23 fields (mirrors of name / balancePkr)
+  label?: string; // e.g. "Splitwise balance owed", "Credit card"
+  amountPkr?: number;
   details?: string;
+}
+
+export type LiabilityItem = Liability;
+
+/** Per-liability outcome of the engine's debt schedule (NOTES #45). */
+export interface LiabilityPayoffInfo {
+  liabilityId: string;
+  name: string;
+  payoffMonth: number | null; // 1-based month from projection start; null = not cleared in horizon
+  totalInterestPkr: number;
+  totalPaidPkr: number;
+  negativeAmortization: boolean;
+}
+
+/** A scheduled outflow the portfolio could not fully cover (NOTES #45). */
+export interface LiabilityShortfall {
+  liabilityId: string;
+  name: string;
+  month: number; // 1-based month from projection start
+  duePkr: number;
+  shortfallPkr: number;
 }
 
 export interface WealthTimelinePoint {
@@ -208,6 +268,8 @@ export interface WealthTimelinePoint {
   realMonthlyDividendPkr: number;
   monthlyExpensesPkr: number;
   goalWithdrawnPkr: number;
+  liabilityPaidPkr?: number; // NOTES #45: scheduled liability outflows this year
+  liabilityBalancePkr?: number; // NOTES #45: scheduled liabilities outstanding at year end
 }
 
 export interface ExpenseCoverageStep {
@@ -234,6 +296,11 @@ export interface PlanSummary {
   finalWealthGoldTolas: number;
   safeMonthlyIncome4PctTodaysPkr: number;
   goalOutcomes: GoalOutcome[];
+  // NOTES #45 (additive, present only when scheduled liabilities exist):
+  liabilityWarnings?: string[];
+  liabilityShortfalls?: LiabilityShortfall[];
+  liabilityPayoffs?: LiabilityPayoffInfo[];
+  totalLiabilityPaymentsPkr?: number;
   monthlyPayoutCalendar: { month: string; amountPkr: number }[];
   expenseWaterfall: ExpenseCoverageStep[];
   timeline: WealthTimelinePoint[];

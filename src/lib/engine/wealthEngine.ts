@@ -14,6 +14,16 @@ import {
 } from '@/types';
 import { PSX_STOCKS } from '@/data/marketData';
 import { evaluateCarDecision } from '@/lib/engine/carTcoEngine';
+import {
+  buildLiabilitySchedule,
+  isScheduledLiability,
+  liabilityBalancePkr,
+  liabilityDisplayName,
+  ProjectionStart,
+} from '@/lib/engine/debtSchedule';
+import { LiabilityShortfall } from '@/types';
+
+export type { ProjectionStart } from '@/lib/engine/debtSchedule';
 
 export interface VehicleSwapOption {
   name: string;
@@ -203,12 +213,12 @@ function getDefaultAssetBuckets(): AssetBucket[] {
   ];
 }
 
-/** Total declared liabilities (NOTES #23). Missing list = zero. */
+/**
+ * Total declared liabilities (NOTES #23; NOTES #45: scheduled items count
+ * their `balancePkr`, legacy items their `amountPkr`). Missing list = zero.
+ */
 export function totalLiabilitiesPkr(profile: UserProfile): number {
-  return (profile.liabilities ?? []).reduce(
-    (sum, l) => sum + (typeof l.amountPkr === 'number' && l.amountPkr > 0 ? l.amountPkr : 0),
-    0
-  );
+  return (profile.liabilities ?? []).reduce((sum, l) => sum + liabilityBalancePkr(l), 0);
 }
 
 /** Net liquid position: cash reserve minus declared liabilities. */
@@ -229,7 +239,10 @@ export function totalHoldingsPkr(profile: UserProfile): number {
  * Evaluates month-by-month multi-asset compounding, dated life goal withdrawals,
  * PSX dividend yield and income waterfall, emergency fund buffer, and car TCO decision.
  */
-export function calculateLifePlan(profile: UserProfile): PlanSummary {
+export function calculateLifePlan(
+  profile: UserProfile,
+  options?: { projectionStart?: ProjectionStart }
+): PlanSummary {
   // 1. Total monthly expenses
   const totalMonthlyExpenses =
     profile.expenses.fuelAndCommute +
@@ -379,6 +392,23 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
   // not silently truncated at year 15.
   const yearsToRetirement = (profile.retirementAge || 60) - (profile.age || 30);
   const simulationYears = Math.min(45, Math.max(10, yearsToRetirement || 15));
+
+  // 8a. Liability debt schedule (NOTES #45). Only liabilities carrying an
+  // explicit schedule (kind + balancePkr) take part; legacy NOTES #23
+  // items stay a position-only entry (net liquid reserve / emergency gap)
+  // and never touch the projection — so a profile with no scheduled
+  // liabilities produces outputs identical to the pre-#45 engine.
+  // Liability payments are SEPARATE projection outflows: they are never
+  // added to monthly expenses (no double-count). The schedule is monthly;
+  // the projection consumes it aggregated per year. Time enters only via
+  // options.projectionStart (the engine never reads the clock for debts).
+  const scheduledLiabilities = (profile.liabilities ?? []).filter(isScheduledLiability);
+  const debtSchedule =
+    scheduledLiabilities.length > 0
+      ? buildLiabilitySchedule(scheduledLiabilities, simulationYears * 12, options?.projectionStart)
+      : null;
+  const liabilityShortfalls: LiabilityShortfall[] = [];
+  let totalLiabilityPaymentsPkr = 0;
   const timeline: (WealthTimelinePoint & { portfolioValuePkr: number; annualNetDividendPkr: number })[] = [];
   const annualNewCapital = profile.monthlyInvestPkr * 12;
 
@@ -437,6 +467,62 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
         value: p.value * (1 - 0.025),
       }));
       currentPortfolio -= zakatDeduction;
+    }
+
+    // Liability outflows for this year (NOTES #45): the year's monthly
+    // schedule aggregated. Paid pro-rata from every sleeve, like goal
+    // withdrawals. If the portfolio cannot cover the year's outflows, the
+    // unpaid part is recorded as an explicit shortfall (balloon dues are
+    // attributed first) instead of letting wealth go silently negative.
+    let liabilityPaidThisYear = 0;
+    if (debtSchedule) {
+      const monthFrom = (year - 1) * 12;
+      const monthTo = year * 12;
+      let yearOutflow = 0;
+      for (let m = monthFrom; m < monthTo; m++) yearOutflow += debtSchedule.monthlyOutflows[m] ?? 0;
+      if (yearOutflow > 0) {
+        const paid = Math.min(Math.max(0, currentPortfolio), yearOutflow);
+        let unpaid = yearOutflow - paid;
+        if (unpaid > 0.005) {
+          const byId = scheduledLiabilities
+            .map((l) => {
+              const arr = debtSchedule.outflowsByLiability.get(l.id) ?? [];
+              let due = 0;
+              for (let m = monthFrom; m < monthTo; m++) due += arr[m] ?? 0;
+              // First month this year with an outflow, for the record.
+              let firstMonth = monthFrom + 1;
+              for (let m = monthFrom; m < monthTo; m++) {
+                if ((arr[m] ?? 0) > 0) { firstMonth = m + 1; break; }
+              }
+              return { l, due, firstMonth };
+            })
+            .filter((x) => x.due > 0)
+            .sort((a, b) => (a.l.kind === 'balloon' ? 0 : 1) - (b.l.kind === 'balloon' ? 0 : 1));
+          for (const x of byId) {
+            if (unpaid <= 0.005) break;
+            const shortfall = Math.min(unpaid, x.due);
+            liabilityShortfalls.push({
+              liabilityId: x.l.id,
+              name: liabilityDisplayName(x.l),
+              month: x.firstMonth,
+              duePkr: Math.round(x.due),
+              shortfallPkr: Math.round(shortfall),
+            });
+            unpaid -= shortfall;
+          }
+        }
+        if (paid > 0 && currentPortfolio > 0) {
+          const psxFrac = psxPot / currentPortfolio;
+          psxPot -= paid * psxFrac;
+          otherPots = otherPots.map((p) => ({
+            ...p,
+            value: p.value - paid * (p.value / currentPortfolio),
+          }));
+          currentPortfolio -= paid;
+        }
+        liabilityPaidThisYear = paid;
+        totalLiabilityPaymentsPkr += paid;
+      }
     }
 
     const inflationFactor = Math.pow(1 + profile.annualInflationPct / 100, year - 1);
@@ -499,6 +585,14 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
       realMonthlyDividendPkr: Math.round(realMonthlyDiv),
       monthlyExpensesPkr: Math.round(monthlyExpenses),
       goalWithdrawnPkr: Math.round(goalWithdrawnThisYear),
+      ...(debtSchedule
+        ? {
+            liabilityPaidPkr: Math.round(liabilityPaidThisYear),
+            liabilityBalancePkr: Math.round(
+              debtSchedule.totalBalanceByMonth[year * 12 - 1] ?? 0
+            ),
+          }
+        : {}),
     });
   }
 
@@ -567,7 +661,7 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
   const finalRealTodaysPkr = lastPoint ? lastPoint.realTodaysPkr : Math.round(profile.lumpSumPkr);
   const finalWealthUsd = Math.round(finalRealTodaysPkr / (profile.usdToPkr || 276.5));
   const finalWealthGoldTolas = Number(
-    (finalRealTodaysPkr / (profile.goldPerTolaPkr || 376336)).toFixed(1)
+    (finalRealTodaysPkr / (profile.goldPerTolaPkr || 379836)).toFixed(1)
   );
   const safeMonthlyIncome4PctTodaysPkr = Math.round((finalRealTodaysPkr * 0.04) / 12);
 
@@ -650,6 +744,17 @@ export function calculateLifePlan(profile: UserProfile): PlanSummary {
     recommendedAllocations,
     carDecision,
     vehicleSwaps,
+    // NOTES #45: liability outputs are attached only when scheduled
+    // liabilities exist, so liability-free profiles keep the exact
+    // pre-#45 result shape (golden-baseline guarantee).
+    ...(debtSchedule
+      ? {
+          liabilityWarnings: debtSchedule.warnings,
+          liabilityShortfalls,
+          liabilityPayoffs: debtSchedule.payoffs,
+          totalLiabilityPaymentsPkr: Math.round(totalLiabilityPaymentsPkr),
+        }
+      : {}),
   };
 
   return result as PlanSummary;

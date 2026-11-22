@@ -249,15 +249,78 @@ function sanitizeHoldings(raw: any): HoldingItem[] {
   }));
 }
 
-/** Declared liabilities (NOTES #23): validate shape, clamp amounts. */
+const LIABILITY_CATEGORIES = [
+  'mortgage',
+  'vehicle-loan',
+  'education-loan',
+  'personal-loan',
+  'credit-card',
+  'bnpl',
+  'medical',
+  'tax',
+  'family-loan',
+  'other',
+];
+const LIABILITY_KINDS = ['amortizing', 'revolving', 'balloon'];
+
+/** Optional clamped number: undefined unless a finite number was supplied. */
+function clampOptional(val: any, min: number, max: number): number | undefined {
+  return typeof val === 'number' && Number.isFinite(val)
+    ? Math.min(Math.max(val, min), max)
+    : undefined;
+}
+
+function cleanDueDate(val: any): string | undefined {
+  if (typeof val !== 'string') return undefined;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(val);
+  if (!m) return undefined;
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return undefined;
+  return val.slice(0, 10);
+}
+
+/**
+ * Declared liabilities (NOTES #23; scheduled shape NOTES #45): validate
+ * shape, deep-clamp amounts, reject unknown category/kind values.
+ * The canonical scheduled fields (`name`, `balancePkr`) and the legacy
+ * mirrors (`label`, `amountPkr`) are synced from whichever side supplied
+ * a value, so old and new consumers read the same numbers. An entry with
+ * an unknown kind keeps its balance as a position but loses the kind —
+ * it is never scheduled on a guessed basis. No NaN/Infinity survives:
+ * every numeric field passes through clamp/clampOptional.
+ */
 function sanitizeLiabilities(raw: any): LiabilityItem[] {
   if (!Array.isArray(raw)) return [];
-  return raw.slice(0, 100).map((l: any, i: number) => ({
-    id: typeof l?.id === 'string' && l.id ? l.id.slice(0, 64) : `liability-${i}`,
-    label: cleanText(l?.label, 120) || 'Liability',
-    amountPkr: clamp(l?.amountPkr, 0, 1_000_000_000, 0),
-    details: cleanText(l?.details, 300) || undefined,
-  }));
+  return raw.slice(0, 100).map((l: any, i: number) => {
+    const name = cleanText(l?.name, 120) || cleanText(l?.label, 120) || 'Liability';
+    const balanceRaw =
+      typeof l?.balancePkr === 'number' && Number.isFinite(l.balancePkr)
+        ? l.balancePkr
+        : l?.amountPkr;
+    const balance = clamp(balanceRaw, 0, 1_000_000_000, 0);
+    const kind = LIABILITY_KINDS.includes(l?.kind) ? l.kind : undefined;
+    const item: LiabilityItem = {
+      id: typeof l?.id === 'string' && l.id ? l.id.slice(0, 64) : `liability-${i}`,
+      name,
+      label: name,
+      balancePkr: balance,
+      amountPkr: balance,
+      category: LIABILITY_CATEGORIES.includes(l?.category) ? l.category : undefined,
+      kind,
+      // A schedule only exists with a valid kind; kind-specific fields are
+      // kept only for the kind they belong to.
+      aprPct: kind ? clamp(l?.aprPct, 0, 100, 0) : clampOptional(l?.aprPct, 0, 100),
+      monthlyPaymentPkr:
+        kind === 'amortizing' ? clampOptional(l?.monthlyPaymentPkr, 0, 100_000_000) : undefined,
+      minPaymentPctOfBalance:
+        kind === 'revolving' ? clampOptional(l?.minPaymentPctOfBalance, 0, 100) : undefined,
+      dueDateISO:
+        kind === 'balloon' || kind === 'amortizing' ? cleanDueDate(l?.dueDateISO) : undefined,
+      details: cleanText(l?.details, 300) || undefined,
+    };
+    return item;
+  });
 }
 
 /**

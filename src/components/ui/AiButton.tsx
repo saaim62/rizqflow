@@ -116,7 +116,9 @@ export function AiButton({ type, context, currentValue, onAccept, formatValue }:
           >
             <div className="flex items-center justify-between">
               <span className="text-[9px] font-bold tracking-widest text-amber-400 uppercase">
-                AI Estimate{result ? ` · ${modelShort(result.model)}` : ''}
+                {result?.source === 'sourced'
+                  ? `Sourced Data${result.sourceNote ? ` · ${result.sourceNote}` : ''}`
+                  : `AI Estimate${result ? ` · ${modelShort(result.model)}` : ''}`}
               </span>
               <button
                 type="button"

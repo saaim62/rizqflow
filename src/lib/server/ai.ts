@@ -19,6 +19,7 @@ import {
   parsePrediction,
   isGroundedPrediction,
 } from '@/lib/aiPredictions';
+import { findGroundTruth } from '@/lib/vehicleGroundTruth';
 import { ForeignMappingResult } from '@/types';
 import {
   getDefaultFallbackProfile,
@@ -35,6 +36,7 @@ interface AiConfig {
   apiKey: string;
   model: string;
   fallbackModel: string;
+  provider: string;
 }
 
 export function getAiConfig(): AiConfig | null {
@@ -44,7 +46,38 @@ export function getAiConfig(): AiConfig | null {
     apiKey,
     model: process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
     fallbackModel: process.env.GROQ_MODEL_FALLBACK || 'qwen/qwen3.8-27b',
+    provider: process.env.AI_PROVIDER || 'groq',
   };
+}
+
+/**
+ * Thin provider layer (NOTES #46): provider + model are chosen by
+ * env (AI_PROVIDER, GROQ_MODEL / GROQ_MODEL_FALLBACK). Groq is the
+ * default and the ONLY wired provider this round — the layer exists
+ * so a future provider seat needs no route changes. No new
+ * endpoints, no new external calls beyond the existing Groq route.
+ */
+export interface AiProvider {
+  id: string;
+  chat: (
+    cfg: AiConfig,
+    model: string,
+    type: PredictionType,
+    context: Record<string, unknown>,
+    opts?: { grounded?: boolean }
+  ) => Promise<(PredictionResult & { model: string }) | null>;
+}
+
+const groqProvider: AiProvider = {
+  id: 'groq',
+  chat: (cfg, model, type, context, opts) => callGroq(cfg, model, type, context, opts),
+};
+
+const AI_PROVIDERS: Record<string, AiProvider> = { groq: groqProvider };
+
+export function getAiProvider(cfg?: AiConfig): AiProvider {
+  const id = cfg?.provider || process.env.AI_PROVIDER || 'groq';
+  return AI_PROVIDERS[id] ?? groqProvider;
 }
 
 export const MAX_CACHE_ENTRIES = 500;
@@ -158,7 +191,7 @@ async function callGroq(
     };
     const content = data.choices?.[0]?.message?.content;
     if (!content) return null;
-    const parsed = parsePrediction(type, content);
+    const parsed = parsePrediction(type, content, context);
     return parsed ? { ...parsed, model: grounded ? `${model} + browser_search` : model } : null;
   } catch {
     return null;
@@ -171,11 +204,25 @@ export type PredictOutcome =
   | { ok: true; result: PredictionResult & { model: string }; cached: boolean }
   | { ok: false; reason: 'not_configured' | 'rate_limited' | 'unavailable' };
 
+/**
+ * Single-flight de-duplication (NOTES #46): identical in-flight
+ * prediction requests share ONE upstream call chain, keyed by the
+ * same cache key as the 6h cache. Bulk fills stay sequential; this
+ * only collapses concurrent duplicates, never parallelises.
+ */
+const inFlight = new Map<string, Promise<PredictOutcome>>();
+
 export async function predictWithAi(
   type: PredictionType,
   context: Record<string, unknown>,
   ip: string
 ): Promise<PredictOutcome> {
+  // Ground truth first (NOTES #46): a table hit returns instantly,
+  // labelled as sourced data — no model call, no API key needed, no
+  // daily-cap consumption.
+  const sourced = findGroundTruth(type, context);
+  if (sourced) return { ok: true, result: sourced, cached: false };
+
   const cfg = getAiConfig();
   if (!cfg) return { ok: false, reason: 'not_configured' };
 
@@ -187,20 +234,33 @@ export async function predictWithAi(
     return { ok: true, result: hit.result, cached: true };
   }
 
-  if (!underCap(ip)) return { ok: false, reason: 'rate_limited' };
+  const pending = inFlight.get(key);
+  if (pending) return pending;
 
-  // Grounded types (volatile market prices): browser-search call on
-  // the primary model first, then the plain primary, then fallback.
-  let result: (PredictionResult & { model: string }) | null = null;
-  if (isGroundedPrediction(type)) {
-    result = await callGroq(cfg, cfg.model, type, context, { grounded: true });
+  const promise = (async (): Promise<PredictOutcome> => {
+    if (!underCap(ip)) return { ok: false, reason: 'rate_limited' };
+
+    const provider = getAiProvider(cfg);
+    // Grounded types (volatile market prices): browser-search call on
+    // the primary model first, then the plain primary, then fallback.
+    let result: (PredictionResult & { model: string }) | null = null;
+    if (isGroundedPrediction(type)) {
+      result = await provider.chat(cfg, cfg.model, type, context, { grounded: true });
+    }
+    if (!result) result = await provider.chat(cfg, cfg.model, type, context);
+    if (!result) result = await provider.chat(cfg, cfg.fallbackModel, type, context);
+    if (!result) return { ok: false, reason: 'unavailable' };
+
+    setBoundedEntry(cache, key, { at: Date.now(), result });
+    return { ok: true, result, cached: false };
+  })();
+
+  inFlight.set(key, promise);
+  try {
+    return await promise;
+  } finally {
+    inFlight.delete(key);
   }
-  if (!result) result = await callGroq(cfg, cfg.model, type, context);
-  if (!result) result = await callGroq(cfg, cfg.fallbackModel, type, context);
-  if (!result) return { ok: false, reason: 'unavailable' };
-
-  setBoundedEntry(cache, key, { at: Date.now(), result });
-  return { ok: true, result, cached: false };
 }
 
 const mappingCache = new Map<string, { at: number; result: ForeignMappingResult & { model: string } }>();
@@ -333,7 +393,12 @@ export function _resetAiStateForTesting(): void {
   cache.clear();
   mappingCache.clear();
   dailyCounts.clear();
+  inFlight.clear();
   lastDayString = new Date().toISOString().slice(0, 10);
+}
+
+export function _getInFlightSizeForTesting(): number {
+  return inFlight.size;
 }
 
 export function _getAiCacheSizeForTesting(): number {

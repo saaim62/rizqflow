@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { HoldingItem, HoldingKind, LiabilityItem, UserProfile } from '@/types';
+import { HoldingItem, HoldingKind, LiabilityCategory, LiabilityItem, LiabilityKind, UserProfile } from '@/types';
 import { netLiquidReservePkr, totalHoldingsPkr, totalLiabilitiesPkr } from '@/lib/engine/wealthEngine';
+import { isScheduledLiability, liabilityBalancePkr, summarizeLiability } from '@/lib/engine/debtSchedule';
 import { formatCompactPkr, formatPkr } from '@/lib/format';
 import { AmountWords } from '@/components/ui/AmountWords';
 import { AiButton } from '@/components/ui/AiButton';
@@ -225,6 +226,257 @@ Your holding's value = shares x this price.`
   );
 }
 
+const LIABILITY_CATEGORY_OPTIONS: { value: LiabilityCategory; label: string }[] = [
+  { value: 'mortgage', label: 'Mortgage' },
+  { value: 'vehicle-loan', label: 'Vehicle Loan' },
+  { value: 'education-loan', label: 'Education Loan' },
+  { value: 'personal-loan', label: 'Personal Loan' },
+  { value: 'credit-card', label: 'Credit Card' },
+  { value: 'bnpl', label: 'BNPL' },
+  { value: 'medical', label: 'Medical' },
+  { value: 'tax', label: 'Tax Due' },
+  { value: 'family-loan', label: 'Family / Informal Loan' },
+  { value: 'other', label: 'Other' },
+];
+
+const LIABILITY_KIND_OPTIONS: { value: LiabilityKind; label: string }[] = [
+  { value: 'amortizing', label: 'Loan — fixed monthly payment' },
+  { value: 'revolving', label: 'Revolving — % minimum payment' },
+  { value: 'balloon', label: 'Balloon — full amount on a due date' },
+];
+
+const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** "Mar 2029" for a 1-based schedule month counted from the projection start. */
+function payoffMonthLabel(start: { year: number; month: number }, payoffMonth: number): string {
+  const idx = start.month - 1 + (payoffMonth - 1);
+  return `${MONTH_LABELS[idx % 12]} ${start.year + Math.floor(idx / 12)}`;
+}
+
+function LiabilityRow({
+  liability: l,
+  updateLiability,
+  onRemove,
+}: {
+  liability: LiabilityItem;
+  updateLiability: (id: string, patch: Partial<LiabilityItem>) => void;
+  onRemove: () => void;
+}) {
+  // The component (not the engine) owns "today": it is passed into the
+  // pure schedule helper as the projection start.
+  const now = new Date();
+  const start = { year: now.getFullYear(), month: now.getMonth() + 1 };
+  const scheduled = isScheduledLiability(l);
+  const summary = scheduled ? summarizeLiability(l, start) : null;
+  const balance = liabilityBalancePkr(l);
+
+  return (
+    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.07] space-y-2">
+      <div className="flex items-center gap-2">
+        <select
+          value={l.category ?? 'other'}
+          onChange={(e) => updateLiability(l.id, { category: e.target.value as LiabilityCategory })}
+          className={`${inputCls} w-auto shrink-0`}
+          aria-label="Liability category"
+        >
+          {LIABILITY_CATEGORY_OPTIONS.map((c) => (
+            <option key={c.value} value={c.value} className="bg-zinc-900">
+              {c.label}
+            </option>
+          ))}
+        </select>
+        <input
+          type="text"
+          value={l.name ?? l.label ?? ''}
+          onChange={(e) => updateLiability(l.id, { name: e.target.value })}
+          placeholder="e.g. Family loan — return in 5 years"
+          className={inputCls}
+        />
+        <button
+          type="button"
+          onClick={onRemove}
+          className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 shrink-0"
+          aria-label="Remove liability"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        <label className="space-y-1 block">
+          <span className="text-[10px] text-zinc-500">Balance owed (PKR)</span>
+          <input
+            type="number"
+            value={l.balancePkr ?? l.amountPkr ?? ''}
+            onChange={(e) =>
+              updateLiability(l.id, { balancePkr: e.target.value === '' ? 0 : Number(e.target.value) })
+            }
+            className={numCls}
+          />
+          <AmountWords value={balance} />
+        </label>
+        <label className="space-y-1 block">
+          <span className="flex items-center justify-between text-[10px] text-zinc-500">
+            <span>APR % / year</span>
+            <FieldInfo
+              title="APR — what it means"
+              text={`The yearly interest rate on this debt. Interest accrues monthly at APR ÷ 12 on the outstanding balance.
+
+Family / informal loans are often interest-free — 0 is a valid APR.`}
+            />
+          </span>
+          <input
+            type="number"
+            value={l.aprPct ?? ''}
+            onChange={(e) =>
+              updateLiability(l.id, { aprPct: e.target.value === '' ? 0 : Number(e.target.value) })
+            }
+            className={numCls}
+          />
+        </label>
+        <label className="space-y-1 block">
+          <span className="text-[10px] text-zinc-500">Schedule type</span>
+          <select
+            value={l.kind ?? ''}
+            onChange={(e) =>
+              updateLiability(l.id, {
+                kind: e.target.value === '' ? undefined : (e.target.value as LiabilityKind),
+              })
+            }
+            className={inputCls}
+          >
+            <option value="" className="bg-zinc-900">
+              No schedule (position only)
+            </option>
+            {LIABILITY_KIND_OPTIONS.map((k) => (
+              <option key={k.value} value={k.value} className="bg-zinc-900">
+                {k.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {l.kind === 'amortizing' && (
+        <div className="grid grid-cols-2 gap-2">
+          <label className="space-y-1 block">
+            <span className="text-[10px] text-zinc-500">Monthly payment (PKR)</span>
+            <input
+              type="number"
+              value={l.monthlyPaymentPkr ?? ''}
+              onChange={(e) =>
+                updateLiability(l.id, {
+                  monthlyPaymentPkr: e.target.value === '' ? 0 : Number(e.target.value),
+                })
+              }
+              className={numCls}
+            />
+            <AmountWords value={l.monthlyPaymentPkr ?? 0} />
+          </label>
+          <label className="space-y-1 block">
+            <span className="text-[10px] text-zinc-500">Term end (optional)</span>
+            <input
+              type="date"
+              value={l.dueDateISO ?? ''}
+              onChange={(e) => updateLiability(l.id, { dueDateISO: e.target.value || undefined })}
+              className={inputCls}
+            />
+          </label>
+        </div>
+      )}
+
+      {l.kind === 'revolving' && (
+        <label className="space-y-1 block">
+          <span className="flex items-center justify-between text-[10px] text-zinc-500">
+            <span>Minimum payment (% of balance / month)</span>
+            <FieldInfo
+              title="Minimum payment % — what it means"
+              text={`Cards and BNPL usually demand a minimum payment each month, set as a % of the outstanding balance.
+
+The plan pays that % of the current balance every month until the debt clears — payments shrink as the balance falls.`}
+            />
+          </span>
+          <input
+            type="number"
+            value={l.minPaymentPctOfBalance ?? ''}
+            onChange={(e) =>
+              updateLiability(l.id, {
+                minPaymentPctOfBalance: e.target.value === '' ? 0 : Number(e.target.value),
+              })
+            }
+            className={numCls}
+          />
+        </label>
+      )}
+
+      {l.kind === 'balloon' && (
+        <label className="space-y-1 block">
+          <span className="flex items-center justify-between text-[10px] text-zinc-500">
+            <span>Due date — full balance leaves the plan</span>
+            <FieldInfo
+              title="Balloon due date — what it means"
+              text={`A balloon debt is repaid in ONE lump sum on its due date — common for family / informal loans ("return it in 5 years").
+
+No monthly payments are modelled; the balance accrues interest at the APR and the full amount leaves your portfolio in the due month. If the portfolio cannot cover it, the plan shows the shortfall explicitly.`}
+            />
+          </span>
+          <input
+            type="date"
+            value={l.dueDateISO ?? ''}
+            onChange={(e) => updateLiability(l.id, { dueDateISO: e.target.value || undefined })}
+            className={inputCls}
+          />
+        </label>
+      )}
+
+      <input
+        type="text"
+        value={l.details ?? ''}
+        onChange={(e) => updateLiability(l.id, { details: e.target.value || undefined })}
+        placeholder="Notes (optional)"
+        className={inputCls}
+      />
+
+      {scheduled && summary ? (
+        <p className="text-[11px] leading-relaxed text-zinc-400">
+          {l.kind === 'balloon' ? (
+            <>
+              Due{' '}
+              <span className="text-rose-300 font-semibold">
+                {summary.payoffMonth ? payoffMonthLabel(start, summary.payoffMonth) : 'beyond the projection'}
+              </span>{' '}
+              · total interest {formatPkr(summary.totalInterestPkr)}
+            </>
+          ) : summary.payoffMonth ? (
+            <>
+              Clears{' '}
+              <span className="text-emerald-300 font-semibold">
+                {payoffMonthLabel(start, summary.payoffMonth)}
+              </span>{' '}
+              · total interest {formatPkr(summary.totalInterestPkr)}
+            </>
+          ) : (
+            <span className="text-rose-300">
+              Does not clear on this schedule — the payment does not outrun the interest.
+            </span>
+          )}
+          {summary.negativeAmortization && (
+            <span className="block text-rose-300 font-semibold mt-0.5">
+              Warning: the monthly payment is less than the monthly interest — this balance is
+              growing, not shrinking.
+            </span>
+          )}
+        </p>
+      ) : (
+        <p className="text-[11px] text-zinc-500 leading-relaxed">
+          No schedule set — this debt counts in your net liquid position only. Pick a schedule type
+          above and its payments will bite inside the life-plan projection.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function HoldingsLiabilitiesCard({ profile, onChange }: Props) {
   const holdings = profile.holdings ?? [];
   const liabilities = profile.liabilities ?? [];
@@ -263,9 +515,33 @@ export function HoldingsLiabilitiesCard({ profile, onChange }: Props) {
     ]);
 
   const updateLiability = (id: string, patch: Partial<LiabilityItem>) =>
-    setLiabilities(liabilities.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+    setLiabilities(
+      liabilities.map((l) => {
+        if (l.id !== id) return l;
+        const merged = { ...l, ...patch };
+        // Keep the legacy mirrors in sync with the canonical scheduled
+        // fields so every consumer reads the same name / balance.
+        if (patch.name !== undefined) merged.label = patch.name;
+        if (patch.balancePkr !== undefined) merged.amountPkr = patch.balancePkr;
+        return merged;
+      })
+    );
 
-  const addLiability = () => setLiabilities([...liabilities, { id: newId(), label: '', amountPkr: 0 }]);
+  const addLiability = () =>
+    setLiabilities([
+      ...liabilities,
+      {
+        id: newId(),
+        name: '',
+        label: '',
+        category: 'personal-loan',
+        kind: 'amortizing',
+        balancePkr: 0,
+        amountPkr: 0,
+        aprPct: 0,
+        monthlyPaymentPkr: 0,
+      },
+    ]);
 
   return (
     <div className="rounded-2xl bg-[#0C0C0F] border border-white/10 p-5 space-y-5 shadow-md">
@@ -327,40 +603,12 @@ export function HoldingsLiabilitiesCard({ profile, onChange }: Props) {
         )}
 
         {liabilities.map((l) => (
-          <div key={l.id} className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.07] space-y-2">
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={l.label}
-                onChange={(e) => updateLiability(l.id, { label: e.target.value })}
-                placeholder="e.g. Splitwise balance owed"
-                className={inputCls}
-              />
-              <input
-                type="number"
-                value={l.amountPkr ?? ''}
-                onChange={(e) => updateLiability(l.id, { amountPkr: e.target.value === '' ? 0 : Number(e.target.value) })}
-                placeholder="Amount (PKR)"
-                className={`${numCls} w-[130px] shrink-0`}
-              />
-              <AmountWords value={l.amountPkr ?? 0} />
-              <button
-                type="button"
-                onClick={() => setLiabilities(liabilities.filter((x) => x.id !== l.id))}
-                className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 shrink-0"
-                aria-label="Remove liability"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            <input
-              type="text"
-              value={l.details ?? ''}
-              onChange={(e) => updateLiability(l.id, { details: e.target.value || undefined })}
-              placeholder="Notes (optional)"
-              className={inputCls}
-            />
-          </div>
+          <LiabilityRow
+            key={l.id}
+            liability={l}
+            updateLiability={updateLiability}
+            onRemove={() => setLiabilities(liabilities.filter((x) => x.id !== l.id))}
+          />
         ))}
       </div>
 

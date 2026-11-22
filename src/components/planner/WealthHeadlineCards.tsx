@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { PlanSummary, UserProfile } from '@/types';
+import { totalLiabilitiesPkr } from '@/lib/engine/wealthEngine';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import { 
   Sparkles, 
@@ -57,6 +58,13 @@ export function WealthHeadlineCards({ plan, profile }: WealthHeadlineCardsProps)
           </div>
           <div className="text-[10px] text-zinc-500 mt-2 font-mono">
             Nominal: {formatCompactPkrMasked(plan.finalNominalWealthPkr)}
+            {totalLiabilitiesPkr(profile) > 0 && (
+              <>
+                <br />
+                Liabilities: −{formatCompactPkrMasked(totalLiabilitiesPkr(profile))} owed today;
+                scheduled payments are inside this projection
+              </>
+            )}
           </div>
         </div>
 

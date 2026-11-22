@@ -6,6 +6,7 @@ import { AmountWords } from '@/components/ui/AmountWords';
 import { useProfile } from '@/components/providers/ProfileProvider';
 import { formatPkr } from '@/lib/format';
 import { formatCompactPkr } from '@/lib/format';
+import { buildWizardDraft, compileWizardProfile, type WizardDraft, type WizardVehicleType } from '@/lib/wizardDraft';
 import { AiAssistProvider } from '@/components/providers/AiAssistProvider';
 import { AiButton } from '@/components/ui/AiButton';
 import { FieldInfo } from '@/components/ui/FieldInfo';
@@ -43,49 +44,53 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
   const [step, setStep] = useState<number>(1);
   const totalSteps = 6;
 
-  // Local draft state initialized with current profile
+  // Local draft state initialized with current profile. ALL steps load via
+  // buildWizardDraft (NOTES #44) — the same function the round-trip tests
+  // exercise — so load and save (compileWizardProfile) can never diverge.
+  const [initialDraft] = useState<WizardDraft>(() => buildWizardDraft(profile));
   const [name, setName] = useState<string>(currentUser?.name ?? '');
   const [portfolioName, setPortfolioName] = useState<string>('My Freedom Portfolio');
-  const [age, setAge] = useState<number>(profile.age ?? 28);
-  const [retirementAge, setRetirementAge] = useState<number>(profile.retirementAge ?? 55);
-  const [rawRetirementAge, setRawRetirementAge] = useState<string>(String(profile.retirementAge ?? 55));
-  const [role, setRole] = useState<UserRole>(profile.role ?? 'salaried');
-  const [gender, setGender] = useState<'male' | 'female'>(profile.gender ?? 'male');
-  const [isBreadwinner, setIsBreadwinner] = useState<boolean>(profile.isBreadwinner ?? true);
-  const [maritalStatus, setMaritalStatus] = useState<'unmarried' | 'married'>(profile.maritalStatus ?? 'unmarried');
-  const [familyMembers, setFamilyMembers] = useState<number>(profile.familyMembers ?? 1);
+  const [age, setAge] = useState<number>(initialDraft.age);
+  const [retirementAge, setRetirementAge] = useState<number>(initialDraft.retirementAge);
+  const [rawRetirementAge, setRawRetirementAge] = useState<string>(String(initialDraft.retirementAge));
+  const [role, setRole] = useState<UserRole>(initialDraft.role);
+  const [gender, setGender] = useState<'male' | 'female'>(initialDraft.gender);
+  const [isBreadwinner, setIsBreadwinner] = useState<boolean>(initialDraft.isBreadwinner);
+  const [maritalStatus, setMaritalStatus] = useState<'unmarried' | 'married'>(initialDraft.maritalStatus);
+  const [familyMembers, setFamilyMembers] = useState<number>(initialDraft.familyMembers);
 
   // Step 2: Tax & Shariah
-  const [taxStatus, setTaxStatus] = useState<TaxStatus>(profile.taxStatus ?? 'filer');
-  const [shariahOnly, setShariahOnly] = useState<boolean>(profile.shariahOnly ?? true);
-  const [includeZakat, setIncludeZakat] = useState<boolean>(profile.includeZakat ?? false);
+  const [taxStatus, setTaxStatus] = useState<TaxStatus>(initialDraft.taxStatus);
+  const [shariahOnly, setShariahOnly] = useState<boolean>(initialDraft.shariahOnly);
+  const [includeZakat, setIncludeZakat] = useState<boolean>(initialDraft.includeZakat);
 
   // Step 3: Income & Investments
-  const [monthlyIncomePkr, setMonthlyIncomePkr] = useState<number>(profile.monthlyIncomePkr ?? 250000);
-  const [monthlyInvestPkr, setMonthlyInvestPkr] = useState<number>(profile.monthlyInvestPkr ?? 100000);
-  const [annualSalaryRaisePct, setAnnualSalaryRaisePct] = useState<number>(profile.annualSalaryRaisePct ?? 10);
-  const [lumpSumPkr, setLumpSumPkr] = useState<number>(profile.lumpSumPkr ?? 1500000);
-  const [currentCashReservePkr, setCurrentCashReservePkr] = useState<number>(profile.currentCashReservePkr ?? 400000);
+  const [monthlyIncomePkr, setMonthlyIncomePkr] = useState<number>(initialDraft.monthlyIncomePkr);
+  const [monthlyInvestPkr, setMonthlyInvestPkr] = useState<number>(initialDraft.monthlyInvestPkr);
+  const [annualSalaryRaisePct, setAnnualSalaryRaisePct] = useState<number>(initialDraft.annualSalaryRaisePct);
+  const [lumpSumPkr, setLumpSumPkr] = useState<number>(initialDraft.lumpSumPkr);
+  const [currentCashReservePkr, setCurrentCashReservePkr] = useState<number>(initialDraft.currentCashReservePkr);
 
   // Step 4: Expenses
-  const [fuelAndCommute, setFuelAndCommute] = useState<number>(profile.expenses?.fuelAndCommute ?? 20000);
-  const [utilitiesAndInternet, setUtilitiesAndInternet] = useState<number>(profile.expenses?.utilitiesAndInternet ?? 25000);
-  const [groceriesAndFood, setGroceriesAndFood] = useState<number>(profile.expenses?.groceriesAndFood ?? 35000);
-  const [rentOrHousing, setRentOrHousing] = useState<number>(profile.expenses?.rentOrHousing ?? 20000);
-  const [familyAndOther, setFamilyAndOther] = useState<number>(profile.expenses?.familyAndOther ?? 15000);
+  const [fuelAndCommute, setFuelAndCommute] = useState<number>(initialDraft.fuelAndCommute);
+  const [utilitiesAndInternet, setUtilitiesAndInternet] = useState<number>(initialDraft.utilitiesAndInternet);
+  const [groceriesAndFood, setGroceriesAndFood] = useState<number>(initialDraft.groceriesAndFood);
+  const [rentOrHousing, setRentOrHousing] = useState<number>(initialDraft.rentOrHousing);
+  const [familyAndOther, setFamilyAndOther] = useState<number>(initialDraft.familyAndOther);
 
-  // Step 5: Vehicle & Solar
-  const [dailyCommuteKm, setDailyCommuteKm] = useState<number>(profile.dailyCommuteKm ?? 35);
-  const [currentVehicleType, setCurrentVehicleType] = useState<'none' | 'petrol-bike' | 'petrol-car' | 'ev-car'>('petrol-car');
-  const [currentVehicleResalePkr, setCurrentVehicleResalePkr] = useState<number>(2800000);
-  const [solarKw, setSolarKw] = useState<number>(profile.solarKw ?? 10);
-  const [solarTariffMode, setSolarTariffMode] = useState<SolarTariffMode>(profile.solarTariffMode ?? 'net-metering-legacy');
+  // Step 5: Vehicle & Solar — vehicle type/resale load from the profile-level
+  // fields (falling back to the flagged vehicles[] entry), NOT constants.
+  const [dailyCommuteKm, setDailyCommuteKm] = useState<number>(initialDraft.dailyCommuteKm);
+  const [currentVehicleType, setCurrentVehicleType] = useState<WizardVehicleType>(initialDraft.currentVehicleType);
+  const [currentVehicleResalePkr, setCurrentVehicleResalePkr] = useState<number>(initialDraft.currentVehicleResalePkr);
+  const [solarKw, setSolarKw] = useState<number>(initialDraft.solarKw);
+  const [solarTariffMode, setSolarTariffMode] = useState<SolarTariffMode>(initialDraft.solarTariffMode);
 
-  // Step 6: Life Goals
-  const [weddingAge, setWeddingAge] = useState<number>(maritalStatus === 'unmarried' ? 29 : 0);
-  const [weddingCost, setWeddingCost] = useState<number>(2500000);
-  const [houseAge, setHouseAge] = useState<number>(33);
-  const [houseCost, setHouseCost] = useState<number>(15000000);
+  // Step 6: Life Goals — loaded from profile.lifeGoals, not constants.
+  const [weddingAge, setWeddingAge] = useState<number>(initialDraft.weddingAge);
+  const [weddingCost, setWeddingCost] = useState<number>(initialDraft.weddingCost);
+  const [houseAge, setHouseAge] = useState<number>(initialDraft.houseAge);
+  const [houseCost, setHouseCost] = useState<number>(initialDraft.houseCost);
   const [isFinishing, setIsFinishing] = useState(false);
 
   if (!isOpen) return null;
@@ -120,131 +125,19 @@ export function OnboardingWizardModal({ isOpen, onClose, mode = 'create', onComp
     setIsFinishing(true);
 
     try {
-      const goals = [];
-      if (weddingAge > age) {
-        goals.push({
-          id: 'goal-wedding-custom',
-          name: 'Wedding Ceremony',
-          targetAge: weddingAge,
-          costInTodaysPkr: weddingCost,
-        });
-      }
-      if (houseAge > age) {
-        goals.push({
-          id: 'goal-house-custom',
-          name: 'Home Construction / Downpayment',
-          targetAge: houseAge,
-          costInTodaysPkr: houseCost,
-        });
-      }
-
-      const compiledVehicles = (() => {
-        if (currentVehicleType === 'none') {
-          if (profile.vehicles && profile.vehicles.length > 0) {
-            return profile.vehicles.map((v) => ({ ...v, isCurrentVehicle: false }));
-          }
-          return [
-            {
-              id: 'honri-ve2',
-              name: 'Honri Ve 2.0 EV',
-              fuelType: 'ev' as const,
-              pricePkr: 3599000,
-              kwhPer100Km: 14.0,
-              fiveYearDepreciationPct: 30,
-              annualMaintenancePkr: 20000,
-            },
-          ];
-        }
-
-        const ownedVehicle = {
-          id: 'current-user-vehicle',
-          name:
-            currentVehicleType === 'petrol-bike'
-              ? 'Existing 70cc Bike'
-              : currentVehicleType === 'ev-car'
-              ? 'Existing EV Car'
-              : 'Existing Petrol Car',
-          fuelType: (currentVehicleType === 'ev-car' ? 'ev' : 'petrol') as 'ev' | 'petrol',
-          pricePkr: currentVehicleResalePkr,
-          isCurrentVehicle: true,
-          ...(currentVehicleType === 'ev-car'
-            ? { kwhPer100Km: 16.5 }
-            : { kmPerLitre: currentVehicleType === 'petrol-bike' ? 45 : 13 }),
-          fiveYearDepreciationPct: 35,
-          annualMaintenancePkr:
-            currentVehicleType === 'petrol-bike' ? 25000 : currentVehicleType === 'ev-car' ? 35000 : 60000,
-        };
-
-        if (profile.vehicles && profile.vehicles.length > 0) {
-          const existingIndex = profile.vehicles.findIndex((v) => v.isCurrentVehicle);
-          if (existingIndex >= 0) {
-            return profile.vehicles.map((v, i) =>
-              i === existingIndex
-                ? {
-                    ...v,
-                    name: v.name.includes('Existing') ? ownedVehicle.name : v.name,
-                    pricePkr: currentVehicleResalePkr,
-                    fuelType: (currentVehicleType === 'ev-car' ? 'ev' : 'petrol') as 'ev' | 'petrol',
-                    ...(currentVehicleType === 'ev-car'
-                      ? { kwhPer100Km: v.kwhPer100Km ?? 16.5, kmPerLitre: undefined }
-                      : { kmPerLitre: v.kmPerLitre ?? (currentVehicleType === 'petrol-bike' ? 45 : 13), kwhPer100Km: undefined }),
-                    isCurrentVehicle: true,
-                  }
-                : { ...v, isCurrentVehicle: false }
-            );
-          }
-          return [ownedVehicle, ...profile.vehicles.map((v) => ({ ...v, isCurrentVehicle: false }))];
-        }
-
-        return [
-          ownedVehicle,
-          {
-            id: 'honri-ve2',
-            name: 'Honri Ve 2.0 EV',
-            fuelType: 'ev' as const,
-            pricePkr: 3599000,
-            kwhPer100Km: 14.0,
-            fiveYearDepreciationPct: 30,
-            annualMaintenancePkr: 20000,
-          },
-        ];
-      })();
-
-      const compiledProfile: UserProfile = {
-        ...profile,
-        role,
-        gender,
-        isBreadwinner,
-        age,
-        retirementAge,
-        maritalStatus,
-        familyMembers,
-        taxStatus,
-        shariahOnly,
-        includeZakat,
-        monthlyIncomePkr,
-        monthlyInvestPkr,
-        annualSalaryRaisePct,
-        lumpSumPkr,
-        currentCashReservePkr,
-        expenses: {
-          fuelAndCommute,
-          utilitiesAndInternet,
-          groceriesAndFood,
-          rentOrHousing,
-          familyAndOther,
-        },
-        dailyCommuteKm,
-        solarKw,
-        solarTariffMode,
-        vehicles: compiledVehicles,
-        lifeGoals:
-          mode === 'update'
-            ? profile.lifeGoals
-            : profile.lifeGoals && profile.lifeGoals.length > 0
-            ? profile.lifeGoals
-            : goals,
+      // Save path is compileWizardProfile (NOTES #44) — the exact function
+      // buildWizardDraft inverts on reopen, tested in wizard-roundtrip.
+      const draft: WizardDraft = {
+        age, retirementAge, role, gender, isBreadwinner, maritalStatus, familyMembers,
+        taxStatus, shariahOnly, includeZakat,
+        monthlyIncomePkr, monthlyInvestPkr, annualSalaryRaisePct, lumpSumPkr, currentCashReservePkr,
+        fuelAndCommute, utilitiesAndInternet, groceriesAndFood, rentOrHousing, familyAndOther,
+        dailyCommuteKm, currentVehicleType, currentVehicleResalePkr, solarKw, solarTariffMode,
+        weddingAge, weddingCost, houseAge, houseCost,
+        weddingGoalId: initialDraft.weddingGoalId,
+        houseGoalId: initialDraft.houseGoalId,
       };
+      const compiledProfile: UserProfile = compileWizardProfile(profile, draft, mode);
 
       if (mode === 'update' && currentUser) {
         updateProfile(compiledProfile);

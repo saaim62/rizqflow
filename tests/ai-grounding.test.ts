@@ -16,11 +16,15 @@ import {
 describe('grounded prediction types', () => {
   it('grounds exactly the volatile car-market types', () => {
     expect(isGroundedPrediction('car-price')).toBe(true);
-    // Live evidence (NOTES #43): maintenance/depreciation searches
-    // timed out and fell back anyway — price is the grounded one.
+    // NOTES #43 narrowed grounding to price after maintenance/
+    // depreciation searches timed out live. Round 3 (NOTES #46)
+    // re-extends grounding to car-efficiency (spec-bearing: the
+    // model returns battery/range, code derives the value) and
+    // car-depreciation, same timeout discipline; live behaviour for
+    // the two re-extended types is unverified from the build sandbox.
     expect(isGroundedPrediction('car-maintenance')).toBe(false);
-    expect(isGroundedPrediction('car-depreciation')).toBe(false);
-    expect(isGroundedPrediction('car-efficiency')).toBe(false);
+    expect(isGroundedPrediction('car-depreciation')).toBe(true);
+    expect(isGroundedPrediction('car-efficiency')).toBe(true);
     expect(isGroundedPrediction('expense')).toBe(false);
     expect(isGroundedPrediction('bucket-return')).toBe(false);
     expect(isGroundedPrediction('stock-price')).toBe(false);

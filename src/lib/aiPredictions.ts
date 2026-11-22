@@ -30,6 +30,19 @@ export interface PredictionResult {
   valueHigh?: number;
   reasoning: string;
   confidence: 'low' | 'medium' | 'high';
+  /**
+   * Provenance label (NOTES #46, Gate 6 Amendment 3 discipline):
+   * 'sourced' = returned from the curated ground-truth table, NOT a
+   * model estimate; 'ai' / undefined = model output ("AI estimate").
+   */
+  source?: 'ai' | 'sourced';
+  /** Short source name for sourced results, e.g. "PakWheels". */
+  sourceNote?: string;
+  /** EV specs the model supplied for car-efficiency (NOTES #46). */
+  batteryKwh?: number;
+  ratedRangeKm?: number;
+  /** Where the specs came from, as reported by the model. */
+  specSource?: string;
 }
 
 export interface PredictionSpec {
@@ -44,6 +57,7 @@ export const AI_SYSTEM_PROMPT =
   'You are the prediction engine inside RizqFlow, a Pakistan personal-finance app. ' +
   'Reply with JSON only, exactly: {"value": <number>, "reasoning": "<one short sentence>", "confidence": "low"|"medium"|"high"}. ' +
   'For a range prediction also include "valueHigh": <number>. ' +
+  'For an EV efficiency prediction also include "batteryKwh": <number> and "ratedRangeKm": <number> with the manufacturer-rated specs you found, plus "specSource": "<site or cycle, e.g. PakWheels / WLTP>". ' +
   'Base every estimate on realistic Pakistan market conditions in 2026 (PKR). ' +
   'Give your best central estimate; when the item is obscure, still estimate and mark confidence "low". ' +
   'No text outside the JSON.';
@@ -62,9 +76,18 @@ export const AI_SYSTEM_PROMPT =
  * into the 60s timeout and fell back anyway — price is the volatile
  * figure that needs the web; the other two keep their improved
  * prompts (mileage scaling, cross-year comparison) ungrounded.
+ * Round 3 (NOTES #46): grounding is extended again to car-efficiency
+ * (the model must return manufacturer specs — battery kWh + rated
+ * range — which code then turns into the value) and car-depreciation
+ * (same-model listings across model years), with the same 60s
+ * timeout discipline and fallback chain as car-price. Live grounded
+ * behaviour for these two types is UNVERIFIED from the build
+ * sandbox (no Groq key there); car-maintenance stays ungrounded.
  */
 export const GROUNDED_PREDICTION_TYPES: ReadonlySet<PredictionType> = new Set([
   'car-price',
+  'car-efficiency',
+  'car-depreciation',
 ]);
 
 export function isGroundedPrediction(type: PredictionType): boolean {
@@ -89,9 +112,10 @@ export const PREDICTIONS: Record<PredictionType, PredictionSpec> = {
     max: 90,
     decimals: 0,
     buildPrompt: (c) =>
-      `Judge from how this model's asking prices fall across model years in Pakistan's used market (PakWheels-style listings) how fast it loses value. ` +
+      `Use web search FIRST: look up listings for this SAME model across several model years on Pakistani sites (pakwheels.com, olx.com.pk) and judge from how the asking prices fall across model years how fast it loses value. ` +
       `Vehicle: name "${s(c.name)}", type ${s(c.fuelType)}, current price Rs ${n(c.pricePkr)}. ` +
       `value = the % of today's price the car will LOSE over 5 years (50 means it will sell for half). ` +
+      `Compare FULL CASH asking prices only — ignore down-payment / installment listings when comparing years. ` +
       `Consider brand resale strength in Pakistan (Toyota/Honda/Suzuki hold value; Chinese EVs and slow-selling models lose more). ` +
       `End your reply with ONLY the JSON object — no text after it.`,
   },
@@ -111,15 +135,20 @@ export const PREDICTIONS: Record<PredictionType, PredictionSpec> = {
   },
   'car-efficiency': {
     label: 'Efficiency (km/L or kWh/100km)',
-    min: 2,
+    // Min lowered 2 -> 1 in NOTES #46: real e-scooty consumption
+    // (e.g. Yadea M3, derived 1.725 kWh/100km) sits below the old
+    // floor and was being silently clamped up to 2.
+    min: 1,
     max: 60,
     decimals: 1,
     buildPrompt: (c) =>
+      `Use web search FIRST: look up this vehicle's official specifications on Pakistani sources (pakwheels.com, olx.com.pk, the brand's Pakistan page) before answering. ` +
       `Predict the real-world energy efficiency of this vehicle in Pakistani city driving: ` +
       `name "${s(c.name)}", type ${s(c.fuelType)}. ` +
       (s(c.fuelType) === 'petrol'
-        ? `value = fuel average in km per litre.`
-        : `value = electricity consumption in kWh per 100 km.`),
+        ? `value = fuel average in km per litre, based on the rated mileage for its engine size from those Pakistani sources.`
+        : `Do NOT do the consumption arithmetic yourself. Instead return the manufacturer-rated specs you found: "batteryKwh" (battery capacity in kWh) and "ratedRangeKm" (rated range in km), plus "specSource" naming the source/cycle (e.g. "PakWheels specs, WLTP"). ` +
+          `value = your best estimate of electricity consumption in kWh per 100 km (the app re-derives it from the specs when both are present).`),
   },
   'car-price': {
     label: 'Typical market price (PKR)',
@@ -131,6 +160,7 @@ export const PREDICTIONS: Record<PredictionType, PredictionSpec> = {
       `Vehicle: name "${s(c.name)}", type ${s(c.fuelType)}. ` +
       `value = the typical FULL CASH asking price in Pakistani Rupees (PKR) for a good-condition example of a common recent model year — the MEDIAN of comparable listings (or the new ex-factory price if the model is mainly sold new). ` +
       `IGNORE any figure that is a down payment, installment, lease, booking or advance amount — those are a fraction of the real price and are the most common source of absurdly low estimates. ` +
+      `If you cite individual listings, include them as "listings": [{"pricePkr": <number>, "priceType": "full"|"down-payment"|"installment"}] — the app computes the median of full-cash listings itself. ` +
       `NEVER use Indian prices: India quotes in INR, which look about 3x smaller than PKR for the same car; if a source figure looks like Indian rupees, discard it. Pakistani prices only. ` +
       `End your reply with ONLY the JSON object — no text after it.`,
   },
@@ -239,6 +269,79 @@ export function clampPrediction(type: PredictionType, raw: number): number {
   return Math.round(clamped * f) / f;
 }
 
+/**
+ * EV efficiency derivation (NOTES #46): the model supplies rated
+ * specs, CODE does the arithmetic — the model's own division is
+ * never trusted. Returns kWh per 100 km, or null when the specs are
+ * unusable (non-finite, non-positive, or an absurd range).
+ */
+export function deriveEvEfficiencyKwhPer100Km(
+  batteryKwh: unknown,
+  ratedRangeKm: unknown
+): number | null {
+  const kwh = typeof batteryKwh === 'number' ? batteryKwh : Number(batteryKwh);
+  const range = typeof ratedRangeKm === 'number' ? ratedRangeKm : Number(ratedRangeKm);
+  if (!Number.isFinite(kwh) || !Number.isFinite(range)) return null;
+  if (kwh <= 0 || kwh > 500 || range < 10 || range > 3000) return null;
+  return (kwh / range) * 100;
+}
+
+export interface ValidationBand {
+  min: number;
+  max: number;
+  unit: string;
+}
+
+/**
+ * Per-fuelType validation bands for vehicle-scoped prediction types
+ * (NOTES #46). A value outside its band is NOT silently clamped into
+ * place: it is flagged low-confidence with the reason in the
+ * reasoning string (the global spec clamp still applies for safety).
+ * Petrol km/L behaviour is unchanged (no band — spec range only).
+ */
+export const EFFICIENCY_BANDS_KWH_PER_100KM: Record<string, ValidationBand> = {
+  'e-scooty': { min: 1, max: 5, unit: 'kWh/100km' },
+  ev: { min: 8, max: 30, unit: 'kWh/100km' },
+};
+
+export function validationBandFor(
+  type: PredictionType,
+  ctx?: Record<string, unknown>
+): ValidationBand | null {
+  if (type !== 'car-efficiency' || !ctx) return null;
+  const fuel = typeof ctx.fuelType === 'string' ? ctx.fuelType : '';
+  return EFFICIENCY_BANDS_KWH_PER_100KM[fuel] ?? null;
+}
+
+export interface PriceListing {
+  pricePkr: number;
+  priceType?: string;
+}
+
+/**
+ * Median of FULL-CASH listing prices only (NOTES #46): listings
+ * tagged down-payment / installment / lease / booking are a fraction
+ * of the real price (the NOTES #38 failure mode) and are excluded
+ * from the derivation. Returns null when no full-cash listing exists.
+ */
+export function medianFullCashPrice(listings: unknown): number | null {
+  if (!Array.isArray(listings)) return null;
+  const prices: number[] = [];
+  for (const l of listings) {
+    if (!l || typeof l !== 'object') continue;
+    const rec = l as Record<string, unknown>;
+    const price = typeof rec.pricePkr === 'number' ? rec.pricePkr : Number(rec.pricePkr);
+    if (!Number.isFinite(price) || price <= 0) continue;
+    const tag = typeof rec.priceType === 'string' ? rec.priceType.toLowerCase() : '';
+    if (tag && tag !== 'full' && tag !== 'full-cash' && tag !== 'cash') continue;
+    prices.push(price);
+  }
+  if (prices.length === 0) return null;
+  prices.sort((a, b) => a - b);
+  const mid = Math.floor(prices.length / 2);
+  return prices.length % 2 === 1 ? prices[mid] : (prices[mid - 1] + prices[mid]) / 2;
+}
+
 /** All top-level balanced {...} substrings of a reply, in order. */
 function extractJsonObjects(text: string): string[] {
   const out: string[] = [];
@@ -274,7 +377,11 @@ function extractJsonObjects(text: string): string[] {
 }
 
 /** Parse + validate the model's JSON reply into a PredictionResult. */
-export function parsePrediction(type: PredictionType, text: string): PredictionResult | null {
+export function parsePrediction(
+  type: PredictionType,
+  text: string,
+  ctx?: Record<string, unknown>
+): PredictionResult | null {
   // Candidates: the legacy whole-span slice first (plain JSON replies),
   // then every balanced object from LAST to FIRST — grounded replies
   // carry search snippets and prose before the final JSON answer.
@@ -287,13 +394,17 @@ export function parsePrediction(type: PredictionType, text: string): PredictionR
     if (!candidates.includes(objects[i])) candidates.push(objects[i]);
   }
   for (const candidate of candidates) {
-    const parsed = tryParsePrediction(type, candidate);
+    const parsed = tryParsePrediction(type, candidate, ctx);
     if (parsed) return parsed;
   }
   return null;
 }
 
-function tryParsePrediction(type: PredictionType, text: string): PredictionResult | null {
+function tryParsePrediction(
+  type: PredictionType,
+  text: string,
+  ctx?: Record<string, unknown>
+): PredictionResult | null {
   try {
     const obj = JSON.parse(text) as Record<string, unknown>;
     const value = typeof obj.value === 'number' ? obj.value : Number(obj.value);
@@ -305,6 +416,44 @@ function tryParsePrediction(type: PredictionType, text: string): PredictionResul
       confidence:
         obj.confidence === 'low' || obj.confidence === 'high' ? obj.confidence : 'medium',
     };
+    // Car price (NOTES #46): when the reply carries individual
+    // listings, code computes the median of the FULL-CASH ones —
+    // down-payment/installment listings never enter the derivation.
+    if (type === 'car-price' && obj.listings !== undefined) {
+      const median = medianFullCashPrice(obj.listings);
+      if (median !== null) result.value = clampPrediction(type, median);
+    }
+    // EV efficiency (NOTES #46): when the reply carries rated specs,
+    // the value is DERIVED in code from battery/range — the model's
+    // own arithmetic is never trusted. The source/cycle is recorded
+    // in the reasoning string.
+    if (type === 'car-efficiency' && (obj.batteryKwh !== undefined || obj.ratedRangeKm !== undefined)) {
+      const derived = deriveEvEfficiencyKwhPer100Km(obj.batteryKwh, obj.ratedRangeKm);
+      if (derived !== null) {
+        const kwh = Number(obj.batteryKwh);
+        const range = Number(obj.ratedRangeKm);
+        result.value = clampPrediction(type, derived);
+        result.batteryKwh = kwh;
+        result.ratedRangeKm = range;
+        if (typeof obj.specSource === 'string' && obj.specSource.trim()) {
+          result.specSource = obj.specSource.trim().slice(0, 80);
+        }
+        const note =
+          ` Derived in code: ${kwh} kWh ÷ ${range} km × 100 = ${result.value} kWh/100km` +
+          ` (rated specs${result.specSource ? `, ${result.specSource}` : ''}).`;
+        result.reasoning = (result.reasoning.slice(0, Math.max(0, 220 - note.length)) + note).slice(0, 220);
+      }
+    }
+    // Validation bands (NOTES #46): an out-of-band value is flagged
+    // low-confidence with the reason stated — never silently clamped
+    // into place (the global spec clamp above still applies).
+    const band = validationBandFor(type, ctx);
+    if (band && (result.value < band.min || result.value > band.max)) {
+      result.confidence = 'low';
+      const flag =
+        ` Flagged: ${result.value} ${band.unit} is outside the expected ${band.min}–${band.max} ${band.unit} band for this vehicle type — treat with caution.`;
+      result.reasoning = (result.reasoning + flag).slice(0, 300);
+    }
     if (typeof obj.valueHigh === 'number' && Number.isFinite(obj.valueHigh)) {
       let high = clampPrediction(type, obj.valueHigh);
       if (high < result.value) {

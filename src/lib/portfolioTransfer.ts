@@ -1009,7 +1009,7 @@ export function areProfilesEqual(a: UserProfile, b: UserProfile): boolean {
   if (lA.length !== lB.length) return false;
   for (let i = 0; i < lA.length; i++) {
     if (lA[i].id !== lB[i].id) return false;
-    if (!numbersEqual(lA[i].amountPkr, lB[i].amountPkr)) return false;
+    if (!numbersEqual(lA[i].amountPkr ?? lA[i].balancePkr ?? 0, lB[i].amountPkr ?? lB[i].balancePkr ?? 0)) return false;
   }
 
   return true;
