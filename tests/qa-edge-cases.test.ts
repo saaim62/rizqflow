@@ -1218,16 +1218,16 @@ describe('QA Edge Cases: Dip-Buy Strategy Simulator Boundaries', () => {
 });
 
 describe('QA Edge Cases: Market Rates Live Overrides & Defaults Matrix', () => {
-  it('verifies exact Nov 22 2026 Pakistan economic defaults benchmark rates', () => {
+  it('verifies exact Nov 23 2026 Pakistan economic defaults benchmark rates', () => {
     const defaults = getDefaultMarketRates();
     expect(defaults.petrolPricePerLitre).toBe(322);
-    expect(defaults.goldPerTolaPkr).toBe(376336); // APSGJA Sat 21 Nov 2026 close, verified 22 Nov 2026
+    expect(defaults.goldPerTolaPkr).toBe(384136); // APSGJA Mon 23 Nov 2026 close, verified 23 Nov 2026
     expect(defaults.usdToPkr).toBe(276.51); // SBP interbank close 20 Nov 2026
     expect(defaults.gridRatePerKwh).toBe(55);
-    expect(defaults.kse100Index).toBe(177382);
+    expect(defaults.kse100Index).toBe(177474);
     expect(defaults.solarNetMeteringLegacyRate).toBe(26);
     expect(defaults.solarNetBilling2026Rate).toBe(11);
-    expect(defaults.lastUpdated).toBe('2026-11-22');
+    expect(defaults.lastUpdated).toBe('2026-11-23');
   });
 
   it('applyRatesToProfile cleanly updates economic rates without modifying other profile fields', () => {
