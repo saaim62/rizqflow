@@ -614,11 +614,14 @@ describe('Phase 3: Live & Custom Market Rates Layer', () => {
     expect(healedPrevGold2.goldPerTolaPkr).toBe(DEFAULT_MARKET_RATES.goldPerTolaPkr);
     const custom = migrateStaleSeedValues({ petrolPricePerLitre: 330 });
     expect(custom.petrolPricePerLitre).toBe(330);
+    // The superseded 21–23 Nov petrol default heals to the new default
+    const healedPrevPetrol = migrateStaleSeedValues({ petrolPricePerLitre: 322 });
+    expect(healedPrevPetrol.petrolPricePerLitre).toBe(DEFAULT_MARKET_RATES.petrolPricePerLitre);
   });
 
   it('returns default Nov 23 2026 Pakistan economic defaults', () => {
     const rates = getDefaultMarketRates();
-    expect(rates.petrolPricePerLitre).toBe(322);
+    expect(rates.petrolPricePerLitre).toBe(319); // OGRA notification 23 Nov 2026, effective 24 Nov
     expect(rates.goldPerTolaPkr).toBe(384136); // APSGJA Mon 23 Nov 2026 close, verified 23 Nov 2026
     expect(rates.usdToPkr).toBe(276.51); // SBP interbank close 20 Nov 2026
     expect(rates.gridRatePerKwh).toBe(55);
