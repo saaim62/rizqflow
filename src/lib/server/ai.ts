@@ -8,9 +8,11 @@
  * Provider order (NOTES #52 — owner directive, 24 Nov 2026): Gemini
  * (GEMINI_MODEL, default gemini-flash-lite-latest) is the PRIMARY
  * model for regular predictions; Groq (GROQ_MODEL, default
- * openai/gpt-oss-120b) is the FALLBACK. Grounded (live-price) types
- * still get Groq's browser_search attempt first — it is the only
- * live-data mechanism for those types — then Gemini, then plain Groq.
+ * openai/gpt-oss-120b) is the FALLBACK. The three grounded types
+ * (car-price / car-efficiency / car-depreciation — vehicle fields
+ * only, NEVER stocks/gold) still get Groq's browser_search attempt
+ * first inside the model chain, as the last resort after the ground
+ * truth table and the web-search pipeline; then Gemini, then Groq.
  * Results are cached in memory for 6 hours per unique (type, context)
  * and each caller IP is softly capped per day, so a busy UI cannot
  * burn the quota.
@@ -461,9 +463,9 @@ export async function predictWithAi(
     if (!cfg) return { ok: false, reason: 'unavailable' };
 
     // Model chain (NOTES #52): Gemini primary for regular types.
-    // Grounded (live-price) types get Groq's browser_search attempt
-    // first — the only live-data mechanism for those types — then
-    // Gemini, then plain Groq GPT-OSS 120B as the fallback seat.
+    // Grounded types (vehicle fields only) get Groq's browser_search
+    // attempt first inside this chain, then Gemini, then plain Groq
+    // GPT-OSS 120B as the fallback seat.
     let result: (PredictionResult & { model: string }) | null = null;
     if (isGroundedPrediction(type) && cfg.groqApiKey) {
       result = await callGroq(cfg, cfg.groqModel, type, context, { grounded: true });
