@@ -10,7 +10,7 @@ import {
 import { computeStreakStats } from '@/lib/engine/streakEngine';
 
 /**
- * Generate 30 daily price points ending on 2026-11-23
+ * Generate 30 daily price points ending on 2026-11-24
  * with an exact active streak leading up to the final day.
  */
 function generateStockHistory(
@@ -20,7 +20,7 @@ function generateStockHistory(
 ): PricePoint[] {
   const dates: string[] = [];
   // Must be updated in lockstep with DATA_AS_OF (Forgewarden Gate 2).
-  const baseDate = new Date(2026, 10, 23); // 2026-11-23
+  const baseDate = new Date(2026, 10, 24); // 2026-11-24
 
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(baseDate);
@@ -71,7 +71,6 @@ function generateStockHistory(
 // ---------------------------------------------------------------------------
 
 const goldHistory: PricePoint[] = [
-  { date: '2026-10-24', price: 421800 },
   { date: '2026-10-25', price: 424200 },
   { date: '2026-10-26', price: 426000 },
   { date: '2026-10-27', price: 425100 },
@@ -102,10 +101,10 @@ const goldHistory: PricePoint[] = [
   { date: '2026-11-21', price: 376336 }, // Down 6 (-3,500, APSGJA Sat 21 Nov close)
   // No Sarafa rate issued Sun 22 Nov — series is trading-day based.
   { date: '2026-11-23', price: 384136 }, // Up 1 (+7,800 today, APSGJA Mon 23 Nov close)
+  { date: '2026-11-24', price: 385436 }, // Up 2 (+1,300 today, APSGJA Tue 24 Nov close)
 ];
 
 const silverHistory: PricePoint[] = [
-  { date: '2026-10-24', price: 5100 },
   { date: '2026-10-25', price: 5180 },
   { date: '2026-10-26', price: 5220 },
   { date: '2026-10-27', price: 5200 },
@@ -136,6 +135,7 @@ const silverHistory: PricePoint[] = [
   { date: '2026-11-21', price: 4600 }, // Down 4 (-108, APSGJA Sat 21 Nov close)
   // No Sarafa rate issued Sun 22 Nov — series is trading-day based.
   { date: '2026-11-23', price: 4735 }, // Up 1 (+135 today, APSGJA Mon 23 Nov close)
+  { date: '2026-11-24', price: 4687 }, // Down 1 (-49 today, APSGJA Tue 24 Nov close)
 ];
 
 export const METAL_ASSETS: MetalAsset[] = [
@@ -143,21 +143,21 @@ export const METAL_ASSETS: MetalAsset[] = [
     id: 'gold-24k',
     name: '24K Gold (Tola)',
     unit: 'per tola',
-    currentPrice: 384136,
+    currentPrice: 385436,
     history: goldHistory,
     streak: computeStreakStats(goldHistory, true),
     insight:
-      'Gold snapped its 6-day slide with a Rs 7,800 rebound to Rs 384,136 on Nov 23, recovering off the Nov 21 low but still -11.8% off its 30-day high of Rs 435,636 on Nov 5.',
+      'Gold extended its rebound a second day, rising Rs 1,300 to Rs 385,436 on Nov 24, still -11.5% off its 30-day high of Rs 435,636 on Nov 5.',
   },
   {
     id: 'silver-24k',
     name: '24K Silver (Tola)',
     unit: 'per tola',
-    currentPrice: 4735,
+    currentPrice: 4687,
     history: silverHistory,
     streak: computeStreakStats(silverHistory, true),
     insight:
-      'Silver snapped its 4-day losing streak, rebounding Rs 135 to Rs 4,735/tola on Nov 23.',
+      'Silver gave back Rs 49 to Rs 4,687/tola on Nov 24, a day after snapping its 4-day losing streak.',
   },
 ];
 
@@ -171,19 +171,19 @@ export const METAL_ASSETS: MetalAsset[] = [
 // here, as of DATA_AS_OF. It is NOT a live feed. When you refresh prices,
 // update DATA_AS_OF and DATA_SOURCES in the same change.
 // ---------------------------------------------------------------------------
-export const DATA_AS_OF = 'Mon 23 Nov 2026 (PSX close) · Gold & silver: Mon 23 Nov 2026 · Petrol: Rs 319/L, OGRA notification 23 Nov, effective 24 Nov 2026';
-export const DATA_AS_OF_SHORT = '23 Nov 2026';
+export const DATA_AS_OF = 'Tue 24 Nov 2026 (PSX close) · Gold & silver: Tue 24 Nov 2026 · Petrol: Rs 319/L, OGRA notification 23 Nov, effective 24 Nov 2026';
+export const DATA_AS_OF_SHORT = '24 Nov 2026';
 export const DATA_SOURCES =
-  'PSX data portal (dps.psx.com.pk), danioPSX, smartmoney.pk dividend records, SBP interbank closing rate, OGRA petrol notification (23 Nov 2026, Rs 319/L effective 24 Nov), All Pakistan Sarafa Gems & Jewellers Association · Gold year history: APSGJA via ARY News / Express Tribune / ProPakistani (29 Jan 2026 peak, FY26 closes) and the goldrateshub monthly archive (World Bank mid-month method), retrieved 21 Nov 2026 · Gold & silver Sat 21 Nov 2026 closes (gold Rs 376,336, silver Rs 4,600) per APSGJA via The Nation / ProPakistani / MM News, verified 22 Nov 2026 · PSX Mon 23 Nov 2026 close (KSE-100 177,473.85, +91.28) per Business Recorder / Mettis Global; gold & silver Mon 23 Nov 2026 closes (gold Rs 384,136, silver Rs 4,735) per APSGJA via ARY News / ProPakistani / Aaj, verified 23 Nov 2026';
+  'PSX data portal (dps.psx.com.pk), danioPSX, smartmoney.pk dividend records, SBP interbank closing rate, OGRA petrol notification (23 Nov 2026, Rs 319/L effective 24 Nov), All Pakistan Sarafa Gems & Jewellers Association · Gold year history: APSGJA via ARY News / Express Tribune / ProPakistani (29 Jan 2026 peak, FY26 closes) and the goldrateshub monthly archive (World Bank mid-month method), retrieved 21 Nov 2026 · Gold & silver Sat 21 Nov 2026 closes (gold Rs 376,336, silver Rs 4,600) per APSGJA via The Nation / ProPakistani / MM News, verified 22 Nov 2026 · PSX Mon 23 Nov 2026 close (KSE-100 177,473.85, +91.28) per Business Recorder / Mettis Global; gold & silver Mon 23 Nov 2026 closes (gold Rs 384,136, silver Rs 4,735) per APSGJA via ARY News / ProPakistani / Aaj, verified 23 Nov 2026 · PSX Tue 24 Nov 2026 close (KSE-100 178,542.28, +1,068.42) per Business Recorder / APP via UrduPoint; gold & silver Tue 24 Nov 2026 closes (gold Rs 385,436, silver Rs 4,687) per APSGJA via Samaa / Bloom Pakistan, verified 24 Nov 2026; USD/PKR SBP M2M revaluation rate Rs 276.47, 24 Nov 2026';
 
 export const MARKET_SNAPSHOT = {
-  kse100Index: 177473.85,
-  kse100ChangePts: 91.28,
-  kse100ChangePct: 0.05,
-  usdPkrInterbank: 276.51,
+  kse100Index: 178542.28,
+  kse100ChangePts: 1068.42,
+  kse100ChangePct: 0.6,
+  usdPkrInterbank: 276.47,
   petrolPerLitre: 319, // OGRA daily pricing, effective 24 Nov 2026
-  goldPerTolaPkr: 384136,
-  silverPerTolaPkr: 4735,
+  goldPerTolaPkr: 385436,
+  silverPerTolaPkr: 4687,
 };
 
 // ---------------------------------------------------------------------------
@@ -213,7 +213,7 @@ export const GOLD_YEAR_HISTORY: PricePoint[] = [
   { date: '2026-08-15', price: 459225 }, // Aug 2026 monthly average
   { date: '2026-09-15', price: 449235 }, // Sep 2026 monthly average
   { date: '2026-10-15', price: 426436 }, // Oct 2026 monthly average
-  { date: '2026-11-23', price: 384136 }, // Latest Sarafa close (= daily series)
+  { date: '2026-11-24', price: 385436 }, // Latest Sarafa close (= daily series)
 ];
 
 interface StockRawConfig {
@@ -237,8 +237,8 @@ const STOCK_CONFIGS: StockRawConfig[] = [
     ticker: 'FFC',
     name: 'Fauji Fertilizer Company',
     sector: 'Fertilizer',
-    price: 569.83,
-    dividendYieldPct: 8.8,
+    price: 573.82,
+    dividendYieldPct: 8.7,
     payoutMonths: [3, 6, 9, 12],
     isShariah: true,
     grade: 'A',
@@ -246,13 +246,13 @@ const STOCK_CONFIGS: StockRawConfig[] = [
       'Consistent quarterly dividend payer with low debt, guaranteed gas pricing framework, and resilient agricultural demand.',
     beginnerSummary:
       'Pakistan\'s largest urea manufacturer. Generates reliable, steady cash flows and pays chunky quarterly dividends.',
-    targetStreak: -5,
+    targetStreak: 1,
   },
   {
     ticker: 'HUBC',
     name: 'Hub Power Company',
     sector: 'Power Generation',
-    price: 212.73,
+    price: 212.54,
     dividendYieldPct: 9.4,
     payoutMonths: [2, 5, 8, 11],
     isShariah: true,
@@ -261,13 +261,13 @@ const STOCK_CONFIGS: StockRawConfig[] = [
       'Largest independent power producer with dollar-indexed base capacity payments and high dividend payout ratio.',
     beginnerSummary:
       'Major electricity supplier with defensive government power contracts. Strong dividend yield distributed across 4 quarters.',
-    targetStreak: 6,
+    targetStreak: -1,
   },
   {
     ticker: 'EFERT',
     name: 'Engro Fertilizers',
     sector: 'Fertilizer',
-    price: 218.27,
+    price: 217.28,
     dividendYieldPct: 6.1,
     payoutMonths: [3, 6, 9, 11],
     isShariah: true,
@@ -276,14 +276,14 @@ const STOCK_CONFIGS: StockRawConfig[] = [
       'Blue-chip fertilizer player with state-of-the-art plant efficiency and high free cash flow conversion.',
     beginnerSummary:
       'Part of the Engro conglomerate, renowned for paying nearly 100% of net profits out to shareholders as dividends.',
-    targetStreak: -6,
+    targetStreak: -7,
   },
   {
     ticker: 'MEBL',
     name: 'Meezan Bank',
     sector: 'Islamic Bank',
-    price: 545.13,
-    dividendYieldPct: 5.6,
+    price: 551.39,
+    dividendYieldPct: 5.5,
     payoutMonths: [2, 5, 8, 10],
     isShariah: true,
     grade: 'A',
@@ -291,13 +291,13 @@ const STOCK_CONFIGS: StockRawConfig[] = [
       'Premier Islamic bank in Pakistan with the lowest cost of deposits (CASA > 85%) and robust asset quality.',
     beginnerSummary:
       'The gold standard of Shariah banking in Pakistan. High return on equity and compounding quarterly cash payouts.',
-    targetStreak: -1,
+    targetStreak: 1,
   },
   {
     ticker: 'POL',
     name: 'Pakistan Oilfields',
     sector: 'Oil & Gas Exploration',
-    price: 659.56,
+    price: 659.81,
     dividendYieldPct: 15.2,
     payoutMonths: [1, 9],
     isShariah: true,
@@ -306,13 +306,13 @@ const STOCK_CONFIGS: StockRawConfig[] = [
       'Zero debt balance sheet with high cash holdings and direct USD revenue hedge from international oil benchmarks.',
     beginnerSummary:
       'Explores and produces oil and gas. Because it has no debt and earns in dollars, it passes huge chunky payouts directly to investors.',
-    targetStreak: 1,
+    targetStreak: 2,
   },
   {
     ticker: 'OGDC',
     name: 'Oil & Gas Dev Co',
     sector: 'Oil & Gas Exploration',
-    price: 310.65,
+    price: 311.77,
     dividendYieldPct: 5.9,
     payoutMonths: [3, 6, 9, 11],
     isShariah: true,
@@ -321,14 +321,14 @@ const STOCK_CONFIGS: StockRawConfig[] = [
       'State-backed national energy champion holding the largest hydrocarbon reserve base in Pakistan.',
     beginnerSummary:
       'The sovereign energy backbone of Pakistan. Regular quarterly dividends backed by state-owned exploration fields.',
-    targetStreak: -1,
+    targetStreak: 1,
   },
   {
     ticker: 'PPL',
     name: 'Pakistan Petroleum',
     sector: 'Oil & Gas Exploration',
-    price: 222.3,
-    dividendYieldPct: 5.4,
+    price: 224.71,
+    dividendYieldPct: 5.3,
     payoutMonths: [4, 10],
     isShariah: true,
     grade: 'A',
@@ -336,14 +336,14 @@ const STOCK_CONFIGS: StockRawConfig[] = [
       'Pioneer of Sui gas field, expanding offshore and frontier exploration with healthy dividend history.',
     beginnerSummary:
       'Key domestic natural gas producer. Pays semi-annual dividends and provides long-term energy resource exposure.',
-    targetStreak: -7,
+    targetStreak: 1,
   },
   {
     ticker: 'BIPL',
     name: 'BankIslami Pakistan',
     sector: 'Islamic Bank',
-    price: 24.4,
-    dividendYieldPct: 11.3,
+    price: 24.54,
+    dividendYieldPct: 11.2,
     payoutMonths: [3, 8],
     isShariah: true,
     grade: 'A',
@@ -351,14 +351,14 @@ const STOCK_CONFIGS: StockRawConfig[] = [
       'Rapidly growing Islamic commercial franchise with improving margins and clean loan book.',
     beginnerSummary:
       'Fast-expanding pure Islamic commercial bank offering an affordable share price and attractive dividend distribution.',
-    targetStreak: 3,
+    targetStreak: 4,
   },
   {
     ticker: 'MTL',
     name: 'Millat Tractors',
     sector: 'Auto Assembler',
-    price: 295.8,
-    dividendYieldPct: 7.1,
+    price: 297.96,
+    dividendYieldPct: 7.0,
     payoutMonths: [2, 10],
     isShariah: true,
     grade: 'A',
@@ -366,7 +366,7 @@ const STOCK_CONFIGS: StockRawConfig[] = [
       'Dominant 70%+ market share in domestic agricultural tractors with unmatched brand moat and zero debt.',
     beginnerSummary:
       'Builds Massey Ferguson tractors essential to Pakistan\'s farming heartland. Highly cash-generative industrial leader.',
-    targetStreak: 1,
+    targetStreak: 2,
   },
 
   // Conventional Grade A (6 stocks)
@@ -374,7 +374,7 @@ const STOCK_CONFIGS: StockRawConfig[] = [
     ticker: 'MCB',
     name: 'MCB Bank',
     sector: 'Commercial Bank',
-    price: 405.19,
+    price: 404.48,
     dividendYieldPct: 8.9,
     payoutMonths: [3, 6, 8, 11],
     isShariah: false,
@@ -383,13 +383,13 @@ const STOCK_CONFIGS: StockRawConfig[] = [
       'Consistently the most efficient conventional private bank with impeccable capital adequacy and discipline.',
     beginnerSummary:
       'One of the best-managed commercial banks in South Asia, famous for paying 4 solid quarterly dividends year after year.',
-    targetStreak: 8,
+    targetStreak: -1,
   },
   {
     ticker: 'UBL',
     name: 'United Bank',
     sector: 'Commercial Bank',
-    price: 430.8,
+    price: 431.16,
     dividendYieldPct: 7.4,
     payoutMonths: [2, 5, 8, 11],
     isShariah: false,
@@ -398,14 +398,14 @@ const STOCK_CONFIGS: StockRawConfig[] = [
       'Massive international presence, strong corporate deposit base, and exceptionally generous payout policy.',
     beginnerSummary:
       'Large commercial lender with top-tier dividend payout track record over the last two decades.',
-    targetStreak: -1,
+    targetStreak: 1,
   },
   {
     ticker: 'HBL',
     name: 'Habib Bank',
     sector: 'Commercial Bank',
-    price: 303.07,
-    dividendYieldPct: 7.9,
+    price: 305.70,
+    dividendYieldPct: 7.8,
     payoutMonths: [3, 6, 8, 11],
     isShariah: false,
     grade: 'A',
@@ -413,13 +413,13 @@ const STOCK_CONFIGS: StockRawConfig[] = [
       'Largest private banking network in Pakistan with unmatched branch coverage and retail liquidity.',
     beginnerSummary:
       'Pakistan\'s oldest and largest private bank by network size, delivering steady quarterly dividends to shareholders.',
-    targetStreak: -5,
+    targetStreak: 1,
   },
   {
     ticker: 'BAHL',
     name: 'Bank AL Habib',
     sector: 'Commercial Bank',
-    price: 168.96,
+    price: 168.26,
     dividendYieldPct: 8.8,
     payoutMonths: [3, 8],
     isShariah: false,
@@ -428,14 +428,14 @@ const STOCK_CONFIGS: StockRawConfig[] = [
       'Conservative trade-finance powerhouse with near-zero non-performing loan ratio and stable earnings.',
     beginnerSummary:
       'Trade finance specialist known for rock-solid risk management and dependable semi-annual cash dividends.',
-    targetStreak: -1,
+    targetStreak: -2,
   },
   {
     ticker: 'BAFL',
     name: 'Bank Alfalah',
     sector: 'Commercial Bank',
-    price: 59.78,
-    dividendYieldPct: 10.1,
+    price: 60.08,
+    dividendYieldPct: 10.0,
     payoutMonths: [3, 8, 10],
     isShariah: false,
     grade: 'A',
@@ -443,13 +443,13 @@ const STOCK_CONFIGS: StockRawConfig[] = [
       'Backed by Abu Dhabi Group, aggressive digital banking expansion and rising net interest margins.',
     beginnerSummary:
       'Progressive commercial bank with attractive valuation multiples and frequent interim dividend payouts.',
-    targetStreak: 1,
+    targetStreak: 2,
   },
   {
     ticker: 'INDU',
     name: 'Indus Motor Company',
     sector: 'Auto Assembler',
-    price: 1840.02,
+    price: 1844.96,
     dividendYieldPct: 10.6,
     payoutMonths: [2, 5, 9],
     isShariah: false,
@@ -458,7 +458,7 @@ const STOCK_CONFIGS: StockRawConfig[] = [
       'Exclusive manufacturer of Toyota in Pakistan with substantial cash balance and high pricing power.',
     beginnerSummary:
       'Toyota assembler with virtually negative net working capital and consistent payout of surplus treasury income.',
-    targetStreak: -1,
+    targetStreak: 1,
   },
 
   // Grade B & C Yield Traps (3 stocks)
@@ -466,8 +466,8 @@ const STOCK_CONFIGS: StockRawConfig[] = [
     ticker: 'NBP',
     name: 'National Bank of Pakistan',
     sector: 'Commercial Bank',
-    price: 177.04,
-    dividendYieldPct: 19.8,
+    price: 180.89,
+    dividendYieldPct: 19.3,
     payoutMonths: [3],
     isShariah: false,
     grade: 'C',
@@ -477,13 +477,13 @@ const STOCK_CONFIGS: StockRawConfig[] = [
       'Extreme 20.2% yield is distorted by a one-off historical pension litigation payout resolution, not repeatable operational dividend earnings.',
     beginnerSummary:
       'State bank showing an alluring 20%+ yield, but this is a classic yield trap fueled by non-recurring legal resolution.',
-    targetStreak: 1,
+    targetStreak: 2,
   },
   {
     ticker: 'KAPCO',
     name: 'Kot Addu Power Company',
     sector: 'Power Generation',
-    price: 27.02,
+    price: 27.11,
     dividendYieldPct: 11.1,
     payoutMonths: [10],
     isShariah: true,
@@ -494,14 +494,14 @@ const STOCK_CONFIGS: StockRawConfig[] = [
       'Power Purchase Agreement (PPA) expired / transitioning to competitive market, long-term operational cash flows and capacity payments uncertain.',
     beginnerSummary:
       'Historic high yielder whose multi-decade guaranteed power contract has expired. High current yield carries terminal risk.',
-    targetStreak: 1,
+    targetStreak: 2,
   },
   {
     ticker: 'LOTCHEM',
     name: 'Lotte Chemical Pakistan',
     sector: 'Chemicals',
-    price: 25.5,
-    dividendYieldPct: 25.5,
+    price: 25.83,
+    dividendYieldPct: 25.2,
     payoutMonths: [4],
     isShariah: true,
     grade: 'C',
@@ -511,7 +511,7 @@ const STOCK_CONFIGS: StockRawConfig[] = [
       'Highly cyclical petrochemical margins subject to volatile international PTA-PX spreads; dividend payouts swing wildly year to year.',
     beginnerSummary:
       'Cyclical commodity producer. When global petrochemical margins peak, payouts are huge; when they crash, dividends vanish.',
-    targetStreak: -1,
+    targetStreak: 1,
   },
 ];
 
@@ -581,7 +581,7 @@ const RAW_PRESETS: PresetProfileConfig[] = [
       dividendGrowthPct: 10,
       opportunityCostReturnPct: 10,
       usdToPkr: 276.5,
-      goldPerTolaPkr: 384136,
+      goldPerTolaPkr: 385436,
       petrolPricePerLitre: 322,
       gridRatePerKwh: 55,
       solarKw: 0,
@@ -705,7 +705,7 @@ const RAW_PRESETS: PresetProfileConfig[] = [
       dividendGrowthPct: 8,
       opportunityCostReturnPct: 10,
       usdToPkr: 276.5,
-      goldPerTolaPkr: 384136,
+      goldPerTolaPkr: 385436,
       petrolPricePerLitre: 322,
       gridRatePerKwh: 55,
       solarKw: 0,
@@ -798,7 +798,7 @@ const RAW_PRESETS: PresetProfileConfig[] = [
       dividendGrowthPct: 10,
       opportunityCostReturnPct: 10,
       usdToPkr: 276.5,
-      goldPerTolaPkr: 384136,
+      goldPerTolaPkr: 385436,
       petrolPricePerLitre: 322,
       gridRatePerKwh: 55,
       solarKw: 10,

@@ -177,10 +177,13 @@ describe('Golden Fixture Baseline Verification (owner portfolio, 22 Nov 2026)', 
     expect(owned.pricePkr - fixture.vehicles.find((v) => v.id === 'yadea-m3')!.pricePkr).toBe(4550000);
   });
 
+  // Re-baselined 24 Nov 2026 (NOTES #53): the three wealth figures moved
+  // with the Shariah basket blend (8.675% -> 8.625%) after the 24 Nov yield
+  // refresh — a data-driven move, no engine code changed.
   it('planner: exact audited headline outputs for the real fixture', () => {
     const plan = calculateLifePlan(fixture);
-    expect(plan.finalRealTodaysPkr).toBe(11464756);
-    expect(plan.finalNominalWealthPkr).toBe(26731671);
+    expect(plan.finalRealTodaysPkr).toBe(11464734);
+    expect(plan.finalNominalWealthPkr).toBe(26731621);
     expect(plan.safeMonthlyIncome4PctTodaysPkr).toBe(38216);
     expect(plan.emergencyFundTargetPkr).toBe(172648);
     expect(plan.initialMonthlyNetDividendPkr).toBe(0);
@@ -190,6 +193,6 @@ describe('Golden Fixture Baseline Verification (owner portfolio, 22 Nov 2026)', 
     expect(debt.shortfallPkr).toBe(0);
     expect(home.funded).toBe(false);
     expect(home.inflatedCostPkr).toBe(20407334);
-    expect(home.shortfallPkr).toBe(14664188);
+    expect(home.shortfallPkr).toBe(14664674);
   });
 });

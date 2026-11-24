@@ -631,7 +631,7 @@ const simulationYears = Math.min(45, Math.max(10, yearsToRetirement || 15, maxGo
           freedomAge = Math.round(profile.age + totalY);
 
           const additionalMonths = Math.round(totalY * 12);
-          const nowDate = new Date('2026-11-23T00:00:00Z'); // stamped base date (tracks DATA_AS_OF) — engine stays pure
+          const nowDate = new Date('2026-11-24T00:00:00Z'); // stamped base date (tracks DATA_AS_OF) — engine stays pure
           const startYear = nowDate.getUTCFullYear();
           const startMonth = nowDate.getUTCMonth();
           const totalMonths = startYear * 12 + startMonth + additionalMonths;

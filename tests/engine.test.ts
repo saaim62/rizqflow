@@ -97,35 +97,35 @@ describe('Streak Calculation Engine (src/lib/engine/streakEngine.ts)', () => {
 });
 
 describe('Market Data Layer (src/data/marketData.ts)', () => {
-  it('Gold 24k (30-day daily series): 6-day slide snapped, Nov 23 close Rs 384,136, up 7,800 today, drawdown ~11.8% from the 30-day-window high Rs 435,636', () => {
+  it('Gold 24k (30-day daily series): rebound extended to a 2-day streak, Nov 24 close Rs 385,436, up 1,300 today, drawdown ~11.5% from the 30-day-window high Rs 435,636', () => {
     const gold = METAL_ASSETS.find((m) => m.id === 'gold-24k');
     expect(gold).toBeDefined();
     if (!gold) return;
 
-    expect(gold.currentPrice).toBe(384136);
+    expect(gold.currentPrice).toBe(385436);
     expect(gold.history.length).toBe(30);
 
     const finalDay = gold.history[gold.history.length - 1];
     const prevDay = gold.history[gold.history.length - 2];
-    expect(finalDay.date).toBe('2026-11-23');
-    expect(finalDay.price).toBe(384136);
-    expect(prevDay.date).toBe('2026-11-21');
-    expect(prevDay.price).toBe(376336);
+    expect(finalDay.date).toBe('2026-11-24');
+    expect(finalDay.price).toBe(385436);
+    expect(prevDay.date).toBe('2026-11-23');
+    expect(prevDay.price).toBe(384136);
 
-    // Rose Rs 7,800 on the final day
-    expect(gold.streak.changeToday).toBe(7800);
+    // Rose Rs 1,300 on the final day
+    expect(gold.streak.changeToday).toBe(1300);
 
     // High of the 30-day window on Nov 5 at Rs 435,636 (NOT the all-time
     // peak — that is Rs 572,862 on 29 Jan 2026, see the year-history test)
     const peakPoint = gold.history.find((p) => p.date === '2026-11-05');
     expect(peakPoint?.price).toBe(435636);
 
-    // 6-day red streak broken by the Nov 23 rebound
-    expect(gold.streak.currentStreak).toBe(1);
+    // 2-day green streak after the Nov 23 rebound
+    expect(gold.streak.currentStreak).toBe(2);
     expect(gold.streak.isSipDipZone).toBe(false);
 
-    // Drawdown from the 30-day-window high ~11.8%
-    expect(gold.streak.drawdownFromPeakPct).toBeCloseTo(-11.8, 1);
+    // Drawdown from the 30-day-window high ~11.5%
+    expect(gold.streak.drawdownFromPeakPct).toBeCloseTo(-11.5, 1);
   });
 
   it('Gold year history: spans a full year and carries the real all-time peak (Rs 572,862, 29 Jan 2026)', () => {
@@ -147,22 +147,22 @@ describe('Market Data Layer (src/data/marketData.ts)', () => {
     expect(peak.date).toBe('2026-01-29');
 
     // Final point agrees with the daily series' latest close
-    expect(last.date).toBe('2026-11-23');
-    expect(last.price).toBe(384136);
+    expect(last.date).toBe('2026-11-24');
+    expect(last.price).toBe(385436);
 
-    // True drawdown from the all-time peak: about −32.9%
+    // True drawdown from the all-time peak: about −32.7%
     const drawdown = ((last.price - peak.price) / peak.price) * 100;
-    expect(drawdown).toBeCloseTo(-32.9, 1);
+    expect(drawdown).toBeCloseTo(-32.7, 1);
   });
 
-  it('Silver 24k: Nov 23 close at Rs 4,735, 4-day slide snapped', () => {
+  it('Silver 24k: Nov 24 close at Rs 4,687, down Rs 49 after the Nov 23 rebound', () => {
     const silver = METAL_ASSETS.find((m) => m.id === 'silver-24k');
     expect(silver).toBeDefined();
     if (!silver) return;
 
-    expect(silver.currentPrice).toBe(4735);
+    expect(silver.currentPrice).toBe(4687);
     expect(silver.history.length).toBe(30);
-    expect(silver.streak.currentStreak).toBe(1);
+    expect(silver.streak.currentStreak).toBe(-1);
     expect(silver.streak.isSipDipZone).toBe(false);
   });
 
@@ -184,7 +184,7 @@ describe('Market Data Layer (src/data/marketData.ts)', () => {
     // Check specific traps
     const nbp = PSX_STOCKS.find((s) => s.ticker === 'NBP');
     expect(nbp?.grade).toBe('C');
-    expect(nbp?.dividendYieldPct).toBe(19.8); // 23 Nov 2026: DPS 35.00 one-off special / price 177.04
+    expect(nbp?.dividendYieldPct).toBe(19.3); // 24 Nov 2026: DPS 35.00 one-off special / price 180.89
     expect(nbp?.trapWarning).toContain('pension litigation');
 
     const kapco = PSX_STOCKS.find((s) => s.ticker === 'KAPCO');
@@ -197,7 +197,7 @@ describe('Market Data Layer (src/data/marketData.ts)', () => {
     // trailing yield is ~25% — a cyclical PTA-PX peak artifact, not a payout
     // rate. That is a yield trap by definition.
     expect(lotchem?.grade).toBe('C');
-    expect(lotchem?.dividendYieldPct).toBe(25.5);
+    expect(lotchem?.dividendYieldPct).toBe(25.2);
     expect(lotchem?.trapWarning).toContain('PTA-PX');
   });
 
@@ -246,7 +246,7 @@ describe('Dividend Life Planner Engine (src/lib/engine/plannerEngine.ts)', () =>
     const plan = calculateLifePlan(profile);
 
     // Data-driven conventional basket (top-8 grade-A yields, equal weight)
-    // at 20 Nov 2026 prices blends to 10.4%
+    // at 24 Nov 2026 prices blends to ~10.35%
     expect(plan.blendedGrossYieldPct).toBeGreaterThanOrEqual(10.0);
     expect(plan.blendedGrossYieldPct).toBeLessThanOrEqual(10.8);
 
@@ -612,6 +612,12 @@ describe('Phase 3: Live & Custom Market Rates Layer', () => {
     // The superseded 22 Nov gold default heals too
     const healedPrevGold2 = migrateStaleSeedValues({ goldPerTolaPkr: 376336 });
     expect(healedPrevGold2.goldPerTolaPkr).toBe(DEFAULT_MARKET_RATES.goldPerTolaPkr);
+    // The superseded 23 Nov gold default heals too
+    const healedPrevGold3 = migrateStaleSeedValues({ goldPerTolaPkr: 384136 });
+    expect(healedPrevGold3.goldPerTolaPkr).toBe(DEFAULT_MARKET_RATES.goldPerTolaPkr);
+    // The superseded 23 Nov USD default heals too
+    const healedPrevUsd = migrateStaleSeedValues({ usdToPkr: 276.51 });
+    expect(healedPrevUsd.usdToPkr).toBe(DEFAULT_MARKET_RATES.usdToPkr);
     const custom = migrateStaleSeedValues({ petrolPricePerLitre: 330 });
     expect(custom.petrolPricePerLitre).toBe(330);
     // The superseded 21–23 Nov petrol default heals to the new default
@@ -619,13 +625,13 @@ describe('Phase 3: Live & Custom Market Rates Layer', () => {
     expect(healedPrevPetrol.petrolPricePerLitre).toBe(DEFAULT_MARKET_RATES.petrolPricePerLitre);
   });
 
-  it('returns default Nov 23 2026 Pakistan economic defaults', () => {
+  it('returns default Nov 24 2026 Pakistan economic defaults', () => {
     const rates = getDefaultMarketRates();
     expect(rates.petrolPricePerLitre).toBe(319); // OGRA notification 23 Nov 2026, effective 24 Nov
-    expect(rates.goldPerTolaPkr).toBe(384136); // APSGJA Mon 23 Nov 2026 close, verified 23 Nov 2026
-    expect(rates.usdToPkr).toBe(276.51); // SBP interbank close 20 Nov 2026
+    expect(rates.goldPerTolaPkr).toBe(385436); // APSGJA Tue 24 Nov 2026 close, verified 24 Nov 2026
+    expect(rates.usdToPkr).toBe(276.47); // SBP M2M revaluation rate, 24 Nov 2026
     expect(rates.gridRatePerKwh).toBe(55);
-    expect(rates.kse100Index).toBe(177474);
+    expect(rates.kse100Index).toBe(178542);
     expect(rates.solarNetMeteringLegacyRate).toBe(26);
     expect(rates.solarNetBilling2026Rate).toBe(11);
   });
