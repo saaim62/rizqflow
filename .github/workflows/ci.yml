@@ -1,0 +1,44 @@
+name: CI Gate
+
+# FORGEWARDEN gate in CI: every push to main must pass npm ci + test + build
+# on a clean runner before the EC2 auto-deployer will ship it. The deployer
+# checks this workflow's run for the exact head SHA and only deploys on
+# conclusion=success.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    name: npm ci / test / build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install (clean)
+        run: npm ci --no-audit --no-fund
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build

@@ -828,3 +828,9 @@ Audit Round 2 UI, accessibility, and zero-value preservation across Onboarding, 
 - **Apply-car-swap (#7):** `applyCarSavingsToPlan` baseline-spec lookup now handles both `vehicleId` and `id`.
 - **Tests:** 227/227 green; build green (16 routes). No changes to `tests/qa-baseline.test.ts`.
 - Gate that should have caught the gaps: Gate 4 (contract lock) + Gate 5 (modelling honesty) + Gate 2 (data freshness).
+
+## #50 — CI gate + automatic deployment (24 Nov 2026)
+- **Owner instruction:** pushes to main deploy automatically; manual SSH deploys retired.
+- **CI:** `.github/workflows/ci.yml` runs the FORGEWARDEN gate (npm ci, npm test, npm run build; Node 22, clean Ubuntu runner) on every push and PR to main.
+- **Auto-deploy:** a systemd timer on the DropRoute EC2 runs `~/deploy-rizqflow.sh` every 5 minutes. It fetches origin/main; only when the head SHA changed AND that SHA's CI Gate run concluded `success` does it pull (ff-only), prebuild in the memory-capped throwaway container (host rule unchanged — never build inside Docker on the host), recreate the `rizqflow` container, and health-check `/api/market-snapshot`. Red or pending CI = no deploy. A failed build leaves the running container untouched and backs off 30 minutes before retrying the same SHA.
+- **No GitHub secrets:** the repo is public — the EC2 pulls over HTTPS and reads gate status from the public Actions API.
