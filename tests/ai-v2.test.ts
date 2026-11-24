@@ -207,8 +207,8 @@ describe('provider layer + single-flight', () => {
     vi.restoreAllMocks();
   });
 
-  it('defaults to the Groq provider', () => {
-    expect(getAiProvider().id).toBe('groq');
+  it('defaults to the Gemini provider (NOTES #52: Gemini primary, Groq fallback)', () => {
+    expect(getAiProvider().id).toBe('gemini');
   });
 
   it('collapses identical concurrent requests into one upstream call', async () => {

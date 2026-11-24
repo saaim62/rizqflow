@@ -234,10 +234,15 @@ export async function fetchPageText(url: string): Promise<string | null> {
  */
 export async function enrichHitsWithPageText(hits: SearchHit[], topN = 2): Promise<SearchHit[]> {
   const out = [...hits];
-  for (let i = 0; i < Math.min(topN, out.length); i++) {
-    const text = await fetchPageText(out[i].url);
+  const n = Math.min(topN, out.length);
+  // Fetch the pages in PARALLEL (NOTES #52): sequentially this step
+  // alone could stack 2 × PAGE_TIMEOUT_MS onto a cold request.
+  const texts = await Promise.all(
+    Array.from({ length: n }, (_, i) => fetchPageText(out[i].url))
+  );
+  texts.forEach((text, i) => {
     if (text) out[i] = { ...out[i], content: text };
-  }
+  });
   return out;
 }
 

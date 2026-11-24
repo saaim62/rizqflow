@@ -1,20 +1,29 @@
 /**
- * Server-side Groq client for AI Assist (NOTES #27 — Gate 6 Amendment 3).
+ * Server-side LLM client for AI Assist (NOTES #27 — Gate 6 Amendment 3).
  *
- * The API key exists ONLY in the server's environment (.env.server on
- * the host, never in git, never sent to the browser). Every prediction
- * goes browser -> POST /api/ai/predict -> here -> Groq. Primary model
- * first (GROQ_MODEL, default openai/gpt-oss-120b); on any failure the
- * fallback model (GROQ_MODEL_FALLBACK, default qwen/qwen3.8-27b) gets
- * one attempt. Results are cached in memory for 6 hours per unique
- * (type, context) and each caller IP is softly capped per day, so a
- * busy UI cannot burn the quota.
+ * API keys exist ONLY in the server's environment (.env.server on the
+ * host, never in git, never sent to the browser). Every prediction
+ * goes browser -> POST /api/ai/predict -> here -> the model chain.
+ *
+ * Provider order (NOTES #52 — owner directive, 24 Nov 2026): Gemini
+ * (GEMINI_MODEL, default gemini-flash-lite-latest) is the PRIMARY
+ * model for regular predictions; Groq (GROQ_MODEL, default
+ * openai/gpt-oss-120b) is the FALLBACK. Grounded (live-price) types
+ * still get Groq's browser_search attempt first — it is the only
+ * live-data mechanism for those types — then Gemini, then plain Groq.
+ * Results are cached in memory for 6 hours per unique (type, context)
+ * and each caller IP is softly capped per day, so a busy UI cannot
+ * burn the quota.
  *
  * NOTES #47: vehicle fields first resolve through the web-search
  * pipeline (src/lib/webSearch.ts + src/lib/specExtraction.ts —
  * Tavily/Serper search, Gemini/Groq extraction, code derivation,
  * 14-day cache) before this model chain is consulted as the
- * last-resort guess.
+ * last-resort guess. NOTES #52 also caps that pipeline with an
+ * overall time budget (SEARCH_PIPELINE_BUDGET_MS) so a cold cache
+ * miss degrades to the model chain in seconds instead of walking a
+ * multi-minute sequential timeout waterfall (measured live: 48.8s
+ * for one cold field before the budget).
  */
 
 import {
@@ -44,34 +53,41 @@ import {
 import { sanitizeProfile } from '@/lib/stateUrl';
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GEMINI_URL_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const DAILY_CAP_PER_IP = 300;
 const TIMEOUT_MS = 20_000;
+const GEMINI_TIMEOUT_MS = 15_000;
+const GROUNDED_TIMEOUT_MS = 30_000;
 
 interface AiConfig {
-  apiKey: string;
-  model: string;
-  fallbackModel: string;
+  groqApiKey: string | null;
+  groqModel: string;
+  geminiApiKey: string | null;
+  geminiModel: string;
   provider: string;
 }
 
 export function getAiConfig(): AiConfig | null {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) return null;
+  const groqApiKey = process.env.GROQ_API_KEY || null;
+  const geminiApiKey = process.env.GEMINI_API_KEY || null;
+  if (!groqApiKey && !geminiApiKey) return null;
   return {
-    apiKey,
-    model: process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
-    fallbackModel: process.env.GROQ_MODEL_FALLBACK || 'qwen/qwen3.8-27b',
-    provider: process.env.AI_PROVIDER || 'groq',
+    groqApiKey,
+    groqModel: process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
+    geminiApiKey,
+    geminiModel: process.env.GEMINI_MODEL || 'gemini-flash-lite-latest',
+    provider: process.env.AI_PROVIDER || 'gemini',
   };
 }
 
 /**
- * Thin provider layer (NOTES #46): provider + model are chosen by
- * env (AI_PROVIDER, GROQ_MODEL / GROQ_MODEL_FALLBACK). Groq is the
- * default and the ONLY wired provider this round — the layer exists
- * so a future provider seat needs no route changes. No new
- * endpoints, no new external calls beyond the existing Groq route.
+ * Thin provider layer (NOTES #46, order swapped in #52): Gemini is
+ * the primary seat, Groq the fallback seat. Provider + model are
+ * chosen by env (AI_PROVIDER names the primary seat; GEMINI_MODEL /
+ * GROQ_MODEL pick the models). The grounded (browser_search) option
+ * exists only on the Groq seat — Gemini's plain free-tier API has no
+ * equivalent, and search grounding is paywalled (verified 23 Nov).
  */
 export interface AiProvider {
   id: string;
@@ -89,11 +105,61 @@ const groqProvider: AiProvider = {
   chat: (cfg, model, type, context, opts) => callGroq(cfg, model, type, context, opts),
 };
 
-const AI_PROVIDERS: Record<string, AiProvider> = { groq: groqProvider };
+const geminiProvider: AiProvider = {
+  id: 'gemini',
+  chat: (cfg, model, type, context) => callGemini(cfg, model, type, context),
+};
+
+const AI_PROVIDERS: Record<string, AiProvider> = { gemini: geminiProvider, groq: groqProvider };
 
 export function getAiProvider(cfg?: AiConfig): AiProvider {
-  const id = cfg?.provider || process.env.AI_PROVIDER || 'groq';
-  return AI_PROVIDERS[id] ?? groqProvider;
+  const id = cfg?.provider || process.env.AI_PROVIDER || 'gemini';
+  return AI_PROVIDERS[id] ?? geminiProvider;
+}
+
+/** Primary-seat call: Gemini generateContent in JSON mode. */
+async function callGemini(
+  cfg: AiConfig,
+  model: string,
+  type: PredictionType,
+  context: Record<string, unknown>
+): Promise<(PredictionResult & { model: string }) | null> {
+  if (!cfg.geminiApiKey) return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${GEMINI_URL_BASE}/${model}:generateContent`, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        'x-goog-api-key': cfg.geminiApiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: AI_SYSTEM_PROMPT }] },
+        contents: [{ parts: [{ text: PREDICTIONS[type].buildPrompt(context) }] }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.3,
+          maxOutputTokens: 400,
+        },
+      }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+    };
+    const text = (data.candidates?.[0]?.content?.parts ?? [])
+      .map((p) => p.text ?? '')
+      .join('');
+    if (!text.trim()) return null;
+    const parsed = parsePrediction(type, text, context);
+    return parsed ? { ...parsed, model } : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export const MAX_CACHE_ENTRIES = 500;
@@ -159,17 +225,19 @@ async function callGroq(
   context: Record<string, unknown>,
   opts?: { grounded?: boolean }
 ): Promise<(PredictionResult & { model: string }) | null> {
+  if (!cfg.groqApiKey) return null;
   const grounded = opts?.grounded === true;
   const controller = new AbortController();
-  // Browser search browses live pages server-side — it needs far
-  // longer than a plain completion (NOTES #38).
-  const timer = setTimeout(() => controller.abort(), grounded ? 60_000 : TIMEOUT_MS);
+  // Browser search browses live pages server-side — it needs longer
+  // than a plain completion, but the old 60s allowance let one hung
+  // grounded call dominate the whole request (NOTES #52): 30s cap.
+  const timer = setTimeout(() => controller.abort(), grounded ? GROUNDED_TIMEOUT_MS : TIMEOUT_MS);
   try {
     const res = await fetch(GROQ_URL, {
       method: 'POST',
       signal: controller.signal,
       headers: {
-        Authorization: `Bearer ${cfg.apiKey}`,
+        Authorization: `Bearer ${cfg.groqApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(
@@ -261,6 +329,16 @@ const SEARCH_FIELD_FOR_TYPE: Partial<Record<PredictionType, SpecField>> = {
   'car-depreciation': 'depreciation',
 };
 
+/**
+ * Overall budget for one search-pipeline attempt (NOTES #52). The
+ * stages below are sequential provider calls, each with its own
+ * timeout; without a budget a cold miss could stack them into
+ * minutes (measured 48.8s live, timeouts allow far worse). When the
+ * budget is spent the pipeline gives up and the model chain answers
+ * instead — a labelled guess now beats a sourced answer in a minute.
+ */
+const SEARCH_PIPELINE_BUDGET_MS = 25_000;
+
 async function trySearchPipeline(
   type: PredictionType,
   context: Record<string, unknown>
@@ -269,6 +347,8 @@ async function trySearchPipeline(
   if (!field) return null;
   const name = typeof context.name === 'string' ? context.name : '';
   const query = buildVehicleSearchQuery(type, context);
+  const startedAt = Date.now();
+  const overBudget = () => Date.now() - startedAt > SEARCH_PIPELINE_BUDGET_MS;
 
   let outcome = await searchVehicleWebDetailed(query);
   let extraction =
@@ -280,7 +360,7 @@ async function trySearchPipeline(
 
   // Extraction-level fallback: Tavily's hits yielded nothing usable
   // → give Serper's Google index a shot at the same query.
-  if (!built && outcome.provider === 'tavily') {
+  if (!built && outcome.provider === 'tavily' && !overBudget()) {
     const serperHits = await searchWithProvider('serper', query);
     if (serperHits && serperHits.length > 0) {
       const ex2 = await extractVehicleSpecs(name, field, serperHits);
@@ -297,7 +377,7 @@ async function trySearchPipeline(
 
   // Serper snippets carried no usable numbers → fetch the top pages
   // and extract from their full text once.
-  if (!built && outcome.provider === 'serper' && outcome.hits.length > 0) {
+  if (!built && outcome.provider === 'serper' && outcome.hits.length > 0 && !overBudget()) {
     const enriched = await enrichHitsWithPageText(outcome.hits, 2);
     const ex3 = await extractVehicleSpecs(name, field, enriched);
     const built3 = ex3
@@ -380,15 +460,20 @@ export async function predictWithAi(
     }
     if (!cfg) return { ok: false, reason: 'unavailable' };
 
-    const provider = getAiProvider(cfg);
-    // Grounded types (volatile market prices): browser-search call on
-    // the primary model first, then the plain primary, then fallback.
+    // Model chain (NOTES #52): Gemini primary for regular types.
+    // Grounded (live-price) types get Groq's browser_search attempt
+    // first — the only live-data mechanism for those types — then
+    // Gemini, then plain Groq GPT-OSS 120B as the fallback seat.
     let result: (PredictionResult & { model: string }) | null = null;
-    if (isGroundedPrediction(type)) {
-      result = await provider.chat(cfg, cfg.model, type, context, { grounded: true });
+    if (isGroundedPrediction(type) && cfg.groqApiKey) {
+      result = await callGroq(cfg, cfg.groqModel, type, context, { grounded: true });
     }
-    if (!result) result = await provider.chat(cfg, cfg.model, type, context);
-    if (!result) result = await provider.chat(cfg, cfg.fallbackModel, type, context);
+    if (!result && cfg.geminiApiKey) {
+      result = await callGemini(cfg, cfg.geminiModel, type, context);
+    }
+    if (!result && cfg.groqApiKey) {
+      result = await callGroq(cfg, cfg.groqModel, type, context);
+    }
     if (!result) return { ok: false, reason: 'unavailable' };
 
     if (searchAttempted) {
@@ -428,15 +513,8 @@ function mappingCacheKey(payload: string): string {
   return `map::${payload.length}::${hash}`;
 }
 
-async function callGroqForMapping(
-  cfg: AiConfig,
-  model: string,
-  foreignPayload: string
-): Promise<(ForeignMappingResult & { model: string }) | null> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  try {
-    const systemPrompt = `You are RizqFlow's AI Portfolio Field Mapping Assistant.
+function buildMappingPrompts(foreignPayload: string): { systemPrompt: string; userPrompt: string } {
+  const systemPrompt = `You are RizqFlow's AI Portfolio Field Mapping Assistant.
 RizqFlow is a Pakistani personal finance and wealth planning application.
 Your goal is to parse and map foreign financial data (from CSV, JSON, Wealthsimple, Mint, YNAB, bank statements, salary slips) into the RizqFlow UserProfile schema.
 
@@ -456,14 +534,97 @@ Rules:
 2. Clean all text, keep values realistic within the specified schema ranges.
 3. Every unmapped key in the foreign input must be listed in "unmapped".
 4. Output MUST be strictly valid JSON, no markdown formatting or extra text outside the JSON.`;
+  const userPrompt = `Here is the foreign financial payload to map:\n${foreignPayload}`;
+  return { systemPrompt, userPrompt };
+}
 
-    const userPrompt = `Here is the foreign financial payload to map:\n${foreignPayload}`;
+function parseMappingContent(
+  content: string,
+  model: string
+): (ForeignMappingResult & { model: string }) | null {
+  try {
+    const parsed = JSON.parse(content);
+    if (!parsed || typeof parsed !== 'object') return null;
 
+    const fallback = getDefaultFallbackProfile();
+    const profile = sanitizeProfile(parsed.profile, fallback);
+    const mapping = Array.isArray(parsed.mapping)
+      ? parsed.mapping.map((m: any) => ({
+          source: String(m?.source || ''),
+          target: String(m?.target || ''),
+          confidence: ['high', 'medium', 'low'].includes(m?.confidence) ? m.confidence : 'medium',
+          note: String(m?.note || ''),
+        }))
+      : [];
+    const unmapped = Array.isArray(parsed.unmapped)
+      ? parsed.unmapped.map((u: any) => String(u))
+      : [];
+
+    return { profile, mapping, unmapped, model };
+  } catch {
+    return null;
+  }
+}
+
+/** Mapping, primary seat (NOTES #52): Gemini in JSON mode. */
+async function callGeminiForMapping(
+  cfg: AiConfig,
+  model: string,
+  foreignPayload: string
+): Promise<(ForeignMappingResult & { model: string }) | null> {
+  if (!cfg.geminiApiKey) return null;
+  const { systemPrompt, userPrompt } = buildMappingPrompts(foreignPayload);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(`${GEMINI_URL_BASE}/${model}:generateContent`, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        'x-goog-api-key': cfg.geminiApiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ parts: [{ text: userPrompt }] }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.2,
+          maxOutputTokens: 1500,
+        },
+      }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+    };
+    const text = (data.candidates?.[0]?.content?.parts ?? [])
+      .map((p) => p.text ?? '')
+      .join('');
+    if (!text.trim()) return null;
+    return parseMappingContent(text, model);
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function callGroqForMapping(
+  cfg: AiConfig,
+  model: string,
+  foreignPayload: string
+): Promise<(ForeignMappingResult & { model: string }) | null> {
+  if (!cfg.groqApiKey) return null;
+  const { systemPrompt, userPrompt } = buildMappingPrompts(foreignPayload);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
     const res = await fetch(GROQ_URL, {
       method: 'POST',
       signal: controller.signal,
       headers: {
-        Authorization: `Bearer ${cfg.apiKey}`,
+        Authorization: `Bearer ${cfg.groqApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -483,30 +644,7 @@ Rules:
     };
     const content = data.choices?.[0]?.message?.content;
     if (!content) return null;
-
-    const parsed = JSON.parse(content);
-    if (!parsed || typeof parsed !== 'object') return null;
-
-    const fallback = getDefaultFallbackProfile();
-    const profile = sanitizeProfile(parsed.profile, fallback);
-    const mapping = Array.isArray(parsed.mapping)
-      ? parsed.mapping.map((m: any) => ({
-          source: String(m?.source || ''),
-          target: String(m?.target || ''),
-          confidence: ['high', 'medium', 'low'].includes(m?.confidence) ? m.confidence : 'medium',
-          note: String(m?.note || ''),
-        }))
-      : [];
-    const unmapped = Array.isArray(parsed.unmapped)
-      ? parsed.unmapped.map((u: any) => String(u))
-      : [];
-
-    return {
-      profile,
-      mapping,
-      unmapped,
-      model,
-    };
+    return parseMappingContent(content, model);
   } catch {
     return null;
   } finally {
@@ -535,8 +673,9 @@ export async function mapPortfolioWithAi(
 
   if (!underCap(ip)) return { ok: false, reason: 'rate_limited' };
 
-  const primary = await callGroqForMapping(cfg, cfg.model, foreignPayload);
-  const result = primary ?? (await callGroqForMapping(cfg, cfg.fallbackModel, foreignPayload));
+  // Mapping chain (NOTES #52): Gemini primary, Groq GPT-OSS 120B fallback.
+  const primary = await callGeminiForMapping(cfg, cfg.geminiModel, foreignPayload);
+  const result = primary ?? (await callGroqForMapping(cfg, cfg.groqModel, foreignPayload));
   if (!result) return { ok: false, reason: 'unavailable' };
 
   setBoundedEntry(mappingCache, key, { at: Date.now(), result });

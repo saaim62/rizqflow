@@ -25,7 +25,7 @@ import { SearchHit } from '@/lib/webSearch';
 
 export type SpecField = 'price' | 'efficiency' | 'depreciation';
 
-const EXTRACTION_TIMEOUT_MS = 20_000;
+const EXTRACTION_TIMEOUT_MS = 12_000;
 const GEMINI_URL_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const MAX_HIT_CONTENT_CHARS = 1_500;
@@ -79,7 +79,7 @@ async function fetchWithTimeout(
 async function callGemini(prompt: string): Promise<string | null> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
-  const model = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+  const model = process.env.GEMINI_MODEL || 'gemini-flash-lite-latest';
   const res = await fetchWithTimeout(
     `${GEMINI_URL_BASE}/${model}:generateContent`,
     {
