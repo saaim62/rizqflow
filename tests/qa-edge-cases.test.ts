@@ -1220,7 +1220,7 @@ describe('QA Edge Cases: Dip-Buy Strategy Simulator Boundaries', () => {
 describe('QA Edge Cases: Market Rates Live Overrides & Defaults Matrix', () => {
   it('verifies exact Nov 24 2026 Pakistan economic defaults benchmark rates', () => {
     const defaults = getDefaultMarketRates();
-    expect(defaults.petrolPricePerLitre).toBe(319); // OGRA notification 23 Nov 2026, effective 24 Nov
+    expect(defaults.petrolPricePerLitre).toBe(318); // OGRA notification 24 Nov 2026, effective 25 Nov
     expect(defaults.goldPerTolaPkr).toBe(385436); // APSGJA Tue 24 Nov 2026 close, verified 24 Nov 2026
     expect(defaults.usdToPkr).toBe(276.47); // SBP M2M revaluation rate, 24 Nov 2026
     expect(defaults.gridRatePerKwh).toBe(55);

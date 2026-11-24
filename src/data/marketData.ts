@@ -171,17 +171,17 @@ export const METAL_ASSETS: MetalAsset[] = [
 // here, as of DATA_AS_OF. It is NOT a live feed. When you refresh prices,
 // update DATA_AS_OF and DATA_SOURCES in the same change.
 // ---------------------------------------------------------------------------
-export const DATA_AS_OF = 'Tue 24 Nov 2026 (PSX close) · Gold & silver: Tue 24 Nov 2026 · Petrol: Rs 319/L, OGRA notification 23 Nov, effective 24 Nov 2026';
+export const DATA_AS_OF = 'Tue 24 Nov 2026 (PSX close) · Gold & silver: Tue 24 Nov 2026 · Petrol: Rs 318/L, OGRA notification 24 Nov, effective 25 Nov 2026';
 export const DATA_AS_OF_SHORT = '24 Nov 2026';
 export const DATA_SOURCES =
-  'PSX data portal (dps.psx.com.pk), danioPSX, smartmoney.pk dividend records, SBP interbank closing rate, OGRA petrol notification (23 Nov 2026, Rs 319/L effective 24 Nov), All Pakistan Sarafa Gems & Jewellers Association · Gold year history: APSGJA via ARY News / Express Tribune / ProPakistani (29 Jan 2026 peak, FY26 closes) and the goldrateshub monthly archive (World Bank mid-month method), retrieved 21 Nov 2026 · Gold & silver Sat 21 Nov 2026 closes (gold Rs 376,336, silver Rs 4,600) per APSGJA via The Nation / ProPakistani / MM News, verified 22 Nov 2026 · PSX Mon 23 Nov 2026 close (KSE-100 177,473.85, +91.28) per Business Recorder / Mettis Global; gold & silver Mon 23 Nov 2026 closes (gold Rs 384,136, silver Rs 4,735) per APSGJA via ARY News / ProPakistani / Aaj, verified 23 Nov 2026 · PSX Tue 24 Nov 2026 close (KSE-100 178,542.28, +1,068.42) per Business Recorder / APP via UrduPoint; gold & silver Tue 24 Nov 2026 closes (gold Rs 385,436, silver Rs 4,687) per APSGJA via Samaa / Bloom Pakistan, verified 24 Nov 2026; USD/PKR SBP M2M revaluation rate Rs 276.47, 24 Nov 2026';
+  'PSX data portal (dps.psx.com.pk), danioPSX, smartmoney.pk dividend records, SBP interbank closing rate, OGRA petrol notification (24 Nov 2026, Rs 318/L effective 25 Nov), All Pakistan Sarafa Gems & Jewellers Association · Gold year history: APSGJA via ARY News / Express Tribune / ProPakistani (29 Jan 2026 peak, FY26 closes) and the goldrateshub monthly archive (World Bank mid-month method), retrieved 21 Nov 2026 · Gold & silver Sat 21 Nov 2026 closes (gold Rs 376,336, silver Rs 4,600) per APSGJA via The Nation / ProPakistani / MM News, verified 22 Nov 2026 · PSX Mon 23 Nov 2026 close (KSE-100 177,473.85, +91.28) per Business Recorder / Mettis Global; gold & silver Mon 23 Nov 2026 closes (gold Rs 384,136, silver Rs 4,735) per APSGJA via ARY News / ProPakistani / Aaj, verified 23 Nov 2026 · PSX Tue 24 Nov 2026 close (KSE-100 178,542.28, +1,068.42) per Business Recorder / APP via UrduPoint; gold & silver Tue 24 Nov 2026 closes (gold Rs 385,436, silver Rs 4,687) per APSGJA via Samaa / Bloom Pakistan, verified 24 Nov 2026; USD/PKR SBP M2M revaluation rate Rs 276.47, 24 Nov 2026';
 
 export const MARKET_SNAPSHOT = {
   kse100Index: 178542.28,
   kse100ChangePts: 1068.42,
   kse100ChangePct: 0.6,
   usdPkrInterbank: 276.47,
-  petrolPerLitre: 319, // OGRA daily pricing, effective 24 Nov 2026
+  petrolPerLitre: 318, // OGRA daily pricing, effective 25 Nov 2026
   goldPerTolaPkr: 385436,
   silverPerTolaPkr: 4687,
 };
