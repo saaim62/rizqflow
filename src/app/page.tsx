@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { METAL_ASSETS, PSX_STOCKS, MARKET_SNAPSHOT } from '@/data/marketData';
+import { METAL_ASSETS, PSX_STOCKS, MARKET_SNAPSHOT, DATA_AS_OF_SHORT } from '@/data/marketData';
 import { useMarketSnapshot } from '@/lib/useMarketSnapshot';
 import { GoldSpotlight } from '@/components/markets/GoldSpotlight';
 import { HoloChart3D } from '@/components/markets/HoloChart3D';
@@ -158,7 +158,7 @@ export default function HomePage() {
               <div className="font-mono font-bold text-amber-300 text-sm mt-0.5">
                 Rs {snap.rates.petrolPricePerLitre} / L
               </div>
-              <span className="text-zinc-400 font-mono text-[10px]">Effective Nov 21, 2026</span>
+              <span className="text-zinc-400 font-mono text-[10px]">Effective {DATA_AS_OF_SHORT}</span>
             </div>
           </div>
         </div>

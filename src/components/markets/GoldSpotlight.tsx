@@ -171,7 +171,7 @@ export function GoldSpotlight({ gold, silver }: GoldSpotlightProps) {
                       padding: '8px 12px',
                     }}
                     formatter={(val) => [`Rs ${Number(val).toLocaleString('en-PK')} / tola`, 'Price']}
-                    labelFormatter={(label) => `Date: ${label}, 2026`}
+                    labelFormatter={(label) => `Date: ${label}`}
                   />
                   <Area
                     type="monotone"

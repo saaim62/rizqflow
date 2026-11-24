@@ -10,6 +10,11 @@ export async function POST(req: Request) {
   const user = await currentSessionUser();
   if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
 
+  const MAX_BODY = 256 * 1024;
+  const cl = Number(req.headers.get('content-length') || 0);
+  if (cl > MAX_BODY) {
+    return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
+  }
   let body: any;
   try {
     body = await req.json();

@@ -21,21 +21,11 @@ import {
   liabilityDisplayName,
   ProjectionStart,
 } from '@/lib/engine/debtSchedule';
-import { LiabilityShortfall } from '@/types';
+import { LiabilityShortfall, VehicleSwapOption } from '@/types';
+import { DEFAULT_MARKET_RATES } from '@/lib/marketRates';
+export type { VehicleSwapOption } from '@/types';
 
 export type { ProjectionStart } from '@/lib/engine/debtSchedule';
-
-export interface VehicleSwapOption {
-  name: string;
-  category: 'e-scooty' | 'micro-ev' | 'city-ev';
-  pricePkr: number;
-  runningCostPerKmPkr: number;
-  netCashRequiredOrFreedPkr: number;
-  monthlyFuelSavingsPkr: number;
-  paybackMonths: number;
-  solarChargingFree: boolean;
-  extraMonthlyDividendFromSwapPkr: number;
-}
 
 interface StockAllocation {
   stock: PsxStock;
@@ -391,7 +381,8 @@ export function calculateLifePlan(
   // 10–45 years) so figures labelled "at retirement" are truly at retirement,
   // not silently truncated at year 15.
   const yearsToRetirement = (profile.retirementAge || 60) - (profile.age || 30);
-  const simulationYears = Math.min(45, Math.max(10, yearsToRetirement || 15));
+  const maxGoalAge = (profile.lifeGoals || []).reduce((m, g) => Math.max(m, g.targetAge || 0), 0);
+const simulationYears = Math.min(45, Math.max(10, yearsToRetirement || 15, maxGoalAge - (profile.age || 0)));
 
   // 8a. Liability debt schedule (NOTES #45). Only liabilities carrying an
   // explicit schedule (kind + balancePkr) take part; legacy NOTES #23
@@ -426,6 +417,7 @@ export function calculateLifePlan(
   // Track Goals
   const goals = profile.lifeGoals || [];
   const goalOutcomes: GoalOutcome[] = [];
+  const firedGoalIds = new Set<string>();
 
   for (let year = 1; year <= simulationYears; year++) {
     const currentAge = profile.age + year;
@@ -534,7 +526,8 @@ export function calculateLifePlan(
     // only what exists. Withdrawals come out of every sleeve pro-rata.
     let goalWithdrawnThisYear = 0;
     for (const g of goals) {
-      if (g.targetAge === currentAge) {
+      if (!firedGoalIds.has(g.id) && g.targetAge <= currentAge) {
+         firedGoalIds.add(g.id);
         // OWNER-DECISION (§6.5): Goal costs inflate with exponent `year` (Math.pow(1 + inf, year))
         // representing compounding to the end of the target year, whereas monthly living expenses
         // inflate with `year - 1` (Year 1 expenses in base prices). Preserved as locked convention.
@@ -638,9 +631,9 @@ export function calculateLifePlan(
           freedomAge = Math.round(profile.age + totalY);
 
           const additionalMonths = Math.round(totalY * 12);
-          const nowDate = new Date();
-          const startYear = nowDate.getFullYear();
-          const startMonth = nowDate.getMonth();
+          const nowDate = new Date('2026-11-23T00:00:00Z'); // stamped base date (tracks DATA_AS_OF) — engine stays pure
+          const startYear = nowDate.getUTCFullYear();
+          const startMonth = nowDate.getUTCMonth();
           const totalMonths = startYear * 12 + startMonth + additionalMonths;
           const targetYear = Math.floor(totalMonths / 12);
           const targetMonthIdx = totalMonths % 12;
@@ -661,7 +654,7 @@ export function calculateLifePlan(
   const finalRealTodaysPkr = lastPoint ? lastPoint.realTodaysPkr : Math.round(profile.lumpSumPkr);
   const finalWealthUsd = Math.round(finalRealTodaysPkr / (profile.usdToPkr || 276.5));
   const finalWealthGoldTolas = Number(
-    (finalRealTodaysPkr / (profile.goldPerTolaPkr || 379836)).toFixed(1)
+    (finalRealTodaysPkr / (profile.goldPerTolaPkr || DEFAULT_MARKET_RATES.goldPerTolaPkr)).toFixed(1)
   );
   const safeMonthlyIncome4PctTodaysPkr = Math.round((finalRealTodaysPkr * 0.04) / 12);
 
@@ -721,7 +714,7 @@ export function calculateLifePlan(
   // 11. Full Car Decision Map TCO Evaluation
   const carDecision: CarDecisionSummary = evaluateCarDecision(profile);
 
-  const result: any = {
+  const result: PlanSummary = {
     emergencyFundTargetPkr,
     emergencyFundGapPkr,
     blendedGrossYieldPct: Number(blendedGrossYieldPct.toFixed(2)),
@@ -757,7 +750,7 @@ export function calculateLifePlan(
       : {}),
   };
 
-  return result as PlanSummary;
+  return result;
 }
 
 /**
@@ -785,8 +778,9 @@ export function applyCarSavingsToPlan(
       : vehicles[0]);
 
   const winningVehicleSpec = vehicles.find((v) => v.id === winningVehicle.vehicleId);
-  const baselineVehicleSpec = baselineCandidate
-    ? vehicles.find((v) => v.id === (baselineCandidate as any).vehicleId)
+  const baselineCandidateId = (baselineCandidate as any)?.vehicleId || (baselineCandidate as any)?.id;
+  const baselineVehicleSpec = baselineCandidateId
+    ? vehicles.find((v) => v.id === baselineCandidateId)
     : null;
 
   let monthlySavings = 0;

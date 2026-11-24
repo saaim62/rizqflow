@@ -79,6 +79,20 @@ Before any building starts, the task brief states all five:
    the UI, fills input fields only, and never overwrites the stamped
    market data of Gate 2; the feature is behind a global user toggle
    and the app remains fully functional with AI off or unavailable.
+   **Amendment 4 (owner instruction, 24 Nov 2026):** Dynamic market-price
+   refresh. The owner requires petrol, gold, silver, KSE-100 and grid
+   rates to refresh on a 2-hour cadence instead of waiting for a manual
+   redeploy. Terms: the browser makes NO third-party calls — all external
+   fetching happens server-side through the same-origin
+   `/api/market-snapshot/refresh` route, which (a) reads provider URLs/keys
+   only from the server's `.env.server`, (b) validates and stamps every
+   figure with a fresh `DATA_AS_OF` + named source before it is served,
+   (c) falls back to the last stamped seed when no provider is configured
+   or the fetch fails, and (d) never transmits user data. The client polls
+   `/api/market-snapshot` every 2 hours and on tab-visibility change.
+   Prices served are always labelled with their as-of stamp; "live"/
+   "real-time" remains forbidden for any figure that is not a same-instant
+   quote. Gate 2's named-source requirement still applies to refreshed data.
 7. **Guardian pass.** Before a push, a read-only reviewer (human or agent
    who did not write the code) checks the diff against gates 1–6 and the
    `NOTES.md` catalog. The builder cannot mark its own work verified.

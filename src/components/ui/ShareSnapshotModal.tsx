@@ -126,7 +126,7 @@ export function renderSnapshotCanvas(
 
   ctx.fillStyle = '#A8A294';
   ctx.font = 'bold 14px monospace';
-  ctx.fillText("TODAY'S PURCHASING POWER", 85, 345);
+  ctx.fillText("REAL WEALTH AT RETIREMENT (TODAY'S RUPEES)", 85, 345);
 
   // Real wealth text: Cream ink #F5F1E6 (contrast > 17:1 on dark bento)
   ctx.fillStyle = '#F5F1E6';

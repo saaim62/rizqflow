@@ -19,6 +19,7 @@ function generateStockHistory(
   days: number = 30
 ): PricePoint[] {
   const dates: string[] = [];
+  // Must be updated in lockstep with DATA_AS_OF (Forgewarden Gate 2).
   const baseDate = new Date(2026, 10, 23); // 2026-11-23
 
   for (let i = days - 1; i >= 0; i--) {

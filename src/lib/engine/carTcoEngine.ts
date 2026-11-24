@@ -7,6 +7,7 @@ import {
   VehicleWaterfallStep,
 } from '@/types';
 import { formatCompactPkr, formatPkr } from '@/lib/format';
+import { DEFAULT_MARKET_RATES } from '@/lib/marketRates';
 
 /**
  * Calculates 5-Year Total Cost of Ownership (TCO) for a single vehicle candidate.
@@ -26,7 +27,7 @@ function computeSingleVehicleTco(
     const kmPerLitre = vehicle.kmPerLitre && vehicle.kmPerLitre > 0 ? vehicle.kmPerLitre : 14;
     const petrolPrice = profile.petrolPricePerLitre && profile.petrolPricePerLitre > 0
       ? profile.petrolPricePerLitre
-      : 322;
+      : DEFAULT_MARKET_RATES.petrolPricePerLitre;
     fiveYearFuelOrChargePkr = (totalKm / kmPerLitre) * petrolPrice;
   } else {
     // EV or E-Scooty: charging is NEVER Rs 0 because of export opportunity cost or grid tariff
@@ -158,9 +159,9 @@ export function evaluateCarDecision(profile: UserProfile): CarDecisionSummary {
   let effectiveSolarRatePerKwh = profile.gridRatePerKwh || 55;
   if (profile.solarKw > 0) {
     if (profile.solarTariffMode === 'net-metering-legacy') {
-      effectiveSolarRatePerKwh = 26; // Lost export tariff credit
+      effectiveSolarRatePerKwh = DEFAULT_MARKET_RATES.solarNetMeteringLegacyRate; // Lost export tariff credit
     } else if (profile.solarTariffMode === 'net-billing-2026') {
-      effectiveSolarRatePerKwh = 11; // 2026 gross-billing buyback rate
+      effectiveSolarRatePerKwh = DEFAULT_MARKET_RATES.solarNetBilling2026Rate; // 2026 gross-billing buyback rate
     } else {
       effectiveSolarRatePerKwh = profile.gridRatePerKwh || 55;
     }
@@ -185,7 +186,7 @@ export function evaluateCarDecision(profile: UserProfile): CarDecisionSummary {
       const diff = runnerUp.totalFiveYearCostPkr - cheapest.totalFiveYearCostPkr;
       verdictSentence = `Buy / Keep ${cheapest.name} — lowest 5-year TCO by ${formatCompactPkr(
         diff
-      )} compared to ${runnerUp.name} (${formatPkr(cheapest.realCostPerMonthPkr)}/mo true cost).`;
+      )} compared to ${runnerUp.name} (${formatPkr(runnerUp.realCostPerMonthPkr)}/mo true cost).`;
     } else {
       verdictSentence = `${cheapest.name} has a 5-year true cost of ${formatCompactPkr(
         cheapest.totalFiveYearCostPkr

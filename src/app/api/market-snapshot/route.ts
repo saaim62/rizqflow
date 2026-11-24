@@ -1,18 +1,25 @@
-import { NextResponse } from 'next/server';
-import { DEFAULT_MARKET_RATES } from '@/lib/marketRates';
-import { DATA_AS_OF, MARKET_SNAPSHOT } from '@/data/marketData';
+import { NextResponse, connection } from 'next/server';
+import { getServerMarketSnapshot } from '@/lib/server/marketRefresh';
 
 // The single server-side source for every market indicator in the app.
-// Clients poll this hourly (see useMarketSnapshot). PSX closes, Sarafa gold
-// and OGRA petrol are DAILY-published official figures — this endpoint
-// serves the latest verified snapshot with its as-of stamp rather than
-// pretending to be a live feed (Forgewarden Gate 2).
+// Serves the stamped seed by default; when a provider is configured and
+// /api/market-snapshot/refresh has run, serves the refreshed snapshot.
+// Prices are always labelled with their as-of stamp (Forgewarden Gate 2);
+// "live"/"real-time" is never claimed.
 export async function GET() {
-  return NextResponse.json({
-    rates: { ...DEFAULT_MARKET_RATES },
-    silverPerTolaPkr: MARKET_SNAPSHOT.silverPerTolaPkr,
-    kse100ChangePts: MARKET_SNAPSHOT.kse100ChangePts,
-    kse100ChangePct: MARKET_SNAPSHOT.kse100ChangePct,
-    dataAsOf: DATA_AS_OF,
-  }, { headers: { 'Cache-Control': 'no-store' } });
+  await connection();
+  const snap = getServerMarketSnapshot();
+  return NextResponse.json(
+    {
+      rates: { ...snap.rates },
+      silverPerTolaPkr: snap.silverPerTolaPkr,
+      kse100ChangePts: snap.kse100ChangePts,
+      kse100ChangePct: snap.kse100ChangePct,
+      dataAsOf: snap.dataAsOf,
+      source: snap.source,
+      updatedAt: snap.updatedAt,
+      refreshedFromProvider: snap.refreshedFromProvider,
+    },
+    { headers: { 'Cache-Control': 'no-store' } }
+  );
 }

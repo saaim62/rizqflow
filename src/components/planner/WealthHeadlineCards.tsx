@@ -47,7 +47,7 @@ export function WealthHeadlineCards({ plan, profile }: WealthHeadlineCardsProps)
         <div className="rounded-xl bg-[#0C0C0F] border border-white/[0.08] p-4 flex flex-col justify-between relative overflow-hidden group hover:border-white/15 transition-all">
           <div>
             <div className="flex items-center justify-between text-zinc-400 text-[10px] uppercase font-semibold">
-              <span>Today's Real Wealth</span>
+              <span>Real Wealth at Retirement (today's rupees)</span>
               <span className="px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-300 font-mono text-[9px]">
                 Deflated
               </span>

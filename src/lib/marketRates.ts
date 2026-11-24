@@ -123,7 +123,7 @@ export function saveCustomMarketRates(overrides: Partial<MarketRatesConfig>): Ma
   const updated: MarketRatesConfig = {
     ...current,
     ...overrides,
-    lastUpdated: new Date().toISOString().slice(0, 10),
+    lastUpdated: DEFAULT_MARKET_RATES.lastUpdated,
   };
   if (typeof window !== 'undefined') {
     try {

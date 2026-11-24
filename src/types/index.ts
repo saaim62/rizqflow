@@ -158,7 +158,7 @@ export interface UserProfile {
   dividendGrowthPct: number;
   opportunityCostReturnPct: number; // Default 10% for car TCO
   usdToPkr: number; // Default 276.5
-  goldPerTolaPkr: number; // Default 379836
+  goldPerTolaPkr: number; // Default 384136 (stamped 23 Nov 2026)
   petrolPricePerLitre: number; // Default 322 (OGRA, Nov 2026)
   gridRatePerKwh: number; // Default 55
   solarKw: number;
@@ -280,6 +280,18 @@ export interface ExpenseCoverageStep {
   isFullyCovered: boolean;
 }
 
+export interface VehicleSwapOption {
+  name: string;
+  category: 'e-scooty' | 'micro-ev' | 'city-ev';
+  pricePkr: number;
+  runningCostPerKmPkr: number;
+  netCashRequiredOrFreedPkr: number;
+  monthlyFuelSavingsPkr: number;
+  paybackMonths: number;
+  solarChargingFree: boolean;
+  extraMonthlyDividendFromSwapPkr: number;
+}
+
 export interface PlanSummary {
   emergencyFundTargetPkr: number;
   emergencyFundGapPkr: number;
@@ -311,6 +323,9 @@ export interface PlanSummary {
     annualNetDivPkr: number;
   }[];
   carDecision: CarDecisionSummary;
+  // Back-compat fields (NOTES #4/#44): present on every result.
+  vehicleSwaps?: VehicleSwapOption[];
+  freedomYears?: number | null;
 }
 
 // --- Phase 3 Additive Engine Types ---

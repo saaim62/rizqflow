@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { MetalAsset } from '@/types';
 import { DATA_AS_OF_SHORT } from '@/data/marketData';
 import { useMarketSnapshot } from '@/lib/useMarketSnapshot';
+import { useProfile } from '@/components/providers/ProfileProvider';
+import { maskAmount } from '@/lib/format';
 
 /**
  * LivePulse — the platform's heartbeat strip.
@@ -15,6 +17,7 @@ import { useMarketSnapshot } from '@/lib/useMarketSnapshot';
  */
 export function LivePulse({ gold }: { gold: MetalAsset }) {
   const snap = useMarketSnapshot();
+  const { hideAmounts } = useProfile();
   const [now, setNow] = useState(0);
 
   useEffect(() => {
@@ -67,9 +70,9 @@ export function LivePulse({ gold }: { gold: MetalAsset }) {
         </svg>
 
         <div className="hidden md:flex items-center gap-4 font-mono text-[11px] shrink-0">
-          <span className="text-zinc-500">GOLD <span className="text-white font-bold">Rs {snap.rates.goldPerTolaPkr.toLocaleString('en-PK')}</span></span>
-          <span className="text-zinc-500">KSE-100 <span className="text-white font-bold">{snap.rates.kse100Index.toLocaleString('en-PK', { maximumFractionDigits: 0 })}</span></span>
-          <span className="text-zinc-500">USD <span className="text-[#E8C15A] font-bold">Rs {snap.rates.usdToPkr}</span></span>
+          <span className="text-zinc-500">GOLD <span className="text-white font-bold">{maskAmount(`Rs ${snap.rates.goldPerTolaPkr.toLocaleString('en-PK')}`, hideAmounts)}</span></span>
+          <span className="text-zinc-500">KSE-100 <span className="text-white font-bold">{maskAmount(snap.rates.kse100Index.toLocaleString('en-PK', { maximumFractionDigits: 0 }), hideAmounts)}</span></span>
+          <span className="text-zinc-500">USD <span className="text-[#E8C15A] font-bold">{maskAmount(`Rs ${snap.rates.usdToPkr}`, hideAmounts)}</span></span>
         </div>
 
         <span className="font-mono text-[10px] text-zinc-500 shrink-0 ml-auto">

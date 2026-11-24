@@ -358,6 +358,10 @@ export function loadProfileFromStorage(fallback: UserProfile): UserProfile {
 export function encodeProfileToHash(profile: UserProfile): string {
   try {
     const json = JSON.stringify(profile);
+    if (json.length > 150000) {
+      console.error('Profile too large to encode into a URL hash.');
+      return '';
+    }
     if (typeof window !== 'undefined' && typeof window.btoa === 'function') {
       const b64 = window.btoa(encodeURIComponent(json));
       return `#plan=${b64}`;
@@ -379,6 +383,8 @@ export function decodeProfileFromHash(
   fallback: UserProfile
 ): UserProfile | null {
   if (!hash) return null;
+  // Guard against oversized payloads (DoS / broken links).
+  if (hash.length > 200000) return null;
   try {
     const cleanHash = hash.replace(/^#/, '');
     const match = cleanHash.match(/(?:^|&)plan=([^&]+)/);

@@ -24,7 +24,7 @@ export interface MarketSnapshotState {
   refresh: () => void;
 }
 
-const REFRESH_MS = 60 * 60 * 1000; // hourly
+const REFRESH_MS = 2 * 60 * 60 * 1000; // 2-hourly (Amendment 4: dynamic price refresh)
 
 let cache: MarketRatesConfig = { ...DEFAULT_MARKET_RATES };
 let silverCache: number = MARKET_SNAPSHOT.silverPerTolaPkr;
@@ -79,6 +79,11 @@ export function useMarketSnapshot(): MarketSnapshotState {
       started = true;
       pull();
       setInterval(pull, REFRESH_MS);
+      if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') pull();
+        });
+      }
     }
     return () => {
       listeners.delete(fn);

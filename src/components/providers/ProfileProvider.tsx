@@ -132,9 +132,6 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
           debounceTimerRef.current = null;
         }
         try {
-          void api.updatePortfolio(pending.portfolioId, { profile: pending.profile }).catch(() => {});
-        } catch {}
-        try {
           if (typeof fetch !== 'undefined') {
             fetch(`/api/portfolios/${pending.portfolioId}`, {
               method: 'PUT',
@@ -158,7 +155,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const applyServerState = useCallback((user: ApiUser, portfolios: PortfolioRecord[]) => {
     setCurrentUser(user);
     setUserPortfolios(portfolios);
-    const activeId = user.activePortfolioId || (portfolios.length > 0 ? portfolios[portfolios.length - 1].id : '');
+    const activeId = user.activePortfolioId || (portfolios.length > 0 ? portfolios[0].id : '');
     setActivePortfolioId(activeId);
     const activePort = portfolios.find((p) => p.id === activeId);
     if (activePort) {
@@ -451,7 +448,8 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     setUserPortfolios([]);
     setActivePortfolioId('');
     lastSyncedRef.current = '';
-    setProfileState(defaultProfile);
+    const stored = loadProfileFromStorage(defaultProfile);
+    setProfileState(stored);
     showToast('Signed out successfully.');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showToast]);
@@ -532,7 +530,8 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
             setProfileState(next.profile);
           } else {
             lastSyncedRef.current = '';
-            setProfileState(defaultProfile);
+            const stored = loadProfileFromStorage(defaultProfile);
+    setProfileState(stored);
           }
         }
         return { success: true };

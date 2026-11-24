@@ -29,8 +29,8 @@ swap, and see what your money actually does — in today's rupees.
 - **Onboarding wizard** — 6 steps (persona & household, tax & Shariah,
   income, expenses, commute/vehicle/solar, life goals) that calibrate the
   whole app; recalibrating updates your active portfolio in place.
-- Beginner guide, hide-amounts privacy mode, share-plan-as-URL, dark/light
-  themes, 3 persona presets.
+- Beginner guide, hide-amounts privacy mode, share-plan-as-URL, 3 persona
+  presets. (Dark/light theme toggle removed; app ships in dark mode.)
 
 ## Market data — read this before trusting a number
 Prices, dividends and yields are **seeded reference data**, stamped in

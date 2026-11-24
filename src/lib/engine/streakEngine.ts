@@ -225,7 +225,8 @@ export function simulateDipStrategy(
       ? Number((((dcaAvgCost - dipAvgCost) / dcaAvgCost) * 100).toFixed(2))
       : 0;
 
-  const baseYield = stock.dividendYieldPct && stock.dividendYieldPct > 0 ? stock.dividendYieldPct : 8.0;
+  const DEFAULT_BASE_YIELD = 8.0; // fallback when a stock has no declared yield (documented)
+  const baseYield = stock.dividendYieldPct && stock.dividendYieldPct > 0 ? stock.dividendYieldPct : DEFAULT_BASE_YIELD;
   const dcaYield = baseYield * (stock.price / dcaAvgCost);
   const dipYield = baseYield * (stock.price / dipAvgCost);
   const yieldLiftPct = Number((dipYield - dcaYield).toFixed(2));

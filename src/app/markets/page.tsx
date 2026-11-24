@@ -170,7 +170,7 @@ function MarketsTerminal() {
               {/* 30-Day Streak Metrics Bento */}
               <div className="grid grid-cols-2 gap-3 font-mono text-xs">
                 <div className="p-3 rounded-xl bg-[#0C0C0F] border border-white/5">
-                  <span className="text-zinc-500 block text-[10px] uppercase">Drawdown from Peak</span>
+                  <span className="text-zinc-500 block text-[10px] uppercase">30-Day Drawdown from Peak</span>
                   <span className="text-amber-400 font-bold text-sm">
                     {activeMetal.streak.drawdownFromPeakPct.toFixed(1)}%
                   </span>

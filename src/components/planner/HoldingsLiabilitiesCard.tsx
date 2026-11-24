@@ -630,6 +630,8 @@ export function HoldingsLiabilitiesCard({ profile, onChange }: Props) {
       <p className="text-[10px] text-zinc-500 leading-relaxed">
         Net liquid position = cash reserve − liabilities. Enter each debt once: either here as a liability,
         or inside the cash reserve — not both.
+        Itemised holdings are tracked here for your net-worth view; they are not folded into the
+        compounding projection, which uses the lump-sum and SIP inputs above.
       </p>
     </div>
   );
