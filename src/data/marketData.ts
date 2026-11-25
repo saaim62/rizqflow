@@ -71,7 +71,6 @@ function generateStockHistory(
 // ---------------------------------------------------------------------------
 
 const goldHistory: PricePoint[] = [
-  { date: '2026-10-25', price: 424200 },
   { date: '2026-10-26', price: 426000 },
   { date: '2026-10-27', price: 425100 },
   { date: '2026-10-28', price: 427800 },
@@ -102,10 +101,10 @@ const goldHistory: PricePoint[] = [
   // No Sarafa rate issued Sun 22 Nov — series is trading-day based.
   { date: '2026-11-23', price: 384136 }, // Up 1 (+7,800 today, APSGJA Mon 23 Nov close)
   { date: '2026-11-24', price: 385436 }, // Up 2 (+1,300 today, APSGJA Tue 24 Nov close)
+  { date: '2026-11-25', price: 373936 }, // Down 1 (-11,500 today, APSGJA Wed 25 Nov close)
 ];
 
 const silverHistory: PricePoint[] = [
-  { date: '2026-10-25', price: 5180 },
   { date: '2026-10-26', price: 5220 },
   { date: '2026-10-27', price: 5200 },
   { date: '2026-10-28', price: 5280 },
@@ -136,6 +135,7 @@ const silverHistory: PricePoint[] = [
   // No Sarafa rate issued Sun 22 Nov — series is trading-day based.
   { date: '2026-11-23', price: 4735 }, // Up 1 (+135 today, APSGJA Mon 23 Nov close)
   { date: '2026-11-24', price: 4687 }, // Down 1 (-49 today, APSGJA Tue 24 Nov close)
+  { date: '2026-11-25', price: 4463 }, // Down 2 (-224 today, APSGJA Wed 25 Nov close)
 ];
 
 export const METAL_ASSETS: MetalAsset[] = [
@@ -143,21 +143,21 @@ export const METAL_ASSETS: MetalAsset[] = [
     id: 'gold-24k',
     name: '24K Gold (Tola)',
     unit: 'per tola',
-    currentPrice: 385436,
+    currentPrice: 373936,
     history: goldHistory,
     streak: computeStreakStats(goldHistory, true),
     insight:
-      'Gold extended its rebound a second day, rising Rs 1,300 to Rs 385,436 on Nov 24, still -11.5% off its 30-day high of Rs 435,636 on Nov 5.',
+      'Gold plunged Rs 11,500 to Rs 373,936 on Nov 25, ending its 2-day rebound, now -14.2% off its 30-day high of Rs 435,636 on Nov 5.',
   },
   {
     id: 'silver-24k',
     name: '24K Silver (Tola)',
     unit: 'per tola',
-    currentPrice: 4687,
+    currentPrice: 4463,
     history: silverHistory,
     streak: computeStreakStats(silverHistory, true),
     insight:
-      'Silver gave back Rs 49 to Rs 4,687/tola on Nov 24, a day after snapping its 4-day losing streak.',
+      'Silver fell Rs 224 to Rs 4,463/tola on Nov 25, extending its losing streak to a second day.',
   },
 ];
 
@@ -171,10 +171,10 @@ export const METAL_ASSETS: MetalAsset[] = [
 // here, as of DATA_AS_OF. It is NOT a live feed. When you refresh prices,
 // update DATA_AS_OF and DATA_SOURCES in the same change.
 // ---------------------------------------------------------------------------
-export const DATA_AS_OF = 'Wed 25 Nov 2026 (PSX close) · Gold & silver: Tue 24 Nov 2026 (APSGJA 25 Nov rate not yet announced at run time) · Petrol: Rs 318/L, OGRA notification 24 Nov, effective 25 Nov 2026';
+export const DATA_AS_OF = 'Wed 25 Nov 2026 (PSX close) · Gold & silver: Wed 25 Nov 2026 (APSGJA) · Petrol: Rs 318/L, OGRA notification 24 Nov, effective 25 Nov 2026';
 export const DATA_AS_OF_SHORT = '25 Nov 2026';
 export const DATA_SOURCES =
-  'PSX data portal (dps.psx.com.pk), danioPSX, smartmoney.pk dividend records, SBP interbank closing rate, OGRA petrol notification (24 Nov 2026, Rs 318/L effective 25 Nov), All Pakistan Sarafa Gems & Jewellers Association · Gold year history: APSGJA via ARY News / Express Tribune / ProPakistani (29 Jan 2026 peak, FY26 closes) and the goldrateshub monthly archive (World Bank mid-month method), retrieved 21 Nov 2026 · Gold & silver Sat 21 Nov 2026 closes (gold Rs 376,336, silver Rs 4,600) per APSGJA via The Nation / ProPakistani / MM News, verified 22 Nov 2026 · PSX Mon 23 Nov 2026 close (KSE-100 177,473.85, +91.28) per Business Recorder / Mettis Global; gold & silver Mon 23 Nov 2026 closes (gold Rs 384,136, silver Rs 4,735) per APSGJA via ARY News / ProPakistani / Aaj, verified 23 Nov 2026 · PSX Tue 24 Nov 2026 close (KSE-100 178,542.28, +1,068.42) per Business Recorder / APP via UrduPoint; gold & silver Tue 24 Nov 2026 closes (gold Rs 385,436, silver Rs 4,687) per APSGJA via Samaa / Bloom Pakistan, verified 24 Nov 2026; USD/PKR SBP M2M revaluation rate Rs 276.47, 24 Nov 2026 · PSX Wed 25 Nov 2026 close (KSE-100 178,121.25, −421.03) per Business Recorder / PSX data portal; all 18 PSX closes rolled from dps.psx.com.pk (LDCP column matched 24 Nov values); USD/PKR SBP M2M revaluation rate Rs 276.46, 25 Nov 2026, per Business Recorder / APP; gold & silver still Tue 24 Nov closes — APSGJA Wed 25 Nov rate not yet announced by ARY/Tribune/ProPakistani at run time and board sources disagree (Karachi board Rs 393,500 vs Rs 385,500), so left unchanged';
+  'PSX data portal (dps.psx.com.pk), danioPSX, smartmoney.pk dividend records, SBP interbank closing rate, OGRA petrol notification (24 Nov 2026, Rs 318/L effective 25 Nov), All Pakistan Sarafa Gems & Jewellers Association · Gold year history: APSGJA via ARY News / Express Tribune / ProPakistani (29 Jan 2026 peak, FY26 closes) and the goldrateshub monthly archive (World Bank mid-month method), retrieved 21 Nov 2026 · Gold & silver Sat 21 Nov 2026 closes (gold Rs 376,336, silver Rs 4,600) per APSGJA via The Nation / ProPakistani / MM News, verified 22 Nov 2026 · PSX Mon 23 Nov 2026 close (KSE-100 177,473.85, +91.28) per Business Recorder / Mettis Global; gold & silver Mon 23 Nov 2026 closes (gold Rs 384,136, silver Rs 4,735) per APSGJA via ARY News / ProPakistani / Aaj, verified 23 Nov 2026 · PSX Tue 24 Nov 2026 close (KSE-100 178,542.28, +1,068.42) per Business Recorder / APP via UrduPoint; gold & silver Tue 24 Nov 2026 closes (gold Rs 385,436, silver Rs 4,687) per APSGJA via Samaa / Bloom Pakistan, verified 24 Nov 2026; USD/PKR SBP M2M revaluation rate Rs 276.47, 24 Nov 2026 · PSX Wed 25 Nov 2026 close (KSE-100 178,121.25, −421.03) per Business Recorder / PSX data portal; all 18 PSX closes rolled from dps.psx.com.pk (LDCP column matched 24 Nov values); USD/PKR SBP M2M revaluation rate Rs 276.46, 25 Nov 2026, per Business Recorder / APP; gold & silver Wed 25 Nov 2026 closes (gold Rs 373,936, −11,500; silver Rs 4,463, −224) per APSGJA via APP/UrduPoint + Daily Pakistan, verified 25 Nov 2026';
 
 export const MARKET_SNAPSHOT = {
   kse100Index: 178121.25,
@@ -182,8 +182,8 @@ export const MARKET_SNAPSHOT = {
   kse100ChangePct: -0.24,
   usdPkrInterbank: 276.46,
   petrolPerLitre: 318, // OGRA daily pricing, effective 25 Nov 2026
-  goldPerTolaPkr: 385436,
-  silverPerTolaPkr: 4687,
+  goldPerTolaPkr: 373936,
+  silverPerTolaPkr: 4463,
 };
 
 // ---------------------------------------------------------------------------
@@ -213,7 +213,7 @@ export const GOLD_YEAR_HISTORY: PricePoint[] = [
   { date: '2026-08-15', price: 459225 }, // Aug 2026 monthly average
   { date: '2026-09-15', price: 449235 }, // Sep 2026 monthly average
   { date: '2026-10-15', price: 426436 }, // Oct 2026 monthly average
-  { date: '2026-11-24', price: 385436 }, // Latest Sarafa close (= daily series)
+  { date: '2026-11-25', price: 373936 }, // Latest Sarafa close (= daily series)
 ];
 
 interface StockRawConfig {

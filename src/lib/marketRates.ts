@@ -7,7 +7,7 @@ const STORAGE_KEY = 'rizqflow_custom_market_rates';
  */
 export const DEFAULT_MARKET_RATES: MarketRatesConfig = {
   petrolPricePerLitre: 318,
-  goldPerTolaPkr: 385436,
+  goldPerTolaPkr: 373936,
   usdToPkr: 276.46,
   gridRatePerKwh: 55,
   kse100Index: 178121,
@@ -24,7 +24,7 @@ export const DEFAULT_MARKET_RATES: MarketRatesConfig = {
 // ---------------------------------------------------------------------------
 const STALE_SEED_VALUES: Partial<Record<keyof MarketRatesConfig, number[]>> = {
   petrolPricePerLitre: [265, 322, 319],
-  goldPerTolaPkr: [385000, 379836, 376336, 384136],
+  goldPerTolaPkr: [385000, 379836, 376336, 384136, 385436],
   usdToPkr: [276.28, 276.51, 276.47],
 };
 

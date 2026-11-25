@@ -158,7 +158,7 @@ export interface UserProfile {
   dividendGrowthPct: number;
   opportunityCostReturnPct: number; // Default 10% for car TCO
   usdToPkr: number; // Default 276.5
-  goldPerTolaPkr: number; // Default 385436 (stamped 24 Nov 2026)
+  goldPerTolaPkr: number; // Default 373936 (stamped 25 Nov 2026)
   petrolPricePerLitre: number; // Default 318 (OGRA, Nov 2026)
   gridRatePerKwh: number; // Default 55
   solarKw: number;
