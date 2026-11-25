@@ -3,17 +3,17 @@ import { MarketRatesConfig, UserProfile } from '@/types';
 const STORAGE_KEY = 'rizqflow_custom_market_rates';
 
 /**
- * Pakistan economic defaults — seeded reference values as of November 24, 2026 (see DATA_AS_OF in src/data/marketData.ts).
+ * Pakistan economic defaults — seeded reference values as of November 25, 2026 (see DATA_AS_OF in src/data/marketData.ts).
  */
 export const DEFAULT_MARKET_RATES: MarketRatesConfig = {
   petrolPricePerLitre: 318,
   goldPerTolaPkr: 385436,
-  usdToPkr: 276.47,
+  usdToPkr: 276.46,
   gridRatePerKwh: 55,
-  kse100Index: 178542,
+  kse100Index: 178121,
   solarNetMeteringLegacyRate: 26,
   solarNetBilling2026Rate: 11,
-  lastUpdated: '2026-11-24',
+  lastUpdated: '2026-11-25',
 };
 
 // ---------------------------------------------------------------------------
@@ -25,7 +25,7 @@ export const DEFAULT_MARKET_RATES: MarketRatesConfig = {
 const STALE_SEED_VALUES: Partial<Record<keyof MarketRatesConfig, number[]>> = {
   petrolPricePerLitre: [265, 322, 319],
   goldPerTolaPkr: [385000, 379836, 376336, 384136],
-  usdToPkr: [276.28, 276.51],
+  usdToPkr: [276.28, 276.51, 276.47],
 };
 
 export function migrateStaleSeedValues<T extends object>(obj: T): T {
