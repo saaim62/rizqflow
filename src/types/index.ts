@@ -159,7 +159,7 @@ export interface UserProfile {
   opportunityCostReturnPct: number; // Default 10% for car TCO
   usdToPkr: number; // Default 276.5
   goldPerTolaPkr: number; // Default 378636 (stamped 26 Nov 2026)
-  petrolPricePerLitre: number; // Default 314 (OGRA, Nov 2026)
+  petrolPricePerLitre: number; // Default 313 (OGRA, Nov 2026)
   gridRatePerKwh: number; // Default 55
   solarKw: number;
   solarTariffMode: SolarTariffMode; // 'net-metering-legacy' (Rs 26) | 'net-billing-2026' (Rs 11) | 'none' (Rs 55)
