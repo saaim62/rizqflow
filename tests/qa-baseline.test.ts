@@ -180,10 +180,14 @@ describe('Golden Fixture Baseline Verification (owner portfolio, 22 Nov 2026)', 
   // Re-baselined 24 Nov 2026 (NOTES #53): the three wealth figures moved
   // with the Shariah basket blend (8.675% -> 8.625%) after the 24 Nov yield
   // refresh — a data-driven move, no engine code changed.
+  // Re-baselined 27 Nov 2026 (NOTES #60): finalReal +Rs 5, finalNominal
+  // +Rs 12, home shortfall −Rs 122 with the Shariah basket blend
+  // (8.625% -> 8.64%) after the 27 Nov yield refresh (MEBL 5.5 -> 5.6) —
+  // again a data-driven move, no engine code changed.
   it('planner: exact audited headline outputs for the real fixture', () => {
     const plan = calculateLifePlan(fixture);
-    expect(plan.finalRealTodaysPkr).toBe(11464734);
-    expect(plan.finalNominalWealthPkr).toBe(26731621);
+    expect(plan.finalRealTodaysPkr).toBe(11464739);
+    expect(plan.finalNominalWealthPkr).toBe(26731633);
     expect(plan.safeMonthlyIncome4PctTodaysPkr).toBe(38216);
     expect(plan.emergencyFundTargetPkr).toBe(172648);
     expect(plan.initialMonthlyNetDividendPkr).toBe(0);
@@ -193,6 +197,6 @@ describe('Golden Fixture Baseline Verification (owner portfolio, 22 Nov 2026)', 
     expect(debt.shortfallPkr).toBe(0);
     expect(home.funded).toBe(false);
     expect(home.inflatedCostPkr).toBe(20407334);
-    expect(home.shortfallPkr).toBe(14664674);
+    expect(home.shortfallPkr).toBe(14664552);
   });
 });
