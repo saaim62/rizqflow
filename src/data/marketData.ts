@@ -71,7 +71,6 @@ function generateStockHistory(
 // ---------------------------------------------------------------------------
 
 const goldHistory: PricePoint[] = [
-  { date: '2026-10-28', price: 427800 },
   { date: '2026-10-29', price: 429500 },
   { date: '2026-10-30', price: 428200 },
   { date: '2026-10-31', price: 431000 },
@@ -102,10 +101,10 @@ const goldHistory: PricePoint[] = [
   { date: '2026-11-25', price: 373936 }, // Down 1 (-11,500 today, APSGJA Wed 25 Nov close)
   { date: '2026-11-26', price: 378636 }, // Up 1 (+4,700 today, APSGJA Thu 26 Nov close)
   { date: '2026-11-27', price: 390136 }, // Up 2 (+11,500 today, APSGJA Fri 27 Nov close)
+  { date: '2026-11-28', price: 387836 }, // Down 1 (-2,300 today, APSGJA Sat 28 Nov close)
 ];
 
 const silverHistory: PricePoint[] = [
-  { date: '2026-10-28', price: 5280 },
   { date: '2026-10-29', price: 5310 },
   { date: '2026-10-30', price: 5290 },
   { date: '2026-10-31', price: 5330 },
@@ -136,6 +135,7 @@ const silverHistory: PricePoint[] = [
   { date: '2026-11-25', price: 4463 }, // Down 2 (-224 today, APSGJA Wed 25 Nov close)
   { date: '2026-11-26', price: 4629 }, // Up 1 (+166 today, APSGJA Thu 26 Nov close)
   { date: '2026-11-27', price: 4906 }, // Up 2 (+277 today, APSGJA Fri 27 Nov close)
+  { date: '2026-11-28', price: 4851 }, // Down 1 (-55 today, APSGJA Sat 28 Nov close)
 ];
 
 export const METAL_ASSETS: MetalAsset[] = [
@@ -143,21 +143,21 @@ export const METAL_ASSETS: MetalAsset[] = [
     id: 'gold-24k',
     name: '24K Gold (Tola)',
     unit: 'per tola',
-    currentPrice: 390136,
+    currentPrice: 387836,
     history: goldHistory,
     streak: computeStreakStats(goldHistory, true),
     insight:
-      'Gold jumped Rs 11,500 to Rs 390,136 on Nov 27, extending its winning streak to 2 days, now -10.4% off its 30-day high of Rs 435,636 on Nov 5.',
+      'Gold fell Rs 2,300 to Rs 387,836 on Nov 28, snapping its 2-day winning streak, now -11.0% off its 30-day high of Rs 435,636 on Nov 5.',
   },
   {
     id: 'silver-24k',
     name: '24K Silver (Tola)',
     unit: 'per tola',
-    currentPrice: 4906,
+    currentPrice: 4851,
     history: silverHistory,
     streak: computeStreakStats(silverHistory, true),
     insight:
-      'Silver rose Rs 277 to Rs 4,906/tola on Nov 27, extending its winning streak to 2 days.',
+      'Silver fell Rs 55 to Rs 4,851/tola on Nov 28, snapping its 2-day winning streak.',
   },
 ];
 
@@ -171,10 +171,10 @@ export const METAL_ASSETS: MetalAsset[] = [
 // here, as of DATA_AS_OF. It is NOT a live feed. When you refresh prices,
 // update DATA_AS_OF and DATA_SOURCES in the same change.
 // ---------------------------------------------------------------------------
-export const DATA_AS_OF = 'Fri 27 Nov 2026 (PSX close) · Gold & silver: Fri 27 Nov 2026 (APSGJA) · Petrol: Rs 312/L, OGRA notification 27 Nov, effective 28–30 Nov 2026';
-export const DATA_AS_OF_SHORT = '27 Nov 2026';
+export const DATA_AS_OF = 'Fri 27 Nov 2026 (PSX close) · Gold & silver: Sat 28 Nov 2026 (APSGJA) · Petrol: Rs 312/L, OGRA notification 27 Nov, effective 28–30 Nov 2026';
+export const DATA_AS_OF_SHORT = '28 Nov 2026';
 export const DATA_SOURCES =
-  'PSX data portal (dps.psx.com.pk), danioPSX, smartmoney.pk dividend records, SBP interbank closing rate, OGRA petrol notification (26 Nov 2026, Rs 313/L effective 27 Nov), All Pakistan Sarafa Gems & Jewellers Association · Gold year history: APSGJA via ARY News / Express Tribune / ProPakistani (29 Jan 2026 peak, FY26 closes) and the goldrateshub monthly archive (World Bank mid-month method), retrieved 21 Nov 2026 · Gold & silver Sat 21 Nov 2026 closes (gold Rs 376,336, silver Rs 4,600) per APSGJA via The Nation / ProPakistani / MM News, verified 22 Nov 2026 · PSX Mon 23 Nov 2026 close (KSE-100 177,473.85, +91.28) per Business Recorder / Mettis Global; gold & silver Mon 23 Nov 2026 closes (gold Rs 384,136, silver Rs 4,735) per APSGJA via ARY News / ProPakistani / Aaj, verified 23 Nov 2026 · PSX Tue 24 Nov 2026 close (KSE-100 178,542.28, +1,068.42) per Business Recorder / APP via UrduPoint; gold & silver Tue 24 Nov 2026 closes (gold Rs 385,436, silver Rs 4,687) per APSGJA via Samaa / Bloom Pakistan, verified 24 Nov 2026; USD/PKR SBP M2M revaluation rate Rs 276.47, 24 Nov 2026 · PSX Wed 25 Nov 2026 close (KSE-100 178,121.25, −421.03) per Business Recorder / PSX data portal; all 18 PSX closes rolled from dps.psx.com.pk (LDCP column matched 24 Nov values); USD/PKR SBP M2M revaluation rate Rs 276.46, 25 Nov 2026, per Business Recorder / APP; gold & silver Wed 25 Nov 2026 closes (gold Rs 373,936, −11,500; silver Rs 4,463, −224) per APSGJA via APP/UrduPoint + Daily Pakistan, verified 25 Nov 2026 · petrol Thu 26 Nov 2026 (Rs 314/L, −Rs 4; diesel Rs 348) per OGRA notification 25 Nov 2026 via Express Tribune / Aaj English, verified 25 Nov 2026 · PSX Thu 26 Nov 2026 close (KSE-100 178,060.68, −60.57) per Business Recorder / PSX data portal; all 18 PSX closes rolled from dps.psx.com.pk (LDCP column matched 25 Nov values) and cross-checked against the smartmoney.pk dividends table (prices identical); yields recomputed on TTM cash DPS (MCB DPS 36.00 per #55, not the smartmoney 27.00); USD/PKR SBP interbank close Rs 276.45, 26 Nov 2026, per Business Recorder; gold & silver Thu 26 Nov 2026 closes (gold Rs 378,636, +4,700; silver Rs 4,629, +166) per APSGJA via APP/UrduPoint + Aaj, verified 26 Nov 2026 · petrol Fri 27 Nov 2026 (Rs 313/L, −Re 1; diesel Rs 346) per OGRA notification 26 Nov 2026 via Aaj English / Geo / The News, verified 26 Nov 2026 · PSX Fri 27 Nov 2026 close (KSE-100 177,663.89, −396.79) per Business Recorder / PSX data portal; all 18 PSX closes rolled from dps.psx.com.pk (LDCP column matched 26 Nov values) and cross-checked against the smartmoney.pk dividends table (prices identical); yields recomputed on TTM cash DPS (MCB DPS 36.00 per #55, not the smartmoney 27.00); USD/PKR SBP interbank close Rs 276.42, 27 Nov 2026, per Business Recorder / ProPakistani; gold & silver Fri 27 Nov 2026 closes (gold Rs 390,136, +11,500; silver Rs 4,906, +277) per APSGJA via Business Recorder + Samaa, verified 27 Nov 2026 · petrol Sat 28 Nov 2026 (Rs 312/L, −Re 1; diesel Rs 346 unchanged) per OGRA notification 27 Nov 2026 via Dawn / Business Recorder / Aaj English, verified 27 Nov 2026';
+  'PSX data portal (dps.psx.com.pk), danioPSX, smartmoney.pk dividend records, SBP interbank closing rate, OGRA petrol notification (26 Nov 2026, Rs 313/L effective 27 Nov), All Pakistan Sarafa Gems & Jewellers Association · Gold year history: APSGJA via ARY News / Express Tribune / ProPakistani (29 Jan 2026 peak, FY26 closes) and the goldrateshub monthly archive (World Bank mid-month method), retrieved 21 Nov 2026 · Gold & silver Sat 21 Nov 2026 closes (gold Rs 376,336, silver Rs 4,600) per APSGJA via The Nation / ProPakistani / MM News, verified 22 Nov 2026 · PSX Mon 23 Nov 2026 close (KSE-100 177,473.85, +91.28) per Business Recorder / Mettis Global; gold & silver Mon 23 Nov 2026 closes (gold Rs 384,136, silver Rs 4,735) per APSGJA via ARY News / ProPakistani / Aaj, verified 23 Nov 2026 · PSX Tue 24 Nov 2026 close (KSE-100 178,542.28, +1,068.42) per Business Recorder / APP via UrduPoint; gold & silver Tue 24 Nov 2026 closes (gold Rs 385,436, silver Rs 4,687) per APSGJA via Samaa / Bloom Pakistan, verified 24 Nov 2026; USD/PKR SBP M2M revaluation rate Rs 276.47, 24 Nov 2026 · PSX Wed 25 Nov 2026 close (KSE-100 178,121.25, −421.03) per Business Recorder / PSX data portal; all 18 PSX closes rolled from dps.psx.com.pk (LDCP column matched 24 Nov values); USD/PKR SBP M2M revaluation rate Rs 276.46, 25 Nov 2026, per Business Recorder / APP; gold & silver Wed 25 Nov 2026 closes (gold Rs 373,936, −11,500; silver Rs 4,463, −224) per APSGJA via APP/UrduPoint + Daily Pakistan, verified 25 Nov 2026 · petrol Thu 26 Nov 2026 (Rs 314/L, −Rs 4; diesel Rs 348) per OGRA notification 25 Nov 2026 via Express Tribune / Aaj English, verified 25 Nov 2026 · PSX Thu 26 Nov 2026 close (KSE-100 178,060.68, −60.57) per Business Recorder / PSX data portal; all 18 PSX closes rolled from dps.psx.com.pk (LDCP column matched 25 Nov values) and cross-checked against the smartmoney.pk dividends table (prices identical); yields recomputed on TTM cash DPS (MCB DPS 36.00 per #55, not the smartmoney 27.00); USD/PKR SBP interbank close Rs 276.45, 26 Nov 2026, per Business Recorder; gold & silver Thu 26 Nov 2026 closes (gold Rs 378,636, +4,700; silver Rs 4,629, +166) per APSGJA via APP/UrduPoint + Aaj, verified 26 Nov 2026 · petrol Fri 27 Nov 2026 (Rs 313/L, −Re 1; diesel Rs 346) per OGRA notification 26 Nov 2026 via Aaj English / Geo / The News, verified 26 Nov 2026 · PSX Fri 27 Nov 2026 close (KSE-100 177,663.89, −396.79) per Business Recorder / PSX data portal; all 18 PSX closes rolled from dps.psx.com.pk (LDCP column matched 26 Nov values) and cross-checked against the smartmoney.pk dividends table (prices identical); yields recomputed on TTM cash DPS (MCB DPS 36.00 per #55, not the smartmoney 27.00); USD/PKR SBP interbank close Rs 276.42, 27 Nov 2026, per Business Recorder / ProPakistani; gold & silver Fri 27 Nov 2026 closes (gold Rs 390,136, +11,500; silver Rs 4,906, +277) per APSGJA via Business Recorder + Samaa, verified 27 Nov 2026 · petrol Sat 28 Nov 2026 (Rs 312/L, −Re 1; diesel Rs 346 unchanged) per OGRA notification 27 Nov 2026 via Dawn / Business Recorder / Aaj English, verified 27 Nov 2026 · gold & silver Sat 28 Nov 2026 closes (gold Rs 387,836, −2,300; silver Rs 4,851, −55) per APSGJA via APP/UrduPoint + ARY News + Business Recorder, verified 28 Nov 2026';
 
 export const MARKET_SNAPSHOT = {
   kse100Index: 177663.89,
@@ -182,8 +182,8 @@ export const MARKET_SNAPSHOT = {
   kse100ChangePct: -0.22,
   usdPkrInterbank: 276.42,
   petrolPerLitre: 312, // OGRA daily pricing, effective 28 Nov 2026
-  goldPerTolaPkr: 390136,
-  silverPerTolaPkr: 4906,
+  goldPerTolaPkr: 387836,
+  silverPerTolaPkr: 4851,
 };
 
 // ---------------------------------------------------------------------------
@@ -213,7 +213,7 @@ export const GOLD_YEAR_HISTORY: PricePoint[] = [
   { date: '2026-08-15', price: 459225 }, // Aug 2026 monthly average
   { date: '2026-09-15', price: 449235 }, // Sep 2026 monthly average
   { date: '2026-10-15', price: 426436 }, // Oct 2026 monthly average
-  { date: '2026-11-27', price: 390136 }, // Latest Sarafa close (= daily series)
+  { date: '2026-11-28', price: 387836 }, // Latest Sarafa close (= daily series)
 ];
 
 interface StockRawConfig {
